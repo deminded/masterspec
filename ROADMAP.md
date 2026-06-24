@@ -176,3 +176,12 @@
 - MCP-интеграция для диаграмм.
 - CI-проверка дисциплины слоёв.
 - Автогенерация awareness-подсказок для стеков.
+
+## Ветка rewrite (2026-06-24): переписывание под строгую мультиагентную логику
+Принцип: kernel→справочник, операции→скиллы-глаголы, паттерны→references. Итеративно вертикальными срезами.
+- [x] Срез 1 — генерация требований: kernel-справочник, `derive layer=req`, `verify scope=req`, `gen`, паттерны (decision-node/element-workflow/enforcement/verification-axes), «состояния» в meta_model.
+- [ ] Срез 2 — `derive layer=spec` + `verify scope=spec` (O0 single-source, O6 контракт, O7 физмодель), приёмщик-консолидатор.
+- [ ] Срез 3 — `evolve entry=req|rule|ext` (impact, scope-fence, немой вердикт/подъём).
+- [ ] `recover source=docs|code` (слияние режимов recover/codemap/reverse).
+- [ ] Доработка `explore` (траектория, изоляция, дозапрос).
+- [ ] Удаление мигрированного: режимы kernel (design/audit/recover/codemap/reverse), скилл design→impl-plan.
