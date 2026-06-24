@@ -185,3 +185,4 @@
 - [ ] `recover source=docs|code` (слияние режимов recover/codemap/reverse).
 - [ ] Доработка `explore` (траектория, изоляция, дозапрос).
 - [ ] Удаление мигрированного: режимы kernel (design/audit/recover/codemap/reverse), скилл design→impl-plan.
+- [ ] Примеры использования (reference) под новую логику — добавить по мере реализации срезов (старые примеры под режимы удалены как устаревшие).
