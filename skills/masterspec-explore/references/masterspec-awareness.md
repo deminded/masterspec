@@ -23,7 +23,7 @@ ls masterspec/ 2>/dev/null
 | Есть `masterspec/changes/` | Есть история изменений. Проверь `changes/<name>/` — возможно, есть активный change. |
 | Ничего из вышеперечисленного | Фабрика ещё не описана — `target=factory-spec` должен создавать артефакты с нуля через вызывающий скил. |
 
-Если `masterspec/` отсутствует — предложи вызывающему скилу сначала запустить kernel-скилл `masterspec` в режиме `design` (чтобы создать индекс и базовые артефакты).
+Если `masterspec/` отсутствует — предложи сначала запустить `masterspec-derive layer=req` (создать слой требований и индекс).
 
 ---
 
@@ -84,7 +84,7 @@ stat -c '%Y' masterspec/.research-notes.md 2>/dev/null || stat -f '%m' masterspe
 |----------|----------------|
 | `target=factory-spec`, фабрики ещё нет | `masterspec` в режиме `design` (использует `.research-notes.md` как черновой материал) |
 | `target=factory-spec`, фабрика есть, но не актуальна | `masterspec` в режиме `audit`/`reverse` |
-| `target=factory-change` | `masterspec-propose` (создаст change.md, подхватив `.research-notes.md`) |
+| `target=factory-change` | `masterspec-evolve` (создаст change, подхватив `.research-notes.md`) |
 
 ---
 
