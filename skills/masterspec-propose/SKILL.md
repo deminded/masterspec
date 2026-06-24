@@ -8,7 +8,7 @@ description: >
   — файлы в `changes/<name>/new/<slug>.md`. Используй когда пользователь формулирует новую
   функцию, правку существующего AC/NFR/компонента/сценария, новый ADR, правку codemap —
   до написания кода. НЕ используй для описания фабрики с нуля (для этого kernel `masterspec`
-  в режиме `design`).
+  через `derive layer=req`).
 when_to_use: >
   добавить/поменять/убрать в фабрике, изменить спецификацию, обновить фабрику,
   внести изменение, создать change, propose, предложение на изменение, change-request
@@ -89,7 +89,7 @@ allowed-tools:
 
 **2.1.** Прочитай `masterspec/00-masterspec-index.md`.
 
-Если файла нет — AskUserQuestion: «Фабрика `<factory-slug>` ещё не описана. Запустить kernel `masterspec` в режиме `design`?» (опции: «да, переключить на design» / «фабрика существует, но без индекса — продолжить без него»).
+Если файла нет — AskUserQuestion: «Фабрика `<factory-slug>` ещё не описана. Запустить `derive layer=req`?» (опции: «да, переключить на design» / «фабрика существует, но без индекса — продолжить без него»).
 
 **2.2.** По упоминаниям пользователя из этапа 1 — прочитай конкретные артефакты фабрики, которые вероятно затрагиваются (`fn-*.md`, `cmp-*.md`, `scn-*.md`).
 
@@ -188,8 +188,8 @@ Blocking-issues исправь до сдачи. Soft-issues зафиксируй
 - Список файлов в `new/`
 - Результат ревью
 - Подсказка: «Change создан со статусом `На согласовании`. Отправь на ревью (PR). После merge PR — поставь статус `Согласовано` вручную. Далее:
-  - **Сложный CR** (затрагивает код, несколько компонентов): `masterspec-design` → `masterspec-implement` → `masterspec-apply-change`.
-  - **Простой CR** (правка одного AC, текстовая правка): можно пропустить `masterspec-design` и сразу `masterspec-apply-change` после merge PR».
+  - **Сложный CR** (затрагивает код, несколько компонентов): `masterspec-impl-plan` → `masterspec-implement` → `masterspec-apply-change`.
+  - **Простой CR** (правка одного AC, текстовая правка): можно пропустить `masterspec-impl-plan` и сразу `masterspec-apply-change` после merge PR».
 
 ---
 
@@ -214,5 +214,5 @@ Blocking-issues исправь до сдачи. Soft-issues зафиксируй
   - `Реализовано` — изменения вмержены в артефакты фабрики (`apply-change`).
   - `Архивировано` — change перемещён в archive (`archive-change`).
 - **Гибридный формат**: diff-блоки для мелких правок, `new/<slug>.md` для крупных (полные правила — `references/change-format.md`).
-- **Маппинг скиллов**: `masterspec-propose` → (`masterspec-design` опционально) → `masterspec-implement` → `masterspec-apply-change` → `masterspec-archive-change`.
+- **Маппинг скиллов**: `masterspec-propose` → (`masterspec-impl-plan` опционально) → `masterspec-implement` → `masterspec-apply-change` → `masterspec-archive-change`.
 - Не создавай change.md, пока остаются неясности. Всегда прочитай целевые артефакты ПЕРЕД созданием. Не копируй примеры из references в итоговый файл. Проверь, что все 8 секций на месте.

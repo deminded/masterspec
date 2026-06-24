@@ -11,31 +11,31 @@
 
 ## Скиллы
 
-| Скилл | Вызов | Назначение | Статус ветки `rewrite` |
-|---|---|---|---|
-| `masterspec` (kernel) | 👤 справочник | мета-модель + шаблоны + references | ✅ переписан в справочник |
-| `explore` | 👤→🤖 | разведка кодовой базы, изолир. фокус-набор | исходный (доработка: траектория/изоляция — 🔜) |
-| `derive layer=req\|spec` | 👤 | породить слой (req: инфо→требования; spec: требования→спека). Поглотил режим design | ✅ layer=req · 🔜 layer=spec |
-| `verify scope=req\|spec\|change` | 🤖→👤 | вычитка по 5 осям; поглотил режим audit | ✅ scope=req · 🔜 spec/change |
-| `gen type=<артефакт>` | 🤖 | сгенерировать 1 артефакт (узел-исполнение) | ✅ |
-| `evolve entry=req\|rule\|ext` | 👤 | изменить фабрику (4 точки входа) | 🔜 (спроектирован) |
-| `recover source=docs\|code` | 👤 | восстановить из документов/кода (режимы recover/codemap/reverse) | 🔜 |
-| `apply` (apply-change) | 👤 | влить change в фабрику + reindex | исходный |
-| `archive` (archive-change) | 👤 | архивация change | исходный |
-| `reindex` | 🤖/👤 | перегенерация индекса | исходный |
+| Скилл | Вызов | Назначение |
+|---|---|---|
+| `masterspec` (kernel) | 👤 справочник | мета-модель + шаблоны + references |
+| `explore` | 👤→🤖 | разведка кодовой базы; траектория, изолированный фокус-набор, дозапрос |
+| `derive layer=req\|spec` | 👤 | породить слой (req: инфо→требования; spec: требования→спека). Оркестратор |
+| `verify scope=req\|spec\|change` | 🤖→👤 | вычитка по 5 осям (статика + динамика + негатив) |
+| `gen type=<артефакт>` | 🤖 | сгенерировать 1 артефакт (узел-исполнение) |
+| `evolve entry=req\|rule\|ext` | 👤 | изменить фабрику: impact, scope-fence, немой вердикт/подъём, проверка-вверх |
+| `recover source=docs\|code` | 👤 | восстановить описание из документов или кода |
+| `apply` (apply-change) | 👤 | влить change в фабрику + reindex |
+| `archive` (archive-change) | 👤 | архивация change |
+| `reindex` | 🤖/👤 | перегенерация индекса |
 
-Граница набора: `impl-plan` / `implement` (кодинг) — отдельный набор скиллов кодинга.
+Граница набора: `impl-plan` (техпроект реализации) и `implement` (реализация кода) — скиллы кодинга, у границы.
+
+Паттерны процесса (references в kernel): `decision-node` (узел-решение), `element-workflow` (планировщик/исполнитель/приёмщик), `enforcement` (hard-gates), `verification-axes` (5 осей вычитки).
 
 ## Мета-модель: три слоя
-Требования (`01-`, ЧТО) → Спецификации (`02-`, КАК) → Кодовая база (`03-`, ГДЕ) + `04-decisions/`. Ссылки **снизу вверх** — дисциплина изоляции слоёв. Полная мета-модель — `skills/masterspec/meta_model.md`.
+Требования (`01-`, ЧТО) → Спецификации (`02-`, КАК) → Кодовая база (`03-`, ГДЕ) + `04-decisions/`. Ссылки **снизу вверх** — дисциплина изоляции слоёв. Решения: `adr-` (сквозные, в `04-decisions/`) и `dr-` (локальные, рядом с артефактом на его слое). Полная мета-модель — `skills/masterspec/meta_model.md`.
 
 ## Жизненный цикл
 - **Генерация:** `explore` → `derive layer=req` → `verify scope=req` → human-gate (merge PR) → `apply` → `derive layer=spec` → `verify scope=spec` (codegen_ready) → human-gate → кодоген.
 - **Изменение:** `evolve entry=…` → `verify scope=change` → human-gate → `apply`.
+- **Восстановление:** `recover source=docs|code` → `verify` → доведение через `derive`/`evolve`.
 - **Hard-gate:** «Согласовано» ставит человек (merge PR), не агент.
-
-## Статус ветки `rewrite`
-Первый вертикальный срез — генерация СЛОЯ ТРЕБОВАНИЙ по новой логике: kernel-справочник + `derive layer=req` + `verify scope=req` + `gen` + паттерны (decision-node, element-workflow, enforcement, verification-axes). Дальше — `layer=spec`, `evolve`, `recover`, доработка `explore`. Прежние скиллы (design/propose/implement) пока сосуществуют, мигрируют по мере среза.
 
 ## Установка
 ```bash

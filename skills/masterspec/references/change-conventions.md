@@ -1,6 +1,6 @@
 # Соглашения про changes/
 
-Как организована директория изменений фабрики. Документ читают workflow-скиллы `masterspec-propose`, `masterspec-design`, `masterspec-implement`, `masterspec-apply-change`, `masterspec-archive-change`.
+Как организована директория изменений фабрики. Документ читают workflow-скиллы `masterspec-propose`, `masterspec-impl-plan`, `masterspec-implement`, `masterspec-apply-change`, `masterspec-archive-change`.
 
 ---
 
@@ -58,7 +58,7 @@ masterspec/
 
 ### 2.4. `design.md` + `tasks.md` — опционально
 
-Создаются `masterspec-design` для сложных CR. Формат — как в `openspec-design` (dev-design, привязанный к реальным классам/модулям проекта). Для простых CR шаг пропускается.
+Создаются `masterspec-impl-plan` для сложных CR. Формат — как в `openspec-design` (dev-design, привязанный к реальным классам/модулям проекта). Для простых CR шаг пропускается.
 
 ---
 
