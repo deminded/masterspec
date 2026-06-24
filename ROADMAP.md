@@ -16,7 +16,7 @@
 | 6 | `add-sprint-capabilities` | 3 `add-subsection`: два на жёсткую границу `##` с подсекциями (`cmp-database/## Возможности`, `cmp-jira-adapter/## Возможности`) и один на конец файла без подсекций (`fn-manage-release/## Критерии приёмки`) | ✅ валидировал S5: границы раздела `##`/EOF, позиция вставки, проверка уровня ПОСЛЕ. Граница `---` в фабрике не встречается — не покрыта. |
 | 7 | `add-fn-manage-sprint` | 4 `modify-bullet` (перепривязка capability из прогона №6 на новую функцию) + 1 ADDED; в §1.5 change — протокол коллизии: предложенный slug `fn-manage-release` заблокирован Glob'ом, переименован в `fn-manage-sprint` | ✅ валидировал S6: `Glob("masterspec/**/<slug>.md")` с исключением `masterspec/changes/` реально ловит коллизию и разрешает уникальный slug |
 
-Архив прогонов — `D:/Projects/sprint-management/masterspec/changes/archive/2026-04-2{3,4}-*`.
+Архив прогонов — `masterspec/changes/archive/2026-04-2{3,4}-*`.
 
 ---
 
@@ -87,7 +87,7 @@
 
 **Где**: [masterspec-skills/skills/masterspec-apply-change/SKILL.md](skills/masterspec-apply-change/SKILL.md) §4 + [merge-workflow.md](skills/masterspec-apply-change/references/merge-workflow.md) §1.1.
 
-**Проблема**: когда фабрика лежит в директории без `.git/` (как `D:/Projects/sprint-management`), `git status --porcelain masterspec/` возвращает `fatal: not a git repository` и выходит с успешным кодом. Текущая логика трактует «пустой вывод» как «чисто» и пропускает. Safety net «откат через git» в этом сценарии отсутствует.
+**Проблема**: когда фабрика лежит в директории без `.git/`, `git status --porcelain masterspec/` возвращает `fatal: not a git repository` и выходит с успешным кодом. Текущая логика трактует «пустой вывод» как «чисто» и пропускает. Safety net «откат через git» в этом сценарии отсутствует.
 
 **Следствие**: в таком проекте `apply-change` необратим — любая ошибка в diff-блоках ломает фабрику без возможности восстановления.
 

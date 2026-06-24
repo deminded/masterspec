@@ -78,7 +78,7 @@
 
 ## 5. Проверка перед сохранением
 
-Чек-лист для workflow-скиллов (propose, apply-change):
+Чек-лист для workflow-скиллов (evolve, apply-change):
 
 1. **Слой определён.** Куда кладу — `01-requirements/`, `02-specifications/`, `03-codemap/` или `04-decisions/`?
 2. **Содержимое соответствует слою.** Запреты из §2 применены.

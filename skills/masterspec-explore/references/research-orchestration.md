@@ -82,7 +82,7 @@ find . -type f \( -name "*.java" -o -name "*.kt" -o -name "*.py" -o -name "*.go"
 | Средний (3 агента) | [requirements-scope], [components-scope + scenarios-scope], [data-scope] |
 | Крупный (4 агента) | [requirements-scope], [components-scope], [scenarios-scope], [data-scope (+ codemap-scope при необходимости)] |
 
-Для простых change (правка одного AC, редактирование строки таблицы) исследование кода вообще можно пропустить — пользовательский чек `Нужно ли картировать код?` на стороне `propose`.
+Для простых change (правка одного AC, редактирование строки таблицы) исследование кода вообще можно пропустить — пользовательский чек `Нужно ли картировать код?` при создании change (`evolve`, шаг 0).
 
 ---
 

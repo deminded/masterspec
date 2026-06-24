@@ -1,6 +1,6 @@
 # Соглашения про changes/
 
-Как организована директория изменений фабрики. Документ читают workflow-скиллы `masterspec-propose`, `masterspec-impl-plan`, `masterspec-implement`, `masterspec-apply-change`, `masterspec-archive-change`.
+Как организована директория изменений фабрики. Документ читают workflow-скиллы `masterspec-evolve` (создаёт change, шаг 0), `masterspec-impl-plan`, `masterspec-implement`, `masterspec-apply-change`, `masterspec-archive-change`.
 
 ---
 
@@ -54,11 +54,11 @@ masterspec/
 
 ### 2.3. `.research/<role>.yaml` — опционально
 
-Результаты работы `masterspec-explore` (structured research кодовой базы). Используются `propose` / `design` / `implement` для точной привязки изменений к коду. После `apply-change` и `archive-change` директория сохраняется внутри архива для аудита.
+Результаты работы `masterspec-explore` (structured research кодовой базы). Используются `evolve` / `impl-plan` / `implement` для точной привязки изменений к коду. После `apply-change` и `archive-change` директория сохраняется внутри архива для аудита.
 
 ### 2.4. `design.md` + `tasks.md` — опционально
 
-Создаются `masterspec-impl-plan` для сложных CR. Формат — как в `openspec-design` (dev-design, привязанный к реальным классам/модулям проекта). Для простых CR шаг пропускается.
+Создаются `masterspec-impl-plan` для сложных CR. Формат — dev-design, привязанный к реальным классам/модулям проекта. Для простых CR шаг пропускается.
 
 ---
 
@@ -68,7 +68,7 @@ masterspec/
 
 | Статус | Переход | Кто ставит |
 |---|---|---|
-| На согласовании | → Согласовано | `masterspec-propose` при создании |
+| На согласовании | → Согласовано | `masterspec-evolve` при создании (шаг 0) |
 | Согласовано | → В реализации | Аналитик вручную после merge PR |
 | В реализации | → Реализовано | `masterspec-implement` при первом запуске |
 | Реализовано | → Архивировано | `masterspec-apply-change` после успешного мержа |
@@ -82,7 +82,7 @@ masterspec/
 
 ## 4. Гибридный формат change (diff vs new/)
 
-Выбор — на стороне `masterspec-propose`. Правила — в `masterspec-propose/references/change-format.md`. Сводка:
+Выбор делается при создании change (`masterspec-evolve`, шаг 0). Правила — в `masterspec-propose/references/change-format.md`. Сводка:
 
 | Тип правки | Формат |
 |---|---|
@@ -91,7 +91,7 @@ masterspec/
 | Новый `cap-*` внутри существующего `cmp-` | diff-блок `add-subsection` |
 | Замена раздела целиком, ≥ 50 строк | файл в `new/<slug>-<section>.patch.md` + пометка в change.md |
 | Новый артефакт целиком (новый `fn-`, `cmp-`, `scn-`, `alg-`, `adr-`, ...) | файл в `new/<slug>.md` |
-| Удаление артефакта целиком | только §2.3 и §6 change.md, файл не трогаем до apply |
+| Удаление артефакта целиком | только §2.3 и §6 change.md, файл не трогаем до apply-change |
 
 ---
 
@@ -132,4 +132,4 @@ mv masterspec/changes/<name> masterspec/changes/archive/YYYY-MM-DD-<name>
 
 Где `YYYY-MM-DD` — сегодняшняя дата (UTC). Если директория с таким именем уже есть — добавляется суффикс `-2`, `-3`.
 
-После архивации change больше не редактируется и не применяется. Для повторных изменений — новый change через `propose`.
+После архивации change больше не редактируется и не применяется. Для повторных изменений — новый change через `evolve`.

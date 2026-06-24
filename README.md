@@ -5,7 +5,7 @@
 > Скиллы работают напрямую с файловой системой — внешних CLI/зависимостей не требуется.
 
 ## Принцип набора
-- **kernel `masterspec` = СПРАВОЧНИК**: мета-модель (3 слоя), 24 шаблона, дисциплина слоёв, паттерны-references. Сам не «делает».
+- **kernel `masterspec` = СПРАВОЧНИК**: мета-модель (3 слоя), 27 шаблонов, дисциплина слоёв, паттерны-references. Сам не «делает».
 - **операции = скиллы-ГЛАГОЛЫ**. Вариации одного назначения = ПАРАМЕТР скилла, не новый скилл.
 - **паттерны процесса = references** внутри kernel, не отдельные скиллы.
 
@@ -16,12 +16,12 @@
 | `masterspec` (kernel) | 👤 справочник | мета-модель + шаблоны + references |
 | `explore` | 👤→🤖 | разведка кодовой базы; траектория, изолированный фокус-набор, дозапрос |
 | `derive layer=req\|spec` | 👤 | породить слой (req: инфо→требования; spec: требования→спека). Оркестратор |
-| `verify scope=req\|spec\|change` | 🤖→👤 | вычитка по 5 осям (статика + динамика + негатив) |
+| `verify scope=req\|spec\|change` | 🤖→👤 | вычитка по осям O1–O5 (+O0/O6/O7 для spec): статика + динамика + негатив |
 | `gen type=<артефакт>` | 🤖 | сгенерировать 1 артефакт (узел-исполнение) |
-| `evolve entry=req\|rule\|ext` | 👤 | изменить фабрику: impact, scope-fence, немой вердикт/подъём, проверка-вверх |
+| `evolve entry=req\|rule\|ext` | 👤 | изменить фабрику (правка узла ИЛИ добавление): impact, scope-fence, немой вердикт/подъём, проверка-вверх |
 | `recover source=docs\|code` | 👤 | восстановить описание из документов или кода |
-| `apply` (apply-change) | 👤 | влить change в фабрику + reindex |
-| `archive` (archive-change) | 👤 | архивация change |
+| `apply-change` | 👤 | влить change в фабрику + reindex |
+| `archive-change` | 👤 | архивация change |
 | `reindex` | 🤖/👤 | перегенерация индекса |
 
 Граница набора: `impl-plan` (техпроект реализации) и `implement` (реализация кода) — скиллы кодинга, у границы.
@@ -32,8 +32,8 @@
 Требования (`01-`, ЧТО) → Спецификации (`02-`, КАК) → Кодовая база (`03-`, ГДЕ) + `04-decisions/`. Ссылки **снизу вверх** — дисциплина изоляции слоёв. Решения: `adr-` (сквозные, в `04-decisions/`) и `dr-` (локальные, рядом с артефактом на его слое). Полная мета-модель — `skills/masterspec/meta_model.md`.
 
 ## Жизненный цикл
-- **Генерация:** `explore` → `derive layer=req` → `verify scope=req` → human-gate (merge PR) → `apply` → `derive layer=spec` → `verify scope=spec` (codegen_ready) → human-gate → кодоген.
-- **Изменение:** `evolve entry=…` → `verify scope=change` → human-gate → `apply`.
+- **Генерация:** (`explore` — если фабрика поверх существующего кода) → `derive layer=req` → `verify scope=req` → human-gate (merge PR) → `apply-change` → `derive layer=spec` → `verify scope=spec` (codegen_ready) → human-gate → кодоген.
+- **Изменение:** `evolve entry=…` → `verify scope=change` → human-gate → `apply-change`.
 - **Восстановление:** `recover source=docs|code` → `verify` → доведение через `derive`/`evolve`.
 - **Hard-gate:** «Согласовано» ставит человек (merge PR), не агент.
 

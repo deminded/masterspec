@@ -1,6 +1,6 @@
 # Осведомлённость об артефактах masterspec
 
-Аналог `openspec-awareness.md` — как лид-скил (`masterspec-explore` или его вызывающий) должен сориентироваться в директории фабрики перед запуском ресеча.
+Как лид-скил (`masterspec-explore` или его вызывающий) должен сориентироваться в директории фабрики перед запуском ресеча.
 
 ---
 
@@ -82,8 +82,8 @@ stat -c '%Y' masterspec/.research-notes.md 2>/dev/null || stat -f '%m' masterspe
 
 | Ситуация | Следующий скил |
 |----------|----------------|
-| `target=factory-spec`, фабрики ещё нет | `masterspec` в режиме `design` (использует `.research-notes.md` как черновой материал) |
-| `target=factory-spec`, фабрика есть, но не актуальна | `masterspec` в режиме `audit`/`reverse` |
+| `target=factory-spec`, фабрики ещё нет | `derive layer=req` (использует `.research-notes.md` как черновой материал) |
+| `target=factory-spec`, фабрика есть, но не актуальна | `verify` (аудит) или `recover source=code` |
 | `target=factory-change` | `masterspec-evolve` (создаст change, подхватив `.research-notes.md`) |
 
 ---

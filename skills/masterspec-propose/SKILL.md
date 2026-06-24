@@ -1,17 +1,10 @@
 ---
 name: masterspec-propose
 description: >
-  Создать change.md — предложение на изменение артефактов фабрики по мета-модели
-  masterspec. Ведёт двухэтапное интервью (ЧТО → КАК), при затрагивании кода запускает
-  параллельных read-only субагентов `masterspec-explore` с target=factory-change.
-  Гибридный формат: мелкие правки — diff-блоки в change.md; крупные (новый fn/cmp/scn/adr)
-  — файлы в `changes/<name>/new/<slug>.md`. Используй когда пользователь формулирует новую
-  функцию, правку существующего AC/NFR/компонента/сценария, новый ADR, правку codemap —
-  до написания кода. НЕ используй для описания фабрики с нуля (для этого kernel `masterspec`
-  через `derive layer=req`).
+  DEPRECATED — создание change поглощено masterspec-evolve (шаг 0). Не активируется напрямую.
+  Сохранён как дом справочника формата change.md (references/change-format.md, templates/change.md).
 when_to_use: >
-  добавить/поменять/убрать в фабрике, изменить спецификацию, обновить фабрику,
-  внести изменение, создать change, propose, предложение на изменение, change-request
+  (deprecated; используй masterspec-evolve)
 argument-hint: "[kebab-name ИЛИ описание того, что нужно изменить]"
 license: MIT
 compatibility: >
@@ -26,6 +19,8 @@ allowed-tools:
   - Grep
   - Bash
 ---
+
+> **DEPRECATED.** Создание change поглощено `masterspec-evolve` (шаг 0 «заведи change»). В активную карту операций не входит и напрямую не активируется. Сохранён как ДОМ справочника формата change.md (`references/change-format.md`, `templates/change.md`), который читают `evolve`, `apply-change`, `impl-plan`. Для новых изменений запускай `masterspec-evolve`.
 
 # masterspec-propose — создание change.md
 

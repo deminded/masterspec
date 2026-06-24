@@ -9,8 +9,8 @@ masterspec/<factory>/  _input/  01-requirements/  02-specifications/  04-decisio
 ```
 
 ## Кто что запускает
-👤 ЧЕЛОВЕК: `explore`, `derive`, `evolve`, `recover`, `apply` (через merge PR), `archive`.
-🤖 ВНУТРИ (не дёргаешь): `gen` (элемент-генерация), `verify` (вычитка), `propose` (под-шаг evolve), приёмщик, негатив-антагонист.
+👤 ЧЕЛОВЕК: `explore`, `derive`, `evolve`, `recover`, `apply-change` (через merge PR), `archive-change`.
+🤖 ВНУТРИ (не дёргаешь): `gen` (элемент-генерация), `verify` (вычитка), создание change (шаг 0 внутри `evolve`), приёмщик, негатив-антагонист.
 Кодоген (`impl-plan`/`implement`) — за границей набора.
 
 Флаги: `pass=linear|parallel` · `verify=core|full`.
@@ -21,16 +21,16 @@ masterspec/<factory>/  _input/  01-requirements/  02-specifications/  04-decisio
 ---
 ## Кейс 1 — Генерация с нуля
 1. 👤 Положи запрос + материалы в `_input/`.
-2. 👤 `explore <factory>` → 🤖 разведчики → `.research/`.
+2. 👤 Если фабрика поверх существующего кода — `explore <factory> roots=<пути>` → 🤖 разведчики → `.research/`. С нуля без кода шаг пропускается: `derive` соберёт контекст из запроса.
 3. 👤 `derive <factory> layer=req pass=linear verify=core` → 🤖 gen (as/fn/nfr/rules/cdm) + приёмщик + verify. Выход: `01-requirements/` + `route-run.md`.
-4. 👤 Проверь `route-run.md`: блокеры осей О4 (динамика), О5 (негатив). Закрой, ответь на дозапросы.
-5. 👤 Согласуй (merge PR) → `apply`.
+4. 👤 Проверь `route-run.md`: блокеры осей O4 (динамика), O5 (негатив). Закрой, ответь на дозапросы.
+5. 👤 Согласуй (merge PR) → `apply-change`.
 6. 👤 `derive <factory> layer=spec pass=parallel verify=full` → 🤖 gen (cmp/scn/api/data) + приёмщик + verify (O0/O6/O7). Выход: `02-specifications/`.
 7. 👤 Согласуй (codegen_ready?) → кодоген (вне набора).
 
 ## Кейс 2 — Добавление функции
 1. 👤 Положи описание новой функции в `changes/<name>/change.md`.
-2. 👤 `evolve <factory> entry=req --root=<новая-fn>` → 🤖 impact + gen + scope-fence + приёмщик + verify scope=change.
+2. 👤 `evolve <factory> entry=req --root=new:<новая-fn>` → 🤖 ДОБАВЛЕНИЕ узла: forward-каскад вниз (порождает scn/api/data/tc-acc) + gen + scope-fence + приёмщик + verify scope=change.
 3. 👤 Получишь в `new/`: узел + рёбра + AC + вердикты соседей.
 4. 👤 Проверь (нет немых вердиктов; инвариант переиспользуемых) → согласуй.
 
@@ -60,7 +60,7 @@ masterspec/<factory>/  _input/  01-requirements/  02-specifications/  04-decisio
 1. route кладёт результат в ветку, открывает **PR** (`status: draft`, change.md «На согласовании»).
 2. 👤 Аналитик ревьюит PR (route-run.md: метрики, немые вердикты/подъёмы).
 3. 👤 **Мержит PR** = «Согласовано» (агент свой PR не мержит).
-4. 🤖 `apply` на смерженном: артефакты → `status: actual`.
+4. 🤖 `apply-change` на смерженном: артефакты → `status: actual`.
 Ключ — разделение прав, не поле в файле.
 
 ## На выходе (отчуждаемо от содержания)

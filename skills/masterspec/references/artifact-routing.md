@@ -1,6 +1,6 @@
 # Маршрутизация артефактов: тип → шаблон → путь → slug
 
-Справочник используют `propose` (при создании файлов в `changes/<name>/new/`), `apply-change` (при копировании new/ в целевые директории фабрики) и kernel-режимы `design`/`recover`/`reverse`.
+Справочник используют `evolve` (при создании change в `changes/<name>/new/`), `apply-change` (при копировании new/ в целевые директории фабрики), `derive` и `recover`.
 
 ---
 
