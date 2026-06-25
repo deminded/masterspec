@@ -73,7 +73,7 @@ ls masterspec/changes/ 2>/dev/null | grep -v "^archive$"
 
 Прочитай `masterspec/changes/<name>/change.md`.
 
-Если файл отсутствует → предложи сначала запустить `masterspec-propose`.
+Если файл отсутствует → предложи сначала создать change через `masterspec-evolve` (шаг 0).
 
 Проверь поле `> **Статус**:` в шапке:
 
@@ -133,7 +133,7 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 По `merge-workflow.md § 5`:
 - Для каждого файла `new/<slug>.md`: прочитай YAML-фронтматтер → определи целевую директорию по `type:` через `masterspec/references/artifact-routing.md`.
 - Проверь отсутствие коллизии (`<target-dir>/<slug>.md` не существует). Коллизия → `merge-workflow.md § 6.4`.
-- Скопируй файл. Проставь `status: actual` (change согласован мержем PR), `updated:` = сегодня.
+- Скопируй файл, `updated:` = сегодня. Статус: артефакты слоёв → `status: actual` (change согласован мержем PR); `adr-`/`dr-` сохраняют свой решенческий статус (`proposed`/`accepted`) — НЕ перезаписывать в actual.
 
 ### 9. Удаление REMOVED
 
@@ -158,7 +158,7 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 Провал smoke-check → `git checkout HEAD -- masterspec/`, расследуй причину. В verification не переходим.
 
 **§9.2 Verification** (применённость по каждой строке §2.1/§2.2/§2.3):
-- Для каждого `modify-bullet` / `replace-section` / `add-subsection` / `prepend-to-file` — проверь, что `ПОСЛЕ:` реально в файле (первая + последняя непустая строка для `modify-bullet`; первая строка в границах раздела для `replace-section` / `add-subsection`; первые и последние строки в голове файла для `prepend-to-file`). Детальный алгоритм — `merge-workflow.md § 9.2`.
+- Для каждого `modify-bullet` / `replace-section` / `add-subsection` — проверь, что `ПОСЛЕ:` реально в файле (первая + последняя непустая строка для `modify-bullet`; первая строка в границах раздела для `replace-section` / `add-subsection`). Детальный алгоритм — `merge-workflow.md § 9.2`.
 - Для ADDED — файл на месте, YAML-фронтматтер валиден (`slug`/`type`/`status`/`updated`), нет HTML-комментариев шаблона.
 - Для REMOVED — файла нет.
 - Строки, пропущенные пользователем в §6 (skipped_by_user), хранятся в памяти сессии и из verification исключаются.
@@ -196,7 +196,7 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 (нет)
 
 #### Index
-- обновлён: добавлены 2 строки с маркером `?` (draft), обновлено `updated`
+- перегенерирован полностью по `index-canonical.md` (маркеры `+`/`-` по `status`), обновлено `updated`
 
 ### Verification (применённость)
 confirmed: K · skipped_by_user: S · unconfirmed: U
