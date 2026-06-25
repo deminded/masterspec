@@ -15,7 +15,7 @@
 `context=full` (дефолт) — оркестратор может читать сам, меньше субагент-оверхеда (большой контекст). `context=lean` — строгая делегация по этому контракту (ограниченный контекст).
 
 ## Рабочая зона и namespace
-Всё ЭФЕМЕРНОЕ рабочее — в `masterspec/.work/<run-id>/` (run-id = `<layer|change-name>-<ts>`), чтобы параллельные/долгоживущие прогоны не делили `plan`/`.focus` и не сносили чужую зону. Внутри: `plan.md`, `.focus/<slug>.md`, `verify/` (частичные отчёты lean-verify: `<elem>.md`, `_negative.md`, `_spec-o0o6o7.md`, `_change-nodes.md`, `<node>.md`).
+Всё ЭФЕМЕРНОЕ рабочее — в `masterspec/.work/<run-id>/` (run-id = `<layer|change-name>-<ts>`), чтобы параллельные/долгоживущие прогоны не делили `plan`/`.focus` и не сносили чужую зону. Внутри: `plan.md`, `.focus/<slug>.md`, `verify/` (частичные отчёты lean-verify: `<elem>.md`, `_negative.md`, `_spec-o0o6o7.md`, `_change-nodes.md`, `<node>.md`), `apply/` (lean-apply: `_dryrun.md`, `<slug>.md`).
 РЕЗУЛЬТАТЫ-метрики (отчуждаемые ОТ содержания) хранятся ОТДЕЛЬНО и переживают чистку: `route-run-<ts>.md` и `verify-report.md` — в корне фабрики (генерация) или `changes/<name>/` (изменение). В `.work/` их НЕ держим (иначе чистка их снесёт). Частичные `verify/*.md` — эфемерны (в `.work/`), `verify-report.md` — результат (вынесен).
 По завершении прогона `masterspec/.work/<run-id>/` ОБЯЗАТЕЛЬНО удаляется: фокус-наборы содержат ВПИСАННЫЕ срезы артефактов (дубли содержания) — оставлять нельзя (рассинхрон, мусор). Итог: `route-run` сохранить, `masterspec/.work/<run-id>/` снести.
 
@@ -99,6 +99,10 @@ gen не хватило фокус-набора → один маршрут:
     3. **aggregate** — оркестратор сводит `verify/<node>.md` в `verify-report.md`: немые вердикты/подъёмы = узлы с `silent-*: yes`; полнота каскада = нет `cascade-AC: missing`; scope-fence-покрытие = у каждого соседа непустой вердикт.
   Сводка: verify-оркестратор читает ТОЛЬКО частичные `verify/*.md` и агрегирует их в `verify-report.md` (holes по осям, by_severity, spec_ready/codegen_ready, остаток) — сам слой не читает. namespace `masterspec/.work/<run-id>/` и чистка — общие; verify-report выносится отдельно (он метрики, не содержание).
 - **recover** (восстановление большой фабрики): `explore` изолирует код; разбор документов и генерация черновиков — субагентами (как planner + gen); recover держит план восстановления, сводки и «Белые пятна», не содержимое.
-- **apply-change** (крупный change): применение diff-блоков и копирование `new/` — поэлементными субагентами (блок/файл = субагент, возвращает confirmed/conflict); apply держит dry-run-план и verification-сводку, не содержимое целевых файлов.
+- **apply-change** (крупный change), в три шага:
+  1. оркестратор читает ТОЛЬКО шапку `change.md` + §2-таблицы (MODIFIED/ADDED/REMOVED: slug + путь + тип) — компактно; формирует dry-run-план `apply/_dryrun.md`, человек подтверждает.
+  2. на каждую строку §2 — субагент: применяет (diff-блок §4 / копирование `new/` / удаление) И делает verification СВОЕЙ строки (по `merge-workflow.md §9.2`: дошла ли правка до файла), пишет `apply/<slug>.md` НОРМИРОВАННОГО формата: `op: modify|add|remove`, `target`, `result: applied|conflict|skipped`, `verification: confirmed|unconfirmed`, `note`. Так §9 собирается из per-block отчётов, а не из бинаря.
+  3. оркестратор агрегирует `apply/*.md` в §9.3-вердикт (confirmed/skipped/unconfirmed) — НЕ читая целевые файлы; `skipped_by_user` берётся из тех строк, где человек на конфликте выбрал «пропустить»; reindex — полной перегенерацией (субагент по `index-canonical.md`); статус change.md по вердикту.
+  `apply/*.md` эфемерны (`.work/`); итоговый `apply-report.md` (§9.3-вердикт) — ВНЕ `.work/` (как verify-report), переживает чистку.
 - **gen** и **explore** параметр `context` НЕ несут: gen атомарен (один артефакт в фокус-наборе, пухнуть нечем), explore lean по природе (изолированные разведчики → `.research/`, лид не читает сырьё).
 `masterspec/.work/<run-id>/` и обязательная чистка — те же, что для derive/evolve.

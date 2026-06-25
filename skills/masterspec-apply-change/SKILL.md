@@ -22,6 +22,7 @@ allowed-tools:
   - Glob
   - Grep
   - Bash
+  - Task
 ---
 
 # masterspec-apply-change — вливание change.md в артефакты фабрики
@@ -30,7 +31,7 @@ allowed-tools:
 
 **Input**: Опционально — имя change. Если не указано — автовыбор/выбор через AskUserQuestion.
 
-> **`context=full` (дефолт) / `context=lean`** — для крупного change в `lean` применение diff-блоков и копирование `new/` идут поэлементными субагентами (блок/файл = субагент → confirmed/conflict), а apply держит только dry-run-план и verification-сводку, не содержимое целевых файлов (принцип — `../masterspec/references/patterns/context-isolation.md`). Для ограниченного контекста.
+> **`context=full` (дефолт) / `context=lean`** — для крупного change в `lean` шаги §3, §5–§11 делегируются (файловый контракт — `../masterspec/references/patterns/context-isolation.md §Lean в других скиллах`): оркестратор читает только шапку `change.md` + §2-таблицы → dry-run-план `apply/_dryrun.md`; на каждую строку §2 — субагент применяет И верифицирует СВОЮ строку → `apply/<slug>.md` (`op`/`target`/`result`/`verification`); оркестратор собирает §9.3-вердикт из этих отчётов, целевые файлы сам НЕ читает; reindex субагентом; `apply-report.md` — вне `.work/`. В `context=full` шаги ниже выполняются самим скиллом (читает сам). Для ограниченного контекста.
 
 ## Bundle-пути
 
@@ -88,6 +89,8 @@ ls masterspec/changes/ 2>/dev/null | grep -v "^archive$"
 | Другой / отсутствует | Предупреди, спроси подтверждение через AskUserQuestion. |
 
 ### 3. Прочитай контекст
+
+> В `context=lean` этот шаг и применение (§5–§11) идут через субагентов: оркестратор читает только шапку change.md + §2-таблицы, целевые файлы и `new/*` не читает (см. врезку выше и `context-isolation.md`). Ниже — режим `full`.
 
 - Полностью `masterspec/changes/<name>/change.md` (шапка + §1..§8).
 - Все файлы `masterspec/changes/<name>/new/*.md` (если ADDED не пустой).
