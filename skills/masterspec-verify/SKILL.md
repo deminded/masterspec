@@ -41,7 +41,13 @@ by_severity: {blocker,major,minor}
 spec_ready / codegen_ready: yes|no
 остаток по типу: {вне-scope / противоречие / недоведённый-негатив}
 top_holes: [{ось, элемент, что, severity}]
+# для scope=change дополнительно (из node-partials):
+silent_verdicts: [узлы]      # узлы с silent-verdict: yes
+silent_raises: [узлы]        # узлы с silent-raise: yes
+cascade_AC_missing: [узлы]   # каскад-вниз-к-AC не доведён
+scope_fence_uncovered: [соседи]  # соседи без вердикта
 ```
+В lean этот же `verify-report.md` собирается агрегатором из частичных `verify/*.md` и хранится ВНЕ `.work/` (переживает чистку — это метрики, не содержание).
 Блокеры → человеку на hard-gate. Метрики выносимы без содержания (приёмка, отчёт).
 
 ## Немое решение (проверка дисциплины записей)
