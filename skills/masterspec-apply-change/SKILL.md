@@ -11,7 +11,7 @@ description: >
 when_to_use: >
   влить change в фабрику, apply change, обновить артефакты по change,
   merge change в spec, зафиксировать изменения в фабрике
-argument-hint: "[имя change]"
+argument-hint: "[имя change] [context=full|lean]"
 license: MIT
 compatibility: >
   Использует masterspec/ layout, bash/git, AskUserQuestion (при отсутствии — текстовый fallback, см. README).
@@ -29,6 +29,8 @@ allowed-tools:
 Мультиартефактный мерж: diff-блоки из `change.md §4` применяются к существующим файлам фабрики, файлы из `new/` копируются в целевые директории по `type:` фронтматтера, `00-masterspec-index.md` обновляется.
 
 **Input**: Опционально — имя change. Если не указано — автовыбор/выбор через AskUserQuestion.
+
+> **`context=full` (дефолт) / `context=lean`** — для крупного change в `lean` применение diff-блоков и копирование `new/` идут поэлементными субагентами (блок/файл = субагент → confirmed/conflict), а apply держит только dry-run-план и verification-сводку, не содержимое целевых файлов (принцип — `../masterspec/references/patterns/context-isolation.md`). Для ограниченного контекста.
 
 ## Bundle-пути
 
