@@ -89,8 +89,8 @@ updated: 2026-04-17
  ? `02-specifications/04-apis/internal/api-template-engine.md` # Рендеринг шаблонов
 
 ### 4.5. Внешние API
- - `02-specifications/04-apis/external/api-sms-provider.yaml` # SMS-провайдер
- ? `02-specifications/04-apis/external/api-push-provider.yaml` # Push-провайдер
+ - `02-specifications/04-apis/external/api-sms-provider.md` # SMS-провайдер (+yaml)
+ ? `02-specifications/04-apis/external/api-push-provider.md` # Push-провайдер (+yaml)
 
 ### 4.6. Схемы данных
  + `02-specifications/05-data/data-notifications.md` # Уведомления
