@@ -18,7 +18,7 @@ when_to_use: >
 argument-hint: "[target: factory-spec|factory-change] roots=<пути к коду> [factory=<slug>] [name=<change>] [anchor=<paths|slugs>]"
 license: MIT
 compatibility: >
-  Требуется доступ к bash/git и встроенный tool запуска read-only субагента
+  Использует bash/git и встроенный tool запуска read-only субагента (при отсутствии — sequential sweep, research-orchestration §8)
   (имя и subagent_type — по таблице § 3.1 references/invocation-contract.md).
   Опционально Serena/LSP/embedding MCP-серверы — сильно повышают качество исследования.
 allowed-tools:

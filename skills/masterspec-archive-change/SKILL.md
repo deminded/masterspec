@@ -9,7 +9,7 @@ when_to_use: >
   архивировать change, закрыть change, убрать из активных, archive change
 argument-hint: "[имя change]"
 license: MIT
-compatibility: Требуется masterspec/ layout в проекте, доступ к bash, AskUserQuestion tool.
+compatibility: Использует masterspec/ layout, bash, AskUserQuestion (при отсутствии — текстовый fallback, см. README).
 allowed-tools:
   - Read
   - Edit

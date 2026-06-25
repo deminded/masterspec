@@ -191,6 +191,7 @@ updated: 2026-04-23
 Специальные случаи:
 - `type: api` — смотри поле `scope:` фронтматтера: `internal` → `02-specifications/04-apis/internal/`, `external` → `02-specifications/04-apis/external/`.
 - `type: function` — смотри поле `block:` фронтматтера: если задано — поддиректория `01-requirements/02-functions/<block>/`; иначе — `01-requirements/02-functions/`.
+- `type: decision-record` (`dr-*`) — путь НЕ вычисляется по `type:`: бери его из колонки «Путь (куда)» в §2.2 change.md (dr ложится на слой артефакта-владельца, см. `meta_model.md §6.1.2`). Поле `about:` — для индекса-среза, не для маршрутизации.
 
 ### 5.3. Проверь отсутствие конфликта имён
 
@@ -206,7 +207,7 @@ cp masterspec/changes/<name>/new/<slug>.md masterspec/<target-dir>/<slug>.md
 ### 5.5. Нормализуй YAML-фронтматтер
 
 В скопированном файле:
-- `status: actual` (change согласован мержем PR — applied-артефакт сразу актуален)
+- `status`: для артефактов слоёв → `actual` (change согласован мержем PR — applied-артефакт сразу актуален); для `adr-`/`dr-` → сохрани как было в `new/` (`proposed`/`accepted`), НЕ переписывай в `actual` (статусная модель решений — `meta_model.md §6.1.2`).
 - `updated: YYYY-MM-DD` (сегодня)
 - Все остальные поля — сохрани как были в `new/<slug>.md`.
 
@@ -301,13 +302,13 @@ rmdir masterspec/<dir-path> 2>/dev/null
 ### 8.1. Почему полная перегенерация, а не diff-блоки
 
 - Алгоритм размещения строк/нумерации разделов — в одном месте (`<Skill dir>/../masterspec/references/index-canonical.md`).
-- Change.md НЕ содержит diff-блоков по `00-masterspec-index.md`. Попытка их добавить должна отклоняться на ревью (см. `<Skill dir>/../../masterspec/references/change-format.md`).
+- Change.md НЕ содержит diff-блоков по `00-masterspec-index.md`. Попытка их добавить должна отклоняться на ревью (см. `<Skill dir>/../masterspec/references/change-format.md`).
 - Сортировка, нумерация, каноничные заголовки секций — одинаковы между фабриками и между прогонами apply-change. Нет merge-конфликтов по индексу.
 
 ### 8.2. Алгоритм (что делает apply-change в §8)
 
 1. Прочитай `<Skill dir>/../masterspec/references/index-canonical.md` (spec + алгоритм reindex).
-2. Выполни полную перегенерацию индекса по `../../masterspec/references/index-canonical.md` на директории `masterspec/`:
+2. Выполни полную перегенерацию индекса по `<Skill dir>/../masterspec/references/index-canonical.md` на директории `masterspec/`:
    - прочитай текущий `masterspec/00-masterspec-index.md`, сохрани §1 «Паспорт» и §7 «Белые пятна и открытые вопросы»;
    - сохрани словарь `path → comment_text` из строк артефактов (для сохранения комментариев);
    - просканируй `00-glossary.md`, `01-requirements/**/*.md`, `02-specifications/**/*.md`, `03-codemap/**/*.md`, `04-decisions/**/*.md`;
