@@ -132,8 +132,10 @@ masterspec/
 ├── 02-specifications/  # 01-components/ 02-scenarios/ 03-algorithms/ 04-apis/{internal,external} 05-data/ 06-diagrams/ 07-load-profiles/ 08-test-cases/ 09-ui-views/
 ├── 03-codemap/         # 00-repo-map.md 01-component-maps/ 02-scenario-traces/ 03-data-maps/  (generated: true)
 ├── 04-decisions/       # adr- — сквозные решения (локальные dr-* лежат рядом с артефактами на их слоях)
-└── changes/<name>/     # change.md, .research/, new/, route-run-<ts>.md
-    └── archive/YYYY-MM-DD-<name>/
+└── changes/
+    ├── <name>/         # активный change: change.md, .research/, new/, route-run-<ts>.md
+    └── archive/        # завершённые change (sibling активных, НЕ вложен в <name>/)
+        └── YYYY-MM-DD-<name>/
 ```
 
 Полная вложенная раскладка с подпапками и правилами — `meta_model.md §3` (единственный источник структуры; здесь — обзор).
