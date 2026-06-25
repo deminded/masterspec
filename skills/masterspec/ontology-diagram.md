@@ -32,8 +32,8 @@ graph TB
         SCN["Сценарий<br/><i>scn-*</i>"]
         ALG["Алгоритм<br/><i>alg-*</i>"]
         CD["Компонентная<br/>диаграмма<br/><i>cd-*</i>"]
-        API_INT["Внутренний API<br/><i>api-internal-*</i>"]
-        API_EXT["Внешний API<br/><i>api-external-*</i>"]
+        API_INT["Внутренний API<br/><i>api-* (scope:internal)</i>"]
+        API_EXT["Внешний API<br/><i>api-* (scope:external)</i>"]
         DATA["Схема данных<br/><i>data-*</i>"]
         LP["Профиль<br/>нагрузки<br/><i>lp-*</i>"]
         TC_INT["Интеграционный<br/>тест<br/><i>tc-int-*</i>"]
@@ -131,8 +131,8 @@ package "Слой спецификаций" as SPEC #dcfce7 {
     class "Сценарий\n<size:9>scn-*</size>" as SCN #bbf7d0
     class "Алгоритм\n<size:9>alg-*</size>" as ALG #bbf7d0
     class "Компонентная диагр.\n<size:9>cd-*</size>" as CD #bbf7d0
-    class "Внутренний API\n<size:9>api-internal-*</size>" as API_INT #bbf7d0
-    class "Внешний API\n<size:9>api-external-*</size>" as API_EXT #bbf7d0
+    class "Внутренний API\n<size:9>api-* (scope:internal)</size>" as API_INT #bbf7d0
+    class "Внешний API\n<size:9>api-* (scope:external)</size>" as API_EXT #bbf7d0
     class "Схема данных\n<size:9>data-*</size>" as DATA #bbf7d0
     class "Профиль нагрузки\n<size:9>lp-*</size>" as LP #bbf7d0
     class "Интеграционный тест\n<size:9>tc-int-*</size>" as TC_INT #bbf7d0

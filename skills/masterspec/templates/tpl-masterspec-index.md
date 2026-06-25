@@ -74,13 +74,13 @@ updated: YYYY-MM-DD
  ? `02-specifications/03-algorithms/alg-<slug>.md` # <название алгоритма>
 
 ### 4.4. Внутренние API
- ? `02-specifications/04-apis/internal/api-<slug>.md|yaml|json` # <назначение>
+ ? `02-specifications/04-apis/internal/api-<slug>.md  (+ опц. sidecar .yaml/.json)` # <назначение>
 
 ### 4.5. Внешние API
- ? `02-specifications/04-apis/external/api-<slug>.md|yaml|json` # <назначение>
+ ? `02-specifications/04-apis/external/api-<slug>.md  (+ опц. sidecar .yaml/.json)` # <назначение>
 
 ### 4.6. Схемы данных
- ? `02-specifications/05-data/data-<domain>.md|yaml|json` # <домен>
+ ? `02-specifications/05-data/data-<domain>.md  (+ опц. sidecar .yaml/.json)` # <домен>
 
 ### 4.7. Диаграммы
  ? `02-specifications/06-diagrams/cd-<slug>.md` # Компонентная диаграмма
