@@ -64,9 +64,9 @@ ls masterspec/changes/ 2>/dev/null | grep -v "^archive$"
 stat -c '%Y' masterspec/.research-notes.md 2>/dev/null || stat -f '%m' masterspec/.research-notes.md 2>/dev/null
 ```
 
-Если не старше 24 часов — переиспользуй, субагентов не запускай повторно. Просто верни путь к `.research-notes.md` и краткую сводку.
+Переиспользуй ТОЛЬКО если выполнены все условия reuse из `masterspec-explore/SKILL.md` шаг 1 (тот же target/roots/anchor, код не менялся, mtime < 24 ч): верни путь к `.research-notes.md` и сводку. Иначе — пересобери.
 
-Если старше 24 часов — сообщи пользователю и спроси, перезапускать или переиспользовать.
+При любом расхождении условий — пересобирай (устаревший research молча подавать оркестратору нельзя).
 
 ---
 

@@ -62,7 +62,7 @@ allowed-tools:
 1. **Слой определён** — `01-requirements/` / `02-specifications/` / `03-codemap/` / `04-decisions/`. Справка — `references/artifact-routing.md`.
 2. **Содержимое соответствует слою** — запреты из `references/layer-discipline.md`.
 3. **Ссылки идут снизу вверх** — нет slug'ов нижних слоёв.
-4. **Фронтматтер заполнен** — `type`, `slug`, `factory`, `status`, `updated` (+ `generated: true` для codemap). Артефакты слоёв: `status` ∈ `draft`/`actual`/`deprecated`. Решения ведут свой цикл (ADR: `proposed`→`accepted`→`deprecated`/`superseded`; DR: `accepted`→`superseded`) — единый источник статусной модели `meta_model.md §6.1.2`.
+4. **Фронтматтер заполнен** — `type`, `slug`, `factory`, `status`, `updated` (+ `generated: true` для codemap). Исключение: singleton-файлы с фиксированным именем (`00-masterspec-index.md`, `00-glossary.md`, `03-codemap/00-repo-map.md`) поле `slug` НЕ несут. Артефакты слоёв: `status` ∈ `draft`/`actual`/`deprecated`. Решения ведут свой цикл (ADR: `proposed`→`accepted`→`deprecated`/`superseded`; DR: `accepted`→`superseded`) — единый источник статусной модели `meta_model.md §6.1.2`.
 5. **Имя файла = slug.**
 6. **HTML-комментарии шаблона удалены.**
 7. **Single-source** — нет дублирования с другими артефактами; повтор → ссылка. Один факт живёт в одном месте.

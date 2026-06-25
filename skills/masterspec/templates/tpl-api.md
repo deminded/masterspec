@@ -1,6 +1,7 @@
 ---
 type: api
 slug: api-<internal|external>-<slug>
+scope: <internal | external>   # ОБЯЗАТЕЛЬНО: определяет 04-apis/internal или /external (routing + индекс §4.4/§4.5)
 factory: <factory-slug>
 status: draft            # draft / actual / deprecated
 owner: <team or person>
