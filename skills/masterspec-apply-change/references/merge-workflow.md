@@ -190,7 +190,7 @@ updated: 2026-04-23
 
 Специальные случаи:
 - `type: api` — смотри поле `scope:` фронтматтера: `internal` → `02-specifications/04-apis/internal/`, `external` → `02-specifications/04-apis/external/`.
-- `type: function` — смотри поле `block:` фронтматтера: если задано — поддиректория `02-functions/<block>/`; иначе — `02-functions/`.
+- `type: function` — смотри поле `block:` фронтматтера: если задано — поддиректория `01-requirements/02-functions/<block>/`; иначе — `01-requirements/02-functions/`.
 
 ### 5.3. Проверь отсутствие конфликта имён
 
@@ -385,7 +385,7 @@ Smoke-check покажет, что дерево файлов в порядке, 
 3. Read первых ~15 строк — проверить YAML-фронтматтер:
    - `slug:` = ожидаемый;
    - `type:` = ожидаемый;
-   - `status:` присутствует (артефакты слоёв — `draft`; `adr-`/`dr-` — `proposed`/`accepted`);
+   - `status:` присутствует (артефакты слоёв — `actual`, уже применены; `adr-` — `proposed`/`accepted`, `dr-` — `accepted`);
    - `updated:` = сегодня.
 4. Grep по всему файлу на `<!--` — комментарии шаблона должны быть удалены (§5.6).
 
