@@ -25,27 +25,27 @@ allowed-tools:
 Route-скилл: бизнес-запрос/требования → слой артефактов. Читай kernel-справочник (`../masterspec/meta_model.md`, `../masterspec/references/layer-discipline.md`, `../masterspec/references/artifact-routing.md`) и паттерны (`../masterspec/references/patterns/`).
 
 ## Параметры
-- `<factory-slug>` — обязателен: kebab-case имя фабрики, задаёт корень `masterspec/<factory>/`.
+- `<factory-slug>` — обязателен: kebab-case имя фабрики; идёт в поле `factory:` фронтматтера всех артефактов. Раскладка плоская — один корень `masterspec/` на проект (мета-модель §3).
 - `layer=req` — вход: бизнес-запрос (из `_input/` или текста пользователя). Если у фабрики есть код — дополнительно агрегат `explore`. Выход: `01-requirements/`.
 - `layer=spec` — вход: согласованный слой требований. Выход: `02-specifications/` (контракт и физмодель рождаются здесь).
 - `pass=linear` (дефолт) — по одному элементу, человек контролирует каждый шаг. `pass=parallel` — независимые элементы разом субагентами, человек на финальной вычитке. parallel — явный выбор аналитика.
 - `verify=core` (дефолт) — дешёвое ядро осей; `verify=full` — все оси на слое и критичных элементах.
 
 ## Метод
-0. **Инициализация (если фабрики ещё нет).** Создай скелет `masterspec/<factory>/` по полной раскладке (`../masterspec/meta_model.md §3`): подпапки `01-requirements/{01-system,02-functions,03-nfr,04-rules,05-landscape,06-data-model,07-dictionaries,08-test-cases}`, `02-specifications/...`, `04-decisions/`. Заведи `00-masterspec-index.md` (шаблон `tpl-masterspec-index`) и пустой `00-glossary.md`.
+0. **Инициализация (если фабрики ещё нет).** Создай скелет `masterspec/` по полной раскладке (`../masterspec/meta_model.md §3`): подпапки `01-requirements/{01-system,02-functions,03-nfr,04-rules,05-landscape,06-data-model,07-dictionaries,08-test-cases}`, `02-specifications/...`, `04-decisions/`. Заведи `00-masterspec-index.md` (шаблон `tpl-masterspec-index`) и пустой `00-glossary.md`.
 1. **Контекст.** Если у фабрики есть код — собери агрегат через `explore` (target=factory-spec). Если кода нет (фабрика с нуля или только слой требований) — `explore` НЕ нужен: контекст берётся из бизнес-запроса; обратный индекс ссылок при необходимости строится `Grep` по `-> ` в уже созданных артефактах.
-2. **Состав и порядок слоя.** layer=req: `as` → черновой `cdm` (сущности) → `rules` → `fn` (use-case по cdm и rules) → вернись к `cdm` и заполни «Состояния и переходы» (по событиям из fn) → `nfr` → `dict` (если есть) → `tc-acc`. Глоссарий пополняй по ходу (каждый новый термин). layer=spec: `cmp` (cap-*) → `scn` → `alg` → `api`/`data` → `cd`/`lp` → `tc-int`. Это «route внутри слоя»; цикл cdm↔fn разрывается итеративно (черновой cdm без состояний → fn → состояния cdm).
+2. **Состав и порядок слоя.** layer=req: `as` → черновой `cdm` (сущности) → `rules` → `fn` (use-case по cdm и rules) → вернись к `cdm` и заполни «Состояния и переходы» (по событиям из fn) → `nfr` → `dict` (если есть) → `tc-acc`. Глоссарий пополняй по ходу (каждый новый термин). layer=spec: `cmp` (cap-*) → `scn` → `alg` → `api`/`data` → `cd`/`lp` → (`ui-view` + `nav` — для систем с пользовательским интерфейсом) → `tc-int`. Это «route внутри слоя»; цикл cdm↔fn разрывается итеративно (черновой cdm без состояний → fn → состояния cdm).
 3. **На каждый элемент — узел.** Оцени decision-worthiness (`patterns/decision-node.md`): есть реальная развилка (модель данных, набор сущностей, для spec — форма контракта/алгоритм) → **узел-РЕШЕНИЕ** (2-3 варианта → выбор → запись `adr-`/`dr-`). Нет → **узел-ИСПОЛНЕНИЕ** (`patterns/element-workflow.md`): планировщик → `gen type=<элемент>` (изолир. фокус-набор) → приёмщик.
 4. **Параллельность.** pass=parallel: независимые элементы (несколько fn) — батч `gen`-субагентов; приёмщик сводит редакции. pass=linear: по одному.
 5. **Дозапрос.** gen не хватило фокус-набора — явный запрос «не хватает X». Если есть код — добор через `explore` (≤2 раунда). Если кода нет — сразу вопрос человеку (открытый вопрос). Не выдумывать.
 6. **Вычитка.** `verify scope=<layer>` (preset по `verify=`). Негатив-ось (O5) — отдельным проверяющим. Критерий: scope=req → spec_ready; scope=spec → codegen_ready (`patterns/verification-axes.md`).
-7. **route-run.** `route-run-<factory>-<ts>.md` (в корне фабрики при генерации с нуля): вход · pass · по элементам (дозапросы/оси/итерации) · метрики · открытые вопросы · кто принял.
+7. **route-run.** `route-run-<ts>.md` (в корне фабрики при генерации с нуля): вход · pass · по элементам (дозапросы/оси/итерации) · метрики · открытые вопросы · кто принял.
 8. **Карантин и hard-gate** (`patterns/enforcement.md`). При генерации с нуля черновики пишутся прямо в `01-`/`02-` со `status: draft` (это и есть карантин — статус, не отдельная папка). Согласование: человек ревьюит (merge PR) и переводит `status: draft → actual`. Агент сам actual не ставит.
 
 ## Выход
 - слой (`01-requirements/` или `02-specifications/`), `status: draft`;
 - `00-glossary.md`, `00-masterspec-index.md`;
-- `route-run-<factory>-<ts>.md` с отчуждаемыми метриками;
+- `route-run-<ts>.md` с отчуждаемыми метриками;
 - открытые вопросы человеку.
 
 ## Чек перед отдачей

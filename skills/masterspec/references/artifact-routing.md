@@ -35,6 +35,7 @@
 | `scenario-trace` / `trace` | `tpl-scenario-trace.md` | `03-codemap/02-scenario-traces/` | `trace-` |
 | `data-map` / `dmap` | `tpl-data-map.md` | `03-codemap/03-data-maps/` | `dmap-` |
 | `adr` | `tpl-adr.md` | `04-decisions/` | `adr-` |
+| `decision-record` / `dr` | `tpl-dr.md` | рядом с артефактом-владельцем (на ЕГО слое: 01-/02-) | `dr-` |
 
 ---
 

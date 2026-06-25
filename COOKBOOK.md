@@ -4,7 +4,7 @@
 
 ## Папки
 ```
-masterspec/<factory>/  _input/  01-requirements/  02-specifications/  04-decisions/
+masterspec/  _input/  01-requirements/  02-specifications/  04-decisions/
   changes/<name>/  change.md  .research/  new/  route-run-<ts>.md
 ```
 
@@ -22,9 +22,9 @@ masterspec/<factory>/  _input/  01-requirements/  02-specifications/  04-decisio
 ## Кейс 1 — Генерация с нуля
 1. 👤 Положи запрос + материалы в `_input/`.
 2. 👤 Если фабрика поверх существующего кода — `explore <factory> roots=<пути>` → 🤖 разведчики → `.research/`. С нуля без кода шаг пропускается: `derive` соберёт контекст из запроса.
-3. 👤 `derive <factory> layer=req pass=linear verify=core` → 🤖 gen (as/fn/nfr/rules/cdm) + приёмщик + verify. Выход: `01-requirements/` + `route-run.md`.
-4. 👤 Проверь `route-run.md`: блокеры осей O4 (динамика), O5 (негатив). Закрой, ответь на дозапросы.
-5. 👤 Согласуй (merge PR) → `apply-change`.
+3. 👤 `derive <factory> layer=req pass=linear verify=core` → 🤖 gen (as/fn/nfr/rules/cdm) + приёмщик + verify. Выход: `01-requirements/` + `route-run-<ts>.md`.
+4. 👤 Проверь `route-run-<ts>.md`: блокеры осей O4 (динамика), O5 (негатив). Закрой, ответь на дозапросы.
+5. 👤 Согласуй: ревью по git-diff, merge PR = перевод `status: draft → actual`. `apply-change` тут НЕ нужен — derive писал прямо в дерево.
 6. 👤 `derive <factory> layer=spec pass=parallel verify=full` → 🤖 gen (cmp/scn/api/data) + приёмщик + verify (O0/O6/O7). Выход: `02-specifications/`.
 7. 👤 Согласуй (codegen_ready?) → кодоген (вне набора).
 
@@ -57,11 +57,11 @@ masterspec/<factory>/  _input/  01-requirements/  02-specifications/  04-decisio
 
 ---
 ## Как согласовать (на каждом гейте)
-1. route кладёт результат в ветку, открывает **PR** (`status: draft`, change.md «На согласовании»).
-2. 👤 Аналитик ревьюит PR (route-run.md: метрики, немые вердикты/подъёмы).
-3. 👤 **Мержит PR** = «Согласовано» (агент свой PR не мержит).
-4. 🤖 `apply-change` на смерженном: артефакты → `status: actual`.
-Ключ — разделение прав, не поле в файле.
+route кладёт результат в ветку и открывает **PR**; аналитик ревьюит (`route-run-<ts>.md`: метрики, немые вердикты/подъёмы) и **мержит** — агент свой PR не мержит. Что дальше — зависит от потока:
+- **Генерация (`derive`):** черновики уже в дереве со `status: draft`. Merge PR = аналитик переводит `draft → actual`. `apply-change` НЕ вызывается.
+- **Изменение (`evolve`):** черновики в `changes/<name>/new/`. После merge — `apply-change` вливает `new/` в дерево, артефакты → `actual`, индекс обновлён.
+
+Ключ — разделение прав (статус в `actual` переводит человек), не поле в файле.
 
 ## На выходе (отчуждаемо от содержания)
-`route-run.md`: точность, полнота, немые вердикты/подъёмы, codegen_ready, остаток по типу. Без содержания — для приёмки и отчёта.
+`route-run-<ts>.md`: точность, полнота, немые вердикты/подъёмы, codegen_ready, остаток по типу. Без содержания — для приёмки и отчёта.

@@ -20,9 +20,10 @@
 | `gen type=<артефакт>` | 🤖 | сгенерировать 1 артефакт (узел-исполнение) |
 | `evolve entry=req\|rule\|ext` | 👤 | изменить фабрику (правка узла ИЛИ добавление): impact, scope-fence, немой вердикт/подъём, проверка-вверх |
 | `recover source=docs\|code` | 👤 | восстановить описание из документов или кода |
-| `apply-change` | 👤 | влить change в фабрику + reindex |
+| `apply-change` | 👤 | влить change-изменение в дерево + обновить индекс |
 | `archive-change` | 👤 | архивация change |
-| `reindex` | 🤖/👤 | перегенерация индекса |
+
+Полные имена скиллов на диске — `masterspec-<глагол>` (`masterspec-derive`, `masterspec-verify` и т.д.); в таблице и тексте они для краткости названы глаголом (`derive`, `verify`). Вызов по параметру (`derive layer=req`) активирует соответствующий `masterspec-*`.
 
 Граница набора: `impl-plan` (техпроект реализации) и `implement` (реализация кода) — скиллы кодинга, у границы.
 
@@ -32,10 +33,13 @@
 Требования (`01-`, ЧТО) → Спецификации (`02-`, КАК) → Кодовая база (`03-`, ГДЕ) + `04-decisions/`. Ссылки **снизу вверх** — дисциплина изоляции слоёв. Решения: `adr-` (сквозные, в `04-decisions/`) и `dr-` (локальные, рядом с артефактом на его слое). Полная мета-модель — `skills/masterspec/meta_model.md`.
 
 ## Жизненный цикл
-- **Генерация:** (`explore` — если фабрика поверх существующего кода) → `derive layer=req` → `verify scope=req` → human-gate (merge PR) → `apply-change` → `derive layer=spec` → `verify scope=spec` (codegen_ready) → human-gate → кодоген.
-- **Изменение:** `evolve entry=…` → `verify scope=change` → human-gate → `apply-change`.
+
+Два потока с разной механикой карантина — не путать:
+
+- **Генерация с нуля (пишется ПРЯМО в дерево, ревью по git-diff):** (`explore` — если фабрика поверх существующего кода) → `derive layer=req` (черновики в `01-requirements/` со `status: draft`) → `verify scope=req` → human-gate (merge PR = перевод `draft → actual`) → `derive layer=spec` → `verify scope=spec` (codegen_ready) → human-gate → кодоген. **`apply-change` здесь НЕ участвует** — карантин это сам `status: draft`, согласование = смена статуса при merge.
+- **Точечное изменение (через `changes/`):** `evolve entry=…` (черновики в `changes/<name>/new/`) → `verify scope=change` → human-gate (merge PR) → `apply-change` (вливает `new/` в дерево, артефакты → `actual`, индекс обновлён).
 - **Восстановление:** `recover source=docs|code` → `verify` → доведение через `derive`/`evolve`.
-- **Hard-gate:** «Согласовано» ставит человек (merge PR), не агент.
+- **Hard-gate:** «Согласовано» и перевод в `actual` делает человек (merge PR), не агент.
 
 ## Установка
 ```bash

@@ -75,7 +75,7 @@ git checkout HEAD -- masterspec/
 (нет)
 
 ### Обновление 00-masterspec-index.md
-- будет перегенерирован целиком через `masterspec reindex` (§8).
+- будет перегенерирован целиком процедурой полной перегенерации индекса (§8).
   §1 «Паспорт» и §7 «Белые пятна» сохранятся дословно, §3–§6 перестроятся по файлам фабрики.
 
 Применить? [Да / Нет]
@@ -318,11 +318,11 @@ rmdir masterspec/<dir-path> 2>/dev/null
 
 ---
 
-## 8. Обновление `00-masterspec-index.md` — запуск `reindex`
+## 8. Обновление `00-masterspec-index.md` — полная перегенерация индекса
 
-Этот файл — единственный shared «spine» фабрики. После всех ADDED/REMOVED он перегенерируется **полностью** kernel-режимом `masterspec reindex`, а не точечными правками.
+Этот файл — единственный shared «spine» фабрики. После всех ADDED/REMOVED он перегенерируется **полностью** процедурой перегенерации индекса (по `../masterspec/references/index-canonical.md`), а не точечными правками.
 
-### 8.1. Почему reindex, а не diff-блоки
+### 8.1. Почему полная перегенерация, а не diff-блоки
 
 - Алгоритм размещения строк/нумерации разделов — в одном месте (`<Skill dir>/../masterspec/references/index-canonical.md`).
 - Change.md НЕ содержит diff-блоков по `00-masterspec-index.md`. Попытка их добавить должна быть отклонена `masterspec-propose` (см. `<Skill dir>/../masterspec-propose/references/change-format.md`).
@@ -331,7 +331,7 @@ rmdir masterspec/<dir-path> 2>/dev/null
 ### 8.2. Алгоритм (что делает apply-change в §8)
 
 1. Прочитай `<Skill dir>/../masterspec/references/index-canonical.md` (spec + алгоритм reindex).
-2. Запусти reindex-процедуру на директории `masterspec/`:
+2. Выполни полную перегенерацию индекса по `../../masterspec/references/index-canonical.md` на директории `masterspec/`:
    - прочитай текущий `masterspec/00-masterspec-index.md`, сохрани §1 «Паспорт» и §7 «Белые пятна и открытые вопросы»;
    - сохрани словарь `path → comment_text` из строк артефактов (для сохранения комментариев);
    - просканируй `00-glossary.md`, `01-requirements/**/*.md`, `02-specifications/**/*.md`, `03-codemap/**/*.md`, `04-decisions/**/*.md`;
