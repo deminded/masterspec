@@ -140,7 +140,7 @@
 
 ## 8. Критерии приёмки изменения
 
-- [ ] После `apply-change` запущен `masterspec reindex`; в `masterspec/00-masterspec-index.md` появились строки для `scn-retry-flow` (§4.2) и `adr-backoff-policy` (§6).
+- [ ] После `apply-change` выполнена полная перегенерация индекса; в `masterspec/00-masterspec-index.md` появились строки для `scn-retry-flow` (§4.2) и `adr-backoff-policy` (§6).
 - [ ] Нет обратных ссылок.
 - [ ] Новые slug'и уникальны.
 - [ ] `new/scn-retry-flow.md`, `new/adr-backoff-policy.md` — `status: draft`, `updated: 2026-04-23`.

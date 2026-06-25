@@ -48,7 +48,7 @@ masterspec/
 
 ### 2.2. `new/<slug>.md` — опционально
 
-Появляется, когда change добавляет новые артефакты целиком (новый `fn-`, `cmp-`, `scn-`, `adr-` и т. д.). Имя файла = slug артефакта. YAML-фронтматтер обязателен, `status: draft`. Шаблон — соответствующий `masterspec/templates/tpl-*.md` по `type:`.
+Появляется, когда change добавляет новые артефакты целиком (новый `fn-`, `cmp-`, `scn-`, `adr-` и т. д.). Имя файла = slug артефакта. YAML-фронтматтер обязателен. Статус по типу (`meta_model.md §6.1.2`): артефакты слоёв — `status: draft`; `adr-` — `proposed`; `dr-` — `accepted`. Шаблон — соответствующий `masterspec/templates/tpl-*.md` по `type:`.
 
 При `apply-change` файл копируется в целевую директорию фабрики по таблице из `references/artifact-routing.md`.
 
@@ -103,7 +103,7 @@ masterspec/
 | На согласовании | Ничего не тронуто. Вся работа — в `masterspec/changes/<name>/`. |
 | Согласовано | PR смержен. Артефакты фабрики не тронуты. Если нужен код — `impl-plan`/`implement`; если меняется только спека — сразу `apply-change`. |
 | В реализации | (опционально, только если нужен код) `implement` пишет код. Артефакты фабрики не тронуты. |
-| Реализовано | `apply-change` выполнен. Diff-блоки применены, файлы из `new/` скопированы, `00-masterspec-index.md` обновлён. Артефакты получают `status: actual` — merge PR уже был согласованием, отдельного ручного перевода не требуется. |
+| Реализовано | `apply-change` выполнен. Diff-блоки применены, файлы из `new/` скопированы, `00-masterspec-index.md` перегенерирован. Артефакты слоёв получают `status: actual` (merge PR уже был согласованием); `adr-`/`dr-` сохраняют свой решенческий статус. |
 | Архивировано | `changes/<name>/` перемещён в `changes/archive/YYYY-MM-DD-<name>/`. |
 
 ---
@@ -113,7 +113,7 @@ masterspec/
 Единая команда при любой проблеме после `apply-change`:
 
 ```bash
-git checkout HEAD -- masterspec/
+git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'
 ```
 
 Откатывает ВСЕ правки в `masterspec/01-*/02-*/03-*/04-*` и `00-masterspec-index.md`. Директория `masterspec/changes/<name>/` остаётся нетронутой — она под отдельным git'ом change'а.

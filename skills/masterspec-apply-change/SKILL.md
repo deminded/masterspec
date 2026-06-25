@@ -49,7 +49,7 @@ allowed-tools:
 - `masterspec/references/artifact-routing.md` — таблица `type:` → целевая директория (для копирования `new/`)
 - `masterspec/references/change-conventions.md` — статусы, откат, архивация
 - `masterspec/references/layer-discipline.md` — финальная проверка на обратные ссылки
-- `masterspec/examples/00-masterspec-index.md` — формат строк индекса (`+` / `?` / `-`)
+- `masterspec/examples/00-masterspec-index.md` — формат строк индекса (`+` actual / `-` draft; `?` — только для планируемого, reindex его в §3–6 не ставит)
 
 **AskUserQuestion fallback**: если инструмент недоступен — задай вопрос текстом, дождись ответа. Не угадывай.
 
@@ -155,7 +155,7 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 - Каждый REMOVED отсутствует и в `00-masterspec-index.md`, и в дереве.
 - Grep на обратные ссылки (`masterspec/references/layer-discipline.md § 4`) — нет ссылок сверху вниз.
 
-Провал smoke-check → `git checkout HEAD -- masterspec/`, расследуй причину. В verification не переходим.
+Провал smoke-check → `git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'`, расследуй причину. В verification не переходим.
 
 **§9.2 Verification** (применённость по каждой строке §2.1/§2.2/§2.3):
 - Для каждого `modify-bullet` / `replace-section` / `add-subsection` — проверь, что `ПОСЛЕ:` реально в файле (первая + последняя непустая строка для `modify-bullet`; первая строка в границах раздела для `replace-section` / `add-subsection`). Детальный алгоритм — `merge-workflow.md § 9.2`.
@@ -165,7 +165,7 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 
 **§9.3 Вердикт**:
 - `unconfirmed == 0` → переходи в §12.
-- `unconfirmed > 0` → AskUserQuestion с тремя опциями: **rollback** (`git checkout HEAD -- masterspec/`), **override** (пользователь подтверждает применение глазами), **leave** (статус `В реализации`, без архивации). См. `merge-workflow.md § 9.3`.
+- `unconfirmed > 0` → AskUserQuestion с тремя опциями: **rollback** (`git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'`), **override** (пользователь подтверждает применение глазами), **leave** (статус `В реализации`, без архивации). См. `merge-workflow.md § 9.3`.
 
 ### 12. Обновление статуса change.md
 
@@ -206,7 +206,7 @@ confirmed: K · skipped_by_user: S · unconfirmed: U
 (если были — список с причиной из §6 merge-workflow.md)
 
 ### Откат
-`git checkout HEAD -- masterspec/`
+`git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'`
 
 ### Next step
 - Вердикт = `confirmed` / `override` → Готово к архивации: запусти скилл `masterspec-archive-change`.
@@ -227,5 +227,5 @@ confirmed: K · skipped_by_user: S · unconfirmed: U
 - НИКОГДА не создавай `.bak`-файлы.
 - НЕ трогай файлы в `masterspec/changes/<name>/` (кроме строки статуса в change.md).
 - НЕ коммитай автоматически — коммит пользователь делает отдельно, видя diff.
-- Если smoke-check (§11 / `merge-workflow.md §9.1`) провалился — `git checkout HEAD -- masterspec/`, сообщи, в verification не переходи.
+- Если smoke-check (§11 / `merge-workflow.md §9.1`) провалился — `git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'`, сообщи, в verification не переходи.
 - Если verification (§11 / `merge-workflow.md §9.2`) нашёл `unconfirmed`-строки — **НЕ переводи статус change.md в `Реализовано` автоматически**. Только через явный `override`, `leave` или `rollback` пользователя в §9.3. Тихий переход в `Реализовано` при unconfirmed — баг.

@@ -18,13 +18,13 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 
 ### 1.2. Команда отката после мержа
 
-Единая:
+Единая (с явным исключением `changes/`, чтобы директория change'а не пострадала):
 
 ```bash
-git checkout HEAD -- masterspec/
+git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'
 ```
 
-Откатит все diff-блоки, все скопированные файлы из `new/`, обновление `00-masterspec-index.md`. Директория `masterspec/changes/<name>/` остаётся нетронутой — она под отдельным жизненным циклом change'а.
+Откатит все diff-блоки, все скопированные файлы из `new/`, перегенерацию `00-masterspec-index.md`. Pathspec-исключение гарантирует, что `masterspec/changes/<name>/` (под отдельным жизненным циклом change'а) не затрагивается. Если change ещё не закоммичен — его файлы untracked, и `checkout` их и так не тронет; исключение страхует случай уже закоммиченного change.
 
 **`.bak`-файлы создавать запрещено.**
 
@@ -218,7 +218,7 @@ cp masterspec/changes/<name>/new/<slug>.md masterspec/<target-dir>/<slug>.md
 
 ## 6. Конфликты
 
-При любом из перечисленных сценариев — **остановись**, покажи пользователю через AskUserQuestion два варианта: (a) отменить apply целиком (`git checkout HEAD -- masterspec/`), (b) пропустить операцию и продолжить.
+При любом из перечисленных сценариев — **остановись**, покажи пользователю через AskUserQuestion два варианта: (a) отменить apply целиком (`git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'`), (b) пропустить операцию и продолжить.
 
 ### 6.1. MODIFIED-файл отсутствует
 
@@ -316,7 +316,7 @@ rmdir masterspec/<dir-path> 2>/dev/null
    - перезапиши `masterspec/00-masterspec-index.md` (атомарно), проставь `updated:` = сегодня.
 3. Собери отчёт: файлы без фронтматтера, дубли `slug:`, неизвестные типы. Отчёт включи в вывод apply-change (не блокирует успех, но пользователь должен увидеть).
 
-Ручных правок в индексе на этом шаге нет. Если reindex упал (например, не найден `index-canonical.md`) — блок с сообщением, `git checkout HEAD -- masterspec/`, апдейт статуса НЕ делается.
+Ручных правок в индексе на этом шаге нет. Если reindex упал (например, не найден `index-canonical.md`) — блок с сообщением, `git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'`, апдейт статуса НЕ делается.
 
 ---
 
@@ -333,7 +333,7 @@ rmdir masterspec/<dir-path> 2>/dev/null
 3. Каждый REMOVED-файл отсутствует и в `00-masterspec-index.md`, и в дереве.
 4. Grep по `masterspec/` на предмет обратных ссылок — нет ссылок из требований на `cmp-`/`scn-`/`api-`/`data-`/`cmap-`/`trace-`/`dmap-`.
 
-Провалилась хотя бы одна проверка — `git checkout HEAD -- masterspec/`, сообщи пользователю, расследуйте причину вместе. В §9.2 не переходим.
+Провалилась хотя бы одна проверка — `git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'`, сообщи пользователю, расследуйте причину вместе. В §9.2 не переходим.
 
 ### 9.2. Verification — применённость каждой строки §2
 
@@ -439,7 +439,7 @@ confirmed: 2 · skipped_by_user: 1 · unconfirmed: 1
 
   | Опция | Действие |
   |-------|----------|
-  | **rollback** | `git checkout HEAD -- masterspec/` — откатить все правки. Статус change.md не меняется (остаётся `Согласовано` / `В реализации`). Скилл завершается с ненулевым кодом. |
+  | **rollback** | `git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'` — откатить все правки. Статус change.md не меняется (остаётся `Согласовано` / `В реализации`). Скилл завершается с ненулевым кодом. |
   | **override** | Пользователь просмотрел unconfirmed-строки глазами и подтверждает, что правки на самом деле применены (ложноотрицательный verdict verification). Переходим в §10 с пометкой в выводе «verification overridden manually». |
   | **leave** | Не откатывать. Статус change.md → `В реализации` (или остаётся, если уже такой). Change **не** уходит в архив. Пользователь разбирается позже. |
 
