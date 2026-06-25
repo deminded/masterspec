@@ -137,7 +137,7 @@ masterspec/
 │   ├── <name>/         # активный change: change.md, .research/, new/, route-run-<ts>.md
 │   └── archive/        # завершённые change (sibling активных, НЕ вложен в <name>/)
 │       └── YYYY-MM-DD-<name>/
-└── .work/              # эфемерная рабочая зона режима context=lean: plan-<layer>.md, .focus/, verify-report (вне боевого дерева, как .research/)
+└── .work/<run-id>/     # эфемерная рабочая зона context=lean (run-id=<layer|change>-<ts>): plan.md, .focus/, verify-report; вне боевого дерева, чистится по завершении прогона
 ```
 
 Полная вложенная раскладка с подпапками и правилами — `meta_model.md §3` (единственный источник структуры; здесь — обзор).
