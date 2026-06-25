@@ -2,7 +2,7 @@
 name: masterspec-propose
 description: >
   DEPRECATED — создание change поглощено masterspec-evolve (шаг 0). Не активируется напрямую.
-  Сохранён как дом справочника формата change.md (references/change-format.md, templates/change.md).
+  Формат change.md перенесён в kernel (../masterspec/references/change-format.md, ../masterspec/templates/tpl-change.md).
 when_to_use: >
   (deprecated; используй masterspec-evolve)
 argument-hint: "[kebab-name ИЛИ описание того, что нужно изменить]"
@@ -20,7 +20,7 @@ allowed-tools:
   - Bash
 ---
 
-> **DEPRECATED.** Создание change поглощено `masterspec-evolve` (шаг 0 «заведи change»). В активную карту операций не входит и напрямую не активируется. Сохранён как ДОМ справочника формата change.md (`references/change-format.md`, `templates/change.md`), который читают `evolve`, `apply-change`, `impl-plan`. Для новых изменений запускай `masterspec-evolve`.
+> **DEPRECATED.** Создание change поглощено `masterspec-evolve` (шаг 0 «заведи change»). В активную карту операций не входит и напрямую не активируется. Формат change.md перенесён в kernel (`../masterspec/references/change-format.md`, `../masterspec/templates/tpl-change.md`); его читают `evolve`, `apply-change`, `impl-plan`. Для новых изменений запускай `masterspec-evolve`.
 
 # masterspec-propose — создание change.md
 
@@ -36,7 +36,7 @@ allowed-tools:
 - Внешние файлы kernel `masterspec` — сосед по директории, резолв через `<Skill dir>/../masterspec/<file>`.
 - Внешние файлы `masterspec-explore` — сосед по директории, резолв через `<Skill dir>/../masterspec-explore/references/<file>`.
 - Если harness даёт `Skill directory: <abs>` в обёртке активации — используй. Например:
-  - `Read("<Skill dir>/templates/change.md")` — шаблон change.md
+  - `Read("<Skill dir>/../masterspec/templates/tpl-change.md")` — шаблон change.md
   - `Read("<Skill dir>/references/interview-playbook.md")` — сценарий интервью
   - `Read("<Skill dir>/../masterspec/meta_model.md")` — мета-модель
   - `Read("<Skill dir>/../masterspec/references/layer-discipline.md")` — проверка diff'ов
@@ -46,10 +46,10 @@ allowed-tools:
 
 ## Bundled materials
 
-- `templates/change.md` — шаблон изменения (шапка + §1..§8)
+- `../masterspec/templates/tpl-change.md` — шаблон изменения (шапка + §1..§8)
 - `references/interview-playbook.md` — сценарий двух этапов интервью
 - `references/guardrails.md` — запреты, уровни обязательности, чек-лист ревью
-- `references/change-format.md` — когда diff-блок, когда файл в `new/`, форматы
+- `../masterspec/references/change-format.md` — когда diff-блок, когда файл в `new/`, форматы
 - `references/example-change.md` — пример заполненного change.md
 
 ## Внешние references (kernel `masterspec`)
@@ -138,13 +138,13 @@ mkdir -p masterspec/changes/<name>
 
 ### 6. Прочитай шаблон
 
-Открой `templates/change.md` — это даст структуру шапки и всех 8 секций с инструктивными HTML-комментариями.
+Открой `../masterspec/templates/tpl-change.md` — это даст структуру шапки и всех 8 секций с инструктивными HTML-комментариями.
 
 ### 7. Создай `change.md`
 
 Запиши в `masterspec/changes/<name>/change.md`. Шапка: статус `На согласовании`, дата, автор, фабрика.
 
-Заполни секции (формат детально — `references/change-format.md`):
+Заполни секции (формат детально — `../masterspec/references/change-format.md`):
 - §1 — мотивация (цель, инициатор, приоритет, слои, контекст)
 - §2 — три таблицы (MODIFIED / ADDED / REMOVED). Пустая таблица — не выкидываем, пишем `Нет изменений.` в соответствующей секции ниже
 - §3 — backward compat (да/нет + план миграции если нет)
@@ -208,6 +208,6 @@ Blocking-issues исправь до сдачи. Soft-issues зафиксируй
   - `В реализации` — начата реализация (design/implement).
   - `Реализовано` — изменения вмержены в артефакты фабрики (`apply-change`).
   - `Архивировано` — change перемещён в archive (`archive-change`).
-- **Гибридный формат**: diff-блоки для мелких правок, `new/<slug>.md` для крупных (полные правила — `references/change-format.md`).
+- **Гибридный формат**: diff-блоки для мелких правок, `new/<slug>.md` для крупных (полные правила — `../masterspec/references/change-format.md`).
 - **Маппинг скиллов**: `masterspec-propose` → (`masterspec-impl-plan` опционально) → `masterspec-implement` → `masterspec-apply-change` → `masterspec-archive-change`.
 - Не создавай change.md, пока остаются неясности. Всегда прочитай целевые артефакты ПЕРЕД созданием. Не копируй примеры из references в итоговый файл. Проверь, что все 8 секций на месте.

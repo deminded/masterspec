@@ -218,7 +218,7 @@ cp masterspec/changes/<name>/new/<slug>.md masterspec/<target-dir>/<slug>.md
 ### 5.5. Нормализуй YAML-фронтматтер
 
 В скопированном файле:
-- `status: draft` (если не был — установи)
+- `status: actual` (change согласован мержем PR — applied-артефакт сразу актуален)
 - `updated: YYYY-MM-DD` (сегодня)
 - Все остальные поля — сохрани как были в `new/<slug>.md`.
 
@@ -325,7 +325,7 @@ rmdir masterspec/<dir-path> 2>/dev/null
 ### 8.1. Почему полная перегенерация, а не diff-блоки
 
 - Алгоритм размещения строк/нумерации разделов — в одном месте (`<Skill dir>/../masterspec/references/index-canonical.md`).
-- Change.md НЕ содержит diff-блоков по `00-masterspec-index.md`. Попытка их добавить должна быть отклонена `masterspec-propose` (см. `<Skill dir>/../masterspec-propose/references/change-format.md`).
+- Change.md НЕ содержит diff-блоков по `00-masterspec-index.md`. Попытка их добавить должна быть отклонена `masterspec-propose` (см. `<Skill dir>/../../masterspec/references/change-format.md`).
 - Сортировка, нумерация, каноничные заголовки секций — одинаковы между фабриками и между прогонами apply-change. Нет merge-конфликтов по индексу.
 
 ### 8.2. Алгоритм (что делает apply-change в §8)

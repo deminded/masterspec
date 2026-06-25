@@ -51,7 +51,7 @@
 Три таблицы: MODIFIED (правим существующее), ADDED (новые файлы целиком),
 REMOVED (удаляем). Одна строка = один slug. Для ADDED файл должен быть
 создан в `new/<slug>.md` рядом с этим change.md. Правила выбора diff vs new/ —
-см. masterspec-propose/references/change-format.md.
+см. ../references/change-format.md.
 -->
 
 ### 2.1. MODIFIED (diff-правки в §4)

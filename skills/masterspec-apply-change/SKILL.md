@@ -133,7 +133,7 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 По `merge-workflow.md § 5`:
 - Для каждого файла `new/<slug>.md`: прочитай YAML-фронтматтер → определи целевую директорию по `type:` через `masterspec/references/artifact-routing.md`.
 - Проверь отсутствие коллизии (`<target-dir>/<slug>.md` не существует). Коллизия → `merge-workflow.md § 6.4`.
-- Скопируй файл. Проставь `status: draft`, `updated:` = сегодня.
+- Скопируй файл. Проставь `status: actual` (change согласован мержем PR), `updated:` = сегодня.
 
 ### 9. Удаление REMOVED
 
@@ -143,10 +143,7 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 
 ### 10. Обновление `00-masterspec-index.md`
 
-По `merge-workflow.md § 8`:
-- Для каждого ADDED — добавь строку с маркером `?` (draft) в соответствующий раздел индекса.
-- Для каждого REMOVED — удали строку.
-- Обнови `updated:` в YAML-фронтматтере индекса, если он есть.
+Один алгоритм — **полная перегенерация** по `merge-workflow.md § 8` и `../masterspec/references/index-canonical.md`: §3–§6 индекса перестраиваются по реально существующим файлам фабрики (маркеры `+`/`-` по `status`), §1 «Паспорт» и §7 «Белые пятна» сохраняются дословно. Точечных правок строк индекса (ручное добавление `?`/удаление) НЕ делается — это и исключает рассинхрон.
 
 ### 11. Финальная валидация
 
