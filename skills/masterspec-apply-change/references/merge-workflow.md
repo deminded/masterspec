@@ -178,11 +178,11 @@ updated: 2026-04-23
 
 ## 5. Копирование `new/` в целевые директории (ADDED)
 
-Для каждой строки §2.2 ADDED. Файл обычно `.md`; для `api`/`data` может быть `.yaml`/`.json` — копируется as-is, расширение сохраняется (ниже `<slug>.md` для краткости).
+Для каждой строки §2.2 ADDED. Файл обычно `.md`. Машинный `api`/`data` — это ПАРА (`change-format.md §3.1`): компаньон `<slug>.md` (несёт masterspec-фронтматтер) + sidecar `<slug>.yaml`/`.json` (машинная спека); копируются ОБА, метаданные всегда из компаньона.
 
-### 5.1. Прочитай файл `new/<slug>.<ext>`
+### 5.1. Прочитай компаньон `new/<slug>.md`
 
-Извлеки YAML-фронтматтер (для `.yaml`/`.json` без фронтматтера — метаданные берутся из строки §2.2 change.md: `type`, `slug`, путь).
+Извлеки YAML-фронтматтер. Машинный sidecar (`<slug>.yaml`/`.json`, если есть) фронтматтера masterspec не содержит — `type`/`slug`/`status`/`scope` берутся из компаньона.
 
 ### 5.2. Определи целевую директорию по `type:`
 
@@ -197,11 +197,16 @@ updated: 2026-04-23
 
 Если `<target-dir>/<slug>.md` уже существует — конфликт (§6).
 
-### 5.4. Скопируй файл
+### 5.4. Скопируй файл(ы)
 
 ```bash
 mkdir -p masterspec/<target-dir>
 cp masterspec/changes/<name>/new/<slug>.md masterspec/<target-dir>/<slug>.md
+# машинный sidecar (api/data в .yaml/.json) — копируется рядом, если есть:
+for ext in yaml json; do
+  src="masterspec/changes/<name>/new/<slug>.$ext"
+  [ -f "$src" ] && cp "$src" "masterspec/<target-dir>/<slug>.$ext"
+done
 ```
 
 ### 5.5. Нормализуй YAML-фронтматтер
@@ -389,8 +394,9 @@ Smoke-check покажет, что дерево файлов в порядке, 
    - `status:` присутствует (артефакты слоёв — `actual`, уже применены; `adr-` — `proposed`/`accepted`, `dr-` — `accepted`);
    - `updated:` = сегодня.
 4. Grep по всему файлу на `<!--` — комментарии шаблона должны быть удалены (§5.6).
+5. Если артефакт машинный (api/data с sidecar): `<target-dir>/<slug>.yaml` (или `.json`) существует И парсится как валидный YAML/JSON (например, `python3 -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]))" <файл>`). Битый/отсутствующий sidecar → `unconfirmed`.
 
-Все 4 выполнены → `confirmed`. Иначе → `unconfirmed` с указанием первого непрошедшего пункта.
+Все пункты выполнены → `confirmed`. Иначе → `unconfirmed` с указанием первого непрошедшего пункта.
 
 #### 9.2.6. REMOVED
 

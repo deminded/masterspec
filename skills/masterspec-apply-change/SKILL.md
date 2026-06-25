@@ -134,6 +134,7 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 - Для каждого файла `new/<slug>.md`: прочитай YAML-фронтматтер → определи целевую директорию по `type:` через `masterspec/references/artifact-routing.md`.
 - Проверь отсутствие коллизии (`<target-dir>/<slug>.md` не существует). Коллизия → `merge-workflow.md § 6.4`.
 - Скопируй файл, `updated:` = сегодня. Статус: артефакты слоёв → `status: actual` (change согласован мержем PR); `adr-`/`dr-` сохраняют свой решенческий статус (`proposed`/`accepted`) — НЕ перезаписывать в actual.
+- **Машинный api/data** (компаньон, `change-format.md §3.1`): копируй ПАРУ — компаньон `<slug>.md` и sidecar `<slug>.yaml`/`.json` рядом. Метаданные и статус — из компаньона; sidecar копируется as-is (`merge-workflow.md §5.4`).
 
 ### 9. Удаление REMOVED
 
