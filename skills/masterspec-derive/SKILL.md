@@ -9,7 +9,7 @@ description: >
 when_to_use: >
   спроектировать слой требований или спецификаций, описать фабрику с нуля,
   derive <factory> layer=req, derive <factory> layer=spec, сгенерировать as/fn/nfr/rules/cdm или cmp/scn/api/data
-argument-hint: "<factory-slug> layer=req|spec [pass=linear|parallel] [verify=core|full]"
+argument-hint: "<factory-slug> layer=req|spec [pass=linear|parallel] [verify=core|full] [context=full|lean]"
 allowed-tools:
   - Read
   - Write
@@ -30,8 +30,11 @@ Route-скилл: бизнес-запрос/требования → слой а
 - `layer=spec` — вход: согласованный слой требований. Выход: `02-specifications/` (контракт и физмодель рождаются здесь).
 - `pass=linear` (дефолт) — по одному элементу, человек контролирует каждый шаг. `pass=parallel` — независимые элементы разом субагентами, человек на финальной вычитке. parallel — явный выбор аналитика.
 - `verify=core` (дефолт) — дешёвое ядро осей; `verify=full` — все оси на слое и критичных элементах.
+- `context=full` (дефолт) / `context=lean` — изоляция контекста оркестратора (`patterns/context-isolation.md`). В `lean` оркестратор сам не читает мета-модель/research/артефакты, а делегирует planner-субагенту (раскладывает план и фокус-наборы в `.work/`), `gen` и `verify`-субагентам; держит в контексте только план, пути и сводки. Для моделей с ограниченным контекстом (рост контекста не зависит от размера фабрики).
 
 ## Метод
+> **В `context=lean`** шаги ниже делегируются по `patterns/context-isolation.md`: planner-субагент раскладывает план и фокус-наборы в `.work/`, оркестратор вызывает `gen` по путям (не читая содержимое), `verify` и приёмщик — субагенты с файл-отчётом. По завершении прогона (после согласования) `.work/` ОБЯЗАТЕЛЬНО удаляется — фокус-наборы содержат срезы содержания фабрики; `route-run` сохраняется отдельно. В `context=full` оркестратор может выполнять чтение сам (как описано ниже).
+
 0. **Инициализация (если фабрики ещё нет).** Создай скелет `masterspec/` по полной раскладке (`../masterspec/meta_model.md §3`): подпапки `01-requirements/{01-system,02-functions,03-nfr,04-rules,05-landscape,06-data-model,07-dictionaries,08-test-cases}`, `02-specifications/{01-components,02-scenarios,03-algorithms,04-apis/{internal,external},05-data,06-diagrams,07-load-profiles,08-test-cases,09-ui-views}`, `03-codemap/{01-component-maps,02-scenario-traces,03-data-maps}`, `04-decisions/`, `changes/`. Заведи `00-masterspec-index.md` (шаблон `tpl-masterspec-index`) и пустой `00-glossary.md`.
 1. **Контекст.** Если у фабрики есть код — собери агрегат через `explore` (target=factory-spec). Если кода нет (фабрика с нуля или только слой требований) — `explore` НЕ нужен: контекст берётся из бизнес-запроса; обратный индекс ссылок при необходимости строится `Grep` по `-> ` в уже созданных артефактах.
 2. **Состав и порядок слоя.** layer=req: `as` → черновой `cdm` (сущности) → `rules` → `fn` (use-case по cdm и rules) → вернись к `cdm` и заполни «Состояния и переходы» (по событиям из fn) → `nfr` → `dict` (если есть) → `tc-acc`. Глоссарий пополняй по ходу (каждый новый термин). layer=spec: `cmp` (cap-*) → `scn` → `alg` → `api`/`data` → `cd`/`lp` → (`ui-view` + `nav` — для систем с пользовательским интерфейсом) → `tc-int`. Это «route внутри слоя»; цикл cdm↔fn разрывается итеративно (черновой cdm без состояний → fn → состояния cdm).
