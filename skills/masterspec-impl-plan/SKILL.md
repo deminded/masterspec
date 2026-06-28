@@ -1,11 +1,11 @@
 ---
-name: masterspec-design
+name: masterspec-impl-plan
 description: >
   Создать технический проект реализации (design.md) и план задач (tasks.md) на основе
   согласованного change.md фабрики — точечное изучение кода плюс генерация design и tasks
   по шаблонам. ВАЖНО: этот скилл — про **план разработки кода** для change-request'а
-  (аналог openspec-design). Если нужно **проектировать фабрику с нуля** — запусти
-  kernel-скилл `masterspec` в режиме `design`. Используй этот скилл когда change
+  Если нужно проектировать фабрику с нуля — запусти
+  скилл `derive layer=spec`. Используй этот скилл когда change
   согласован (статус `Согласовано`) и пользователь готовится к реализации, говорит
   "design", "спроектируй реализацию change", "подготовь tasks", "разбей на задачи",
   "план разработки по change".
@@ -26,10 +26,10 @@ allowed-tools:
   - Bash
 ---
 
-# masterspec-design — техпроект реализации change
+# masterspec-impl-plan — техпроект реализации change
 
-> **Этот скилл создаёт план разработки кода для change-request'а (аналог `openspec-design`).**
-> Если нужно **проектировать фабрику с нуля** — запусти kernel-скилл `masterspec` в режиме `design` (там другая семантика слова «design» — проектирование артефактов мета-модели).
+> **Этот скилл создаёт план разработки кода для change-request'а** — технический проект (design.md) и план задач (tasks.md), привязанные к реальным классам/модулям проекта.
+> Если нужно проектировать фабрику с нуля — запусти скилл `derive layer=spec` (там другая семантика слова «design» — проектирование артефактов мета-модели).
 
 Создаёт `design.md` (технический проект) и `tasks.md` (план задач на реализацию) в директории active change. Опирается на `change.md` + содержимое `new/` + опционально `.research-notes.md` от `masterspec-explore`.
 
@@ -43,7 +43,7 @@ allowed-tools:
   - `Read("<Skill dir>/templates/design.md")`
   - `Read("<Skill dir>/templates/tasks.md")`
   - `Read("<Skill dir>/../masterspec-explore/references/code-analysis-priority.md")`
-- Fallback — `Glob("**/masterspec-skills/skills/masterspec-design/templates/<file>")` и `Glob("**/masterspec-skills/skills/masterspec-explore/references/<file>")`. Пусто → спроси пользователя.
+- Fallback — `Glob("**/masterspec-skills/skills/masterspec-impl-plan/templates/<file>")` и `Glob("**/masterspec-skills/skills/masterspec-explore/references/<file>")`. Пусто → спроси пользователя.
 
 ## Bundled materials
 

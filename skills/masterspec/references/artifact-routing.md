@@ -1,6 +1,6 @@
 # Маршрутизация артефактов: тип → шаблон → путь → slug
 
-Справочник используют `propose` (при создании файлов в `changes/<name>/new/`), `apply-change` (при копировании new/ в целевые директории фабрики) и kernel-режимы `design`/`recover`/`reverse`.
+Справочник используют `evolve` (при создании change в `changes/<name>/new/`), `apply-change` (при копировании new/ в целевые директории фабрики), `derive` и `recover`.
 
 ---
 
@@ -35,12 +35,13 @@
 | `scenario-trace` / `trace` | `tpl-scenario-trace.md` | `03-codemap/02-scenario-traces/` | `trace-` |
 | `data-map` / `dmap` | `tpl-data-map.md` | `03-codemap/03-data-maps/` | `dmap-` |
 | `adr` | `tpl-adr.md` | `04-decisions/` | `adr-` |
+| `decision-record` / `dr` | `tpl-dr.md` | рядом с артефактом-владельцем (на ЕГО слое: 01-/02-) | `dr-` |
 
 ---
 
 ## 2. Уточняющие поля фронтматтера
 
-- **`block:`** для `function` — имя функционального блока, определяет вложенную поддиректорию в `02-functions/`. Если отсутствует — файл кладётся в корень `02-functions/`.
+- **`block:`** для `function` — имя функционального блока, определяет вложенную поддиректорию в `01-requirements/02-functions/`. Если отсутствует — файл кладётся в корень `01-requirements/02-functions/`.
 - **`scope:`** для `api` — значения `internal` | `external`. Определяет выбор между `internal/` и `external/` в пути.
 - **`generated: true`** — обязательно для всех артефактов кодового слоя (`cmap-`, `trace-`, `dmap-`, `repo-map`).
 - **`immutable: true | false`** для `rules` и `nfr` — фиксирует, пересматривается ли правило/НФТ фабрикой. `true` — внешнее обязательство (регуляторка, контракт, ключевой инвариант), противоречащее требование блокирует (CONFLICT); `false` — обычное правило, противоречащее требование инициирует эволюцию (EVOLUTION). Дефолт при отсутствии — `false`. Подробнее — `meta_model.md § 6.2.3` и `§ 6.2.4`.

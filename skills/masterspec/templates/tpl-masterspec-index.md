@@ -74,16 +74,17 @@ updated: YYYY-MM-DD
  ? `02-specifications/03-algorithms/alg-<slug>.md` # <название алгоритма>
 
 ### 4.4. Внутренние API
- ? `02-specifications/04-apis/internal/api-<slug>.md|yaml|json` # <назначение>
+ ? `02-specifications/04-apis/internal/api-<slug>.md` # <назначение> (+опц. sidecar .yaml/.json)
 
 ### 4.5. Внешние API
- ? `02-specifications/04-apis/external/api-<slug>.md|yaml|json` # <назначение>
+ ? `02-specifications/04-apis/external/api-<slug>.md` # <назначение> (+опц. sidecar .yaml/.json)
 
 ### 4.6. Схемы данных
- ? `02-specifications/05-data/data-<domain>.md|yaml|json` # <домен>
+ ? `02-specifications/05-data/data-<domain>.md` # <домен> (+опц. sidecar .yaml/.json)
 
 ### 4.7. Диаграммы
  ? `02-specifications/06-diagrams/cd-<slug>.md` # Компонентная диаграмма
+ ? `02-specifications/06-diagrams/nav-<slug>.md` # Диаграмма навигации
 
 ### 4.8. Профили нагрузки
  ? `02-specifications/07-load-profiles/lp-<scope>.md` # <область>
@@ -91,6 +92,9 @@ updated: YYYY-MM-DD
 ### 4.9. Интеграционные тесты
 <!-- Проверяют работоспособность сценариев. -->
  ? `02-specifications/08-test-cases/tc-int-<slug>.md` # <название> (-> scn-...)
+
+### 4.10. UI Views
+ ? `02-specifications/09-ui-views/ui-view-<slug>.md` # <экран/представление>
 
 ---
 
@@ -125,5 +129,5 @@ updated: YYYY-MM-DD
 ### Легенда
  + done — файл создан, содержание актуально
  - draft — файл создан, содержание неполное
- ? not started — файл не создан
+ ? planned — артефакт запланирован (заявлен в change ADDED или в §7), файла ещё нет. В §3–6 reindex ставит только +/− по реально существующим файлам; ? сюда не попадает.
  · (точка) — возможность внутри компонента, не отдельный файл

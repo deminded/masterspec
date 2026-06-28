@@ -89,8 +89,8 @@ updated: 2026-04-17
  ? `02-specifications/04-apis/internal/api-template-engine.md` # Рендеринг шаблонов
 
 ### 4.5. Внешние API
- - `02-specifications/04-apis/external/api-sms-provider.yaml` # SMS-провайдер
- ? `02-specifications/04-apis/external/api-push-provider.yaml` # Push-провайдер
+ - `02-specifications/04-apis/external/api-sms-provider.md` # SMS-провайдер (+yaml)
+ ? `02-specifications/04-apis/external/api-push-provider.md` # Push-провайдер (+yaml)
 
 ### 4.6. Схемы данных
  + `02-specifications/05-data/data-notifications.md` # Уведомления
@@ -147,5 +147,5 @@ updated: 2026-04-17
 ### Легенда
  + done — файл создан, содержание актуально
  - draft — файл создан, содержание неполное
- ? not started — файл не создан
+ ? planned — артефакт запланирован (заявлен в change ADDED или в §7), файла ещё нет. В §3–6 reindex ставит только +/− по реально существующим файлам; ? сюда не попадает.
  · (точка) — возможность внутри компонента, не отдельный файл

@@ -3,7 +3,7 @@ name: masterspec-apply-change
 description: >
   Влить согласованный change.md (diff-блоки) и файлы из `new/` в артефакты фабрики —
   мультиартефактный мерж в masterspec/01-*/02-*/03-*/04-* с обновлением `00-masterspec-index.md`.
-  Отличается от openspec-apply-change тем, что целевой артефакт не одна спека, а дерево
+  Целевой артефакт — не одна спека, а дерево
   артефактов по slug'ам (fn-*, cmp-*, scn-*, adr-* и др.). Используй когда change-request
   согласован (статус `Согласовано` или `В реализации`), merge PR состоялся, реализация в
   коде (если нужна) завершена, и пользователь говорит "apply change", "влей change",
@@ -11,10 +11,10 @@ description: >
 when_to_use: >
   влить change в фабрику, apply change, обновить артефакты по change,
   merge change в spec, зафиксировать изменения в фабрике
-argument-hint: "[имя change]"
+argument-hint: "[имя change] [context=full|lean]"
 license: MIT
 compatibility: >
-  Требуется masterspec/ layout в проекте, доступ к bash/git, AskUserQuestion tool.
+  Использует masterspec/ layout, bash/git, AskUserQuestion (при отсутствии — текстовый fallback, см. README).
 allowed-tools:
   - Read
   - Write
@@ -22,6 +22,7 @@ allowed-tools:
   - Glob
   - Grep
   - Bash
+  - Task
 ---
 
 # masterspec-apply-change — вливание change.md в артефакты фабрики
@@ -29,6 +30,8 @@ allowed-tools:
 Мультиартефактный мерж: diff-блоки из `change.md §4` применяются к существующим файлам фабрики, файлы из `new/` копируются в целевые директории по `type:` фронтматтера, `00-masterspec-index.md` обновляется.
 
 **Input**: Опционально — имя change. Если не указано — автовыбор/выбор через AskUserQuestion.
+
+> **`context=full` (дефолт) / `context=lean`** — для крупного change в `lean` шаги §3, §5–§11 делегируются (файловый контракт — `../masterspec/references/patterns/context-isolation.md §Lean в других скиллах`): оркестратор читает только шапку `change.md` + §2-таблицы → dry-run-план `apply/_dryrun.md`; на каждую строку §2 — субагент применяет И верифицирует СВОЮ строку → `apply/<slug>.md` (`op`/`target`/`result`/`verification`; на конфликте оркестратор спрашивает человека, при пропуске — `skipped_by_user`); reindex субагентом (обновляет индекс); затем smoke-субагент (§9.1, по УЖЕ обновлённому индексу) → `apply/_smoke.md` как gate (провал → откат, к §9.3 не переходим); оркестратор собирает §9.3-вердикт из этих отчётов, целевые файлы сам НЕ читает; `apply-report.md` — вне `.work/`. В `context=full` шаги ниже выполняются самим скиллом (читает сам). Для ограниченного контекста.
 
 ## Bundle-пути
 
@@ -49,7 +52,7 @@ allowed-tools:
 - `masterspec/references/artifact-routing.md` — таблица `type:` → целевая директория (для копирования `new/`)
 - `masterspec/references/change-conventions.md` — статусы, откат, архивация
 - `masterspec/references/layer-discipline.md` — финальная проверка на обратные ссылки
-- `masterspec/examples/00-masterspec-index.md` — формат строк индекса (`+` / `?` / `-`)
+- `masterspec/examples/00-masterspec-index.md` — формат строк индекса (`+` actual / `-` draft; `?` — только для планируемого, reindex его в §3–6 не ставит)
 
 **AskUserQuestion fallback**: если инструмент недоступен — задай вопрос текстом, дождись ответа. Не угадывай.
 
@@ -73,7 +76,7 @@ ls masterspec/changes/ 2>/dev/null | grep -v "^archive$"
 
 Прочитай `masterspec/changes/<name>/change.md`.
 
-Если файл отсутствует → предложи сначала запустить `masterspec-propose`.
+Если файл отсутствует → предложи сначала создать change через `masterspec-evolve` (шаг 0).
 
 Проверь поле `> **Статус**:` в шапке:
 
@@ -86,6 +89,8 @@ ls masterspec/changes/ 2>/dev/null | grep -v "^archive$"
 | Другой / отсутствует | Предупреди, спроси подтверждение через AskUserQuestion. |
 
 ### 3. Прочитай контекст
+
+> В `context=lean` этот шаг и применение (§5–§11) идут через субагентов: оркестратор читает только шапку change.md + §2-таблицы, целевые файлы и `new/*` не читает (см. врезку выше и `context-isolation.md`). Ниже — режим `full`.
 
 - Полностью `masterspec/changes/<name>/change.md` (шапка + §1..§8).
 - Все файлы `masterspec/changes/<name>/new/*.md` (если ADDED не пустой).
@@ -110,7 +115,7 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 
 По `references/merge-workflow.md § 2` извлеки:
 - Таблицы §2.1 MODIFIED, §2.2 ADDED, §2.3 REMOVED.
-- Diff-блоки §4 (для каждой строки §2.1): `**Файл**`, `**Раздел**`, `**Тип правки**`, `ДО:`, `ПОСЛЕ:`.
+- Diff-блоки §4 — для `.md`-строк §2.1 (`**Файл**`, `**Раздел**`, `**Тип правки**`, `ДО:`, `ПОСЛЕ:`). Строки §2.1 с машинным sidecar (`.yaml`/`.json`) diff-блока НЕ имеют — у них файл-замена в `new/` (обработка §4.6), это норма.
 
 Если парсинг провалился (нет обязательных полей) — сообщи пользователю, что change.md невалиден, не применяй.
 
@@ -124,6 +129,7 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 
 По `merge-workflow.md § 4`:
 - Для каждого diff-блока: прочитай целевой файл, найди раздел **по заголовку**, применение по типу правки (`modify-bullet` / `replace-section` / `add-subsection`).
+- Строка §2.1 с машинным sidecar (`.yaml`/`.json`) — НЕ diff-блок: полная замена файла из `new/` (`merge-workflow.md § 4.6`; целевой sidecar должен существовать, новый — валидно парситься).
 - При конфликте (раздел не найден, `ДО:` не найден, файл отсутствует) → `merge-workflow.md § 6`: AskUserQuestion, отменить или пропустить блок.
 - Обнови `updated:` в YAML-фронтматтере целевого файла на сегодня.
 - Запиши файл.
@@ -133,7 +139,8 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 По `merge-workflow.md § 5`:
 - Для каждого файла `new/<slug>.md`: прочитай YAML-фронтматтер → определи целевую директорию по `type:` через `masterspec/references/artifact-routing.md`.
 - Проверь отсутствие коллизии (`<target-dir>/<slug>.md` не существует). Коллизия → `merge-workflow.md § 6.4`.
-- Скопируй файл. Проставь `status: draft`, `updated:` = сегодня.
+- Скопируй файл, `updated:` = сегодня. Статус: артефакты слоёв → `status: actual` (change согласован мержем PR); `adr-`/`dr-` сохраняют свой решенческий статус (`proposed`/`accepted`) — НЕ перезаписывать в actual.
+- **Машинный api/data** (компаньон, `change-format.md §3.1`): копируй ПАРУ — компаньон `<slug>.md` и sidecar `<slug>.yaml`/`.json` рядом. Метаданные и статус — из компаньона; sidecar копируется as-is (`merge-workflow.md §5.4`).
 
 ### 9. Удаление REMOVED
 
@@ -143,10 +150,7 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 
 ### 10. Обновление `00-masterspec-index.md`
 
-По `merge-workflow.md § 8`:
-- Для каждого ADDED — добавь строку с маркером `?` (draft) в соответствующий раздел индекса.
-- Для каждого REMOVED — удали строку.
-- Обнови `updated:` в YAML-фронтматтере индекса, если он есть.
+Один алгоритм — **полная перегенерация** по `merge-workflow.md § 8` и `../masterspec/references/index-canonical.md`: §3–§6 индекса перестраиваются по реально существующим файлам фабрики (маркеры `+`/`-` по `status`), §1 «Паспорт» и §7 «Белые пятна» сохраняются дословно. Точечных правок строк индекса (ручное добавление `?`/удаление) НЕ делается — это и исключает рассинхрон.
 
 ### 11. Финальная валидация
 
@@ -158,17 +162,17 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 - Каждый REMOVED отсутствует и в `00-masterspec-index.md`, и в дереве.
 - Grep на обратные ссылки (`masterspec/references/layer-discipline.md § 4`) — нет ссылок сверху вниз.
 
-Провал smoke-check → `git checkout HEAD -- masterspec/`, расследуй причину. В verification не переходим.
+Провал smoke-check → `git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'`, расследуй причину. В verification не переходим.
 
 **§9.2 Verification** (применённость по каждой строке §2.1/§2.2/§2.3):
-- Для каждого `modify-bullet` / `replace-section` / `add-subsection` / `prepend-to-file` — проверь, что `ПОСЛЕ:` реально в файле (первая + последняя непустая строка для `modify-bullet`; первая строка в границах раздела для `replace-section` / `add-subsection`; первые и последние строки в голове файла для `prepend-to-file`). Детальный алгоритм — `merge-workflow.md § 9.2`.
+- Для каждого `modify-bullet` / `replace-section` / `add-subsection` — проверь, что `ПОСЛЕ:` реально в файле (первая + последняя непустая строка для `modify-bullet`; первая строка в границах раздела для `replace-section` / `add-subsection`). Детальный алгоритм — `merge-workflow.md § 9.2`.
 - Для ADDED — файл на месте, YAML-фронтматтер валиден (`slug`/`type`/`status`/`updated`), нет HTML-комментариев шаблона.
 - Для REMOVED — файла нет.
 - Строки, пропущенные пользователем в §6 (skipped_by_user), хранятся в памяти сессии и из verification исключаются.
 
 **§9.3 Вердикт**:
 - `unconfirmed == 0` → переходи в §12.
-- `unconfirmed > 0` → AskUserQuestion с тремя опциями: **rollback** (`git checkout HEAD -- masterspec/`), **override** (пользователь подтверждает применение глазами), **leave** (статус `В реализации`, без архивации). См. `merge-workflow.md § 9.3`.
+- `unconfirmed > 0` → AskUserQuestion с тремя опциями: **rollback** (`git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'`), **override** (пользователь подтверждает применение глазами), **leave** (статус `В реализации`, без архивации). См. `merge-workflow.md § 9.3`.
 
 ### 12. Обновление статуса change.md
 
@@ -199,7 +203,7 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 (нет)
 
 #### Index
-- обновлён: добавлены 2 строки с маркером `?` (draft), обновлено `updated`
+- перегенерирован полностью по `index-canonical.md` (маркеры `+`/`-` по `status`), обновлено `updated`
 
 ### Verification (применённость)
 confirmed: K · skipped_by_user: S · unconfirmed: U
@@ -209,7 +213,7 @@ confirmed: K · skipped_by_user: S · unconfirmed: U
 (если были — список с причиной из §6 merge-workflow.md)
 
 ### Откат
-`git checkout HEAD -- masterspec/`
+`git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'`
 
 ### Next step
 - Вердикт = `confirmed` / `override` → Готово к архивации: запусти скилл `masterspec-archive-change`.
@@ -230,5 +234,5 @@ confirmed: K · skipped_by_user: S · unconfirmed: U
 - НИКОГДА не создавай `.bak`-файлы.
 - НЕ трогай файлы в `masterspec/changes/<name>/` (кроме строки статуса в change.md).
 - НЕ коммитай автоматически — коммит пользователь делает отдельно, видя diff.
-- Если smoke-check (§11 / `merge-workflow.md §9.1`) провалился — `git checkout HEAD -- masterspec/`, сообщи, в verification не переходи.
+- Если smoke-check (§11 / `merge-workflow.md §9.1`) провалился — `git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'`, сообщи, в verification не переходи.
 - Если verification (§11 / `merge-workflow.md §9.2`) нашёл `unconfirmed`-строки — **НЕ переводи статус change.md в `Реализовано` автоматически**. Только через явный `override`, `leave` или `rollback` пользователя в §9.3. Тихий переход в `Реализовано` при unconfirmed — баг.

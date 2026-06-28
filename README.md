@@ -1,122 +1,67 @@
 # masterspec-skills
 
-Набор скиллов для описания фабрик (автоматизированных систем) по мета-модели masterspec. Поддерживает полный жизненный цикл: проектирование с нуля, восстановление из документов/кода, и workflow изменений уже описанной фабрики.
+Набор скиллов для описания фабрик (автоматизированных систем) по мета-модели masterspec — и для строгой, мультиагентной генерации спецификаций, пригодных для перехода к коду.
 
-> Скиллы работают напрямую с файловой системой — внешних CLI/зависимостей не требуется.
+> Скиллы работают напрямую с файловой системой. Из среды нужны стандартные `bash`/`git` и (для оркестраторов) встроенный механизм субагентов harness'а; внешних CLI, сервисов или API набор не требует.
+>
+> Каждый скилл = `SKILL.md` + его `references/`: при выполнении операции references обязательны (промпты ролей, контракты вызова субагентов, алгоритмы мержа) — это часть скилла, не опциональное чтение.
+>
+> **Harness-примитивы и fallback (единый контракт):** оркестраторы (`derive`/`evolve`) используют механизм субагентов (`Task`) — без него работают последовательно по одному элементу. Lifecycle-скиллы (`apply-change`/`archive-change`) используют `AskUserQuestion` для подтверждений и выбора — без него задают тот же вопрос текстом и ждут явного ответа человека, не угадывая. Никакой скилл не требует внешних CLI.
+>
+> kernel `masterspec` держит и справку (мета-модель, шаблоны), и НОРМЫ (чек-лист артефакта, дисциплина слоёв, формат change.md, алгоритм индекса). «Не делает» значит «не запускает операций сам» — но его нормы обязательны к соблюдению операциями.
+
+## Принцип набора
+- **kernel `masterspec` = СПРАВОЧНИК**: мета-модель (3 слоя), 29 шаблонов, дисциплина слоёв, паттерны-references. Сам не «делает».
+- **операции = скиллы-ГЛАГОЛЫ**. Вариации одного назначения = ПАРАМЕТР скилла, не новый скилл.
+- **паттерны процесса = references** внутри kernel, не отдельные скиллы.
 
 ## Скиллы
 
-| Скилл | Назначение |
-|---|---|
-| `masterspec` | **Kernel.** Содержит мета-модель, 24 шаблона артефактов, и режимы работы над самой фабрикой: `design` (проектирование с нуля), `recover` (восстановление из документов), `codemap` (анализ репозитория), `audit` (проверка покрытия), `reverse` (reverse engineering из кода) |
-| `masterspec-explore` | Structured research кодовой базы параллельными read-only субагентами по 5 ролям (requirements-scope, components-scope, scenarios-scope, data-scope, codemap-scope) |
-| `masterspec-propose` | Создать `change.md` — предложение на изменение артефактов фабрики. Гибридный формат: diff-блоки для мелких правок, файлы в `new/` для крупных |
-| `masterspec-design` | Создать `design.md` + `tasks.md` — план реализации change в КОДЕ (dev-design, не путать с kernel-режимом `design`) |
-| `masterspec-implement` | Выполнить `tasks.md` change'а с обязательной верификацией (сборка/тесты/линтер) |
-| `masterspec-apply-change` | Мультиартефактный мерж `change.md` (diff-блоки) + файлы из `new/` в артефакты фабрики, обновление `00-masterspec-index.md`. Откат — через git |
-| `masterspec-archive-change` | Переместить завершённый change в `changes/archive/YYYY-MM-DD-<name>/` |
+| Скилл | Вызов | Назначение |
+|---|---|---|
+| `masterspec` (kernel) | 👤 справочник | мета-модель + шаблоны + references |
+| `explore` | 👤→🤖 | разведка кодовой базы; траектория, изолированный фокус-набор, дозапрос |
+| `derive layer=req\|spec` | 👤 | породить слой (req: инфо→требования; spec: требования→спека). Оркестратор |
+| `verify scope=req\|spec\|change` | 🤖→👤 | вычитка по осям O1–O5 (+O0/O6/O7 для spec): статика + динамика + негатив |
+| `gen type=<артефакт>` | 🤖 | сгенерировать 1 артефакт (узел-исполнение) |
+| `evolve entry=req\|rule\|ext` | 👤 | изменить фабрику (правка узла ИЛИ добавление): impact, scope-fence, немой вердикт/подъём, проверка-вверх |
+| `recover source=docs\|code` | 👤 | восстановить описание из документов или кода |
+| `apply-change` | 👤 | влить change-изменение в дерево + обновить индекс |
+| `archive-change` | 👤 | архивация change |
+
+Полные имена скиллов на диске — `masterspec-<глагол>` (`masterspec-derive`, `masterspec-verify` и т.д.); в таблице и тексте они для краткости названы глаголом (`derive`, `verify`). Вызов по параметру (`derive layer=req`) активирует соответствующий `masterspec-*`.
+
+Граница набора: `impl-plan` (техпроект реализации) и `implement` (реализация кода) — скиллы кодинга, у границы.
+
+Паттерны процесса (references в kernel): `decision-node` (узел-решение), `element-workflow` (планировщик/исполнитель/приёмщик), `enforcement` (hard-gates), `verification-axes` (5 осей вычитки).
 
 ## Мета-модель: три слоя
+Требования (`01-`, ЧТО) → Спецификации (`02-`, КАК) → Кодовая база (`03-`, ГДЕ) + `04-decisions/`. Ссылки **снизу вверх** — дисциплина изоляции слоёв. Решения: `adr-` (сквозные, в `04-decisions/`) и `dr-` (локальные, рядом с артефактом на его слое). Полная мета-модель — `skills/masterspec/meta_model.md`.
 
-| Слой | Директория | Что описывает |
-|---|---|---|
-| Требования | `01-requirements/` | ЧТО даёт система (функции, NFR, правила, концептуальные данные) |
-| Спецификации | `02-specifications/` | КАК устроено взаимодействие (компоненты, сценарии, алгоритмы, API, данные) |
-| Кодовая база | `03-codemap/` | ГДЕ в коде (`file:line`, таблицы) — генерируемый слой |
+## Жизненный цикл
 
-Плюс `04-decisions/` для ADR. Ссылки идут **снизу вверх** — требования не ссылаются на спецификации/код.
+Два потока с разной механикой карантина — не путать:
 
-Полная мета-модель — `skills/masterspec/meta_model.md`. Операционная выжимка по запретам — `skills/masterspec/references/layer-discipline.md`.
+- **Генерация с нуля (пишется ПРЯМО в дерево, ревью по git-diff):** (`explore` — если фабрика поверх существующего кода) → `derive layer=req` (черновики в `01-requirements/` со `status: draft`) → `verify scope=req` → human-gate (merge PR = перевод `draft → actual`) → `derive layer=spec` → `verify scope=spec` (codegen_ready) → human-gate → кодоген. **`apply-change` здесь НЕ участвует** — карантин это сам `status: draft`, согласование = смена статуса при merge.
+- **Точечное изменение (через `changes/`):** `evolve entry=…` (правки существующих артефактов = diff-блоки в `change.md §4`; НОВЫЕ артефакты — файлами в `changes/<name>/new/`) → `verify scope=change` → human-gate (merge PR) → `apply-change` (применяет diff-блоки и вливает `new/` в дерево, артефакты слоёв → `actual`, индекс перегенерирован).
+- **Восстановление:** `recover source=docs|code` → `verify` → доведение через `derive`/`evolve`.
+- **Hard-gate (общий для обоих потоков):** согласование — всегда merge PR человеком, агент свой PR не мержит. `actual` наступает ТОЛЬКО после этого merge, но ставит его разный актор: в потоке ГЕНЕРАЦИИ — человек сменой статуса (apply-change не участвует); в потоке ИЗМЕНЕНИЯ — `apply-change` при вливании уже согласованного change. Агент сам, без предшествующего merge, `actual` не ставит никогда.
 
-## Жизненный цикл изменения
+## Масштаб по контексту
+На моделях с ограниченным контекстом запускай скиллы с `context=lean`. Параметр есть у `derive`/`evolve`/`verify`/`recover`/`apply-change` — то есть у всех, кто иначе сам читает много (`gen` атомарен, `explore` уже lean по природе). Скилл не читает мета-модель/research/артефакты сам, а делегирует субагентам (пишут в `masterspec/.work/<run-id>/`, чистится по завершении прогона), держа в контексте только план, пути и сводки — рост контекста не зависит от размера фабрики. Дефолт `context=full` (оркестратор читает сам, для моделей с большим контекстом). Механика — `skills/masterspec/references/patterns/context-isolation.md`.
 
-```
-masterspec (design) ─┐
-                      ▼
-                   propose → (design?) → implement → apply-change → archive-change
-                      ▲                                   │
-                      └──────── explore (read-only) ──────┘
-```
+## Установка и запуск
 
-1. Нет ни одной фабрики в `masterspec/` → kernel `masterspec` в режиме `design`.
-2. Нужно изменить артефакты уже описанной фабрики → `masterspec-propose` (создаёт `masterspec/changes/<name>/change.md` со статусом `На согласовании`).
-3. Ревью PR → merge → статус вручную меняется на `Согласовано`.
-4. Сложный CR (затрагивает код) → `masterspec-design` создаёт `design.md` + `tasks.md`. Простой CR пропускает этот шаг.
-5. Реализация кода → `masterspec-implement` выполняет tasks.md с верификацией, ставит статус `В реализации`.
-6. Вливание в артефакты фабрики → `masterspec-apply-change` мержит diff-блоки и файлы из `new/` в соответствующие директории, ставит статус `Реализовано`.
-7. Архивация → `masterspec-archive-change` перемещает change в `masterspec/changes/archive/YYYY-MM-DD-<name>/`.
-
-### Статусы change.md
-
-| Статус | Кто ставит | Когда |
-|---|---|---|
-| На согласовании | `masterspec-propose` | Change создан, идёт ревью в PR |
-| Согласовано | Аналитик вручную | PR с change.md вмержен, change одобрен |
-| В реализации | `masterspec-implement` | Первый запуск implement, идёт кодинг по tasks.md |
-| Реализовано | `masterspec-apply-change` | Изменения вмержены в артефакты фабрики |
-| Архивировано | `masterspec-archive-change` | Change перемещён в `archive/` из статуса `Реализовано` |
-
-## Структура фабрики в проекте пользователя
-
-```
-masterspec/
-├── 00-masterspec-index.md
-├── 00-glossary.md
-├── 01-requirements/       # as-*, fn-*, nfr-*, rules-*, context-*, fd-*, cdm-*, dict-*, tc-acc-*
-├── 02-specifications/     # cmp-* (с cap-*), scn-*, alg-*, api-*, data-*, cd-*, lp-*, tc-int-*
-├── 03-codemap/            # repo-map, cmap-*, trace-*, dmap-*  (generated: true)
-├── 04-decisions/          # adr-*
-└── changes/
-    ├── <change-name>/
-    │   ├── change.md
-    │   ├── new/           # опц.: крупные новые артефакты
-    │   ├── .research/     # опц.: от masterspec-explore
-    │   ├── design.md      # опц.
-    │   └── tasks.md       # опц.
-    └── archive/YYYY-MM-DD-<name>/
-```
-
-## Установка
-
-### Claude Code
-
+**Claude Code:**
 ```bash
 claude plugin install <путь до этой директории>
 ```
 
-### Другие harness'ы
+**Другой harness со скиллами:** скопируй `skills/` в skill-registry агента. Активация — по `name`/`when_to_use` из фронтматтера.
 
-Скопируй директорию `skills/` в свой skill-registry. Путь к kernel-скиллу `masterspec` автоматически резолвится соседним скиллом через `<Skill dir>/../masterspec/<file>`.
+**Вручную / модель без скилл-движка:** набор самодостаточен как текст. Открой `SKILL.md` нужной операции, читай его как пошаговую инструкцию, его `references/` — как обязательное приложение. Соответствие harness-примитивов:
+- `Task` (субагенты) → если механизма нет, выполняй шаги последовательно по одному элементу (fallback описан в каждом оркестраторе);
+- `AskUserQuestion` → задавай тот же вопрос человеку обычным текстом и жди ответа;
+- `allowed-tools` во фронтматтере — подсказка о нужных правах (чтение/запись файлов, `bash`/`git`), не жёсткая зависимость от конкретного движка.
 
-## Разработка
-
-### Структура поставки
-
-```
-skills/
-├── masterspec/                   # kernel: meta_model.md + 24 шаблона + 5 режимов
-├── masterspec-explore/           # 5 references (invocation-contract, research-orchestration, research-roles, code-analysis-priority, masterspec-awareness)
-├── masterspec-propose/           # SKILL.md + templates/change.md + 4 references
-├── masterspec-design/            # SKILL.md + templates/{design,tasks}.md
-├── masterspec-implement/         # SKILL.md + 3 references (runbook, verification, edge-cases)
-├── masterspec-apply-change/      # SKILL.md + references/merge-workflow.md
-└── masterspec-archive-change/    # SKILL.md
-```
-
-### Где живёт мета-модель
-
-В ОДНОМ месте: `skills/masterspec/meta_model.md` + `skills/masterspec/references/*`. Все workflow-скиллы читают её по относительному пути `<Skill dir>/../masterspec/<file>`. Правишь один файл — меняется поведение всех.
-
-### Мелкие правки vs крупные (change.md)
-
-- Мелкая правка (одна строка, AC, bullet, NFR-значение) → **diff-блок** в `change.md §4` с указанием типа (`modify-bullet` / `replace-section` / `add-subsection`).
-- Крупная правка (новый артефакт целиком: новый `fn-`, `cmp-`, `scn-`, `adr-`) → **файл** в `changes/<name>/new/<slug>.md`.
-
-Правила выбора — `skills/masterspec-propose/references/change-format.md`.
-
-## Roadmap
-
-- [ ] Git WorkTree для параллельной работы над несколькими changes
-- [ ] MCP-интеграция для генерации PlantUML / Mermaid / drawio диаграмм из артефактов
-- [ ] CI-проверка дисциплины слоёв (блок на merge, если в `fn-` появились имена компонентов)
-- [ ] Автогенерация `masterspec-awareness` подсказок для конкретных стеков
+Внешних сервисов, API или платных CLI набор не требует.

@@ -1,5 +1,5 @@
 ---
-type: system-passport
+type: passport-as
 slug: as-<slug>
 factory: <factory-slug>
 status: draft            # draft / actual / deprecated

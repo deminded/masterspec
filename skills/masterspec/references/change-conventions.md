@@ -1,6 +1,6 @@
 # Соглашения про changes/
 
-Как организована директория изменений фабрики. Документ читают workflow-скиллы `masterspec-propose`, `masterspec-design`, `masterspec-implement`, `masterspec-apply-change`, `masterspec-archive-change`.
+Как организована директория изменений фабрики. Документ читают workflow-скиллы `masterspec-evolve` (создаёт change, шаг 0), `masterspec-impl-plan`, `masterspec-implement`, `masterspec-apply-change`, `masterspec-archive-change`.
 
 ---
 
@@ -34,7 +34,7 @@ masterspec/
 
 ### 2.1. `change.md` — обязательный
 
-Шапка со статусом + 8 секций. Шаблон — `masterspec-propose/templates/change.md`. Формат детально — `masterspec-propose/references/change-format.md`.
+Шапка со статусом + 8 секций. Шаблон — `../templates/tpl-change.md`. Формат детально — `change-format.md` (рядом).
 
 Секции:
 1. Мотивация (цель, инициатор, приоритет, слои)
@@ -48,17 +48,17 @@ masterspec/
 
 ### 2.2. `new/<slug>.md` — опционально
 
-Появляется, когда change добавляет новые артефакты целиком (новый `fn-`, `cmp-`, `scn-`, `adr-` и т. д.). Имя файла = slug артефакта. YAML-фронтматтер обязателен, `status: draft`. Шаблон — соответствующий `masterspec/templates/tpl-*.md` по `type:`.
+Появляется, когда change добавляет новые артефакты целиком (новый `fn-`, `cmp-`, `scn-`, `adr-` и т. д.). Имя файла = slug артефакта. YAML-фронтматтер обязателен. Статус по типу (`meta_model.md §6.1.2`): артефакты слоёв — `status: draft`; `adr-` — `proposed`; `dr-` — `accepted`. Шаблон — соответствующий `masterspec/templates/tpl-*.md` по `type:`.
 
 При `apply-change` файл копируется в целевую директорию фабрики по таблице из `references/artifact-routing.md`.
 
 ### 2.3. `.research/<role>.yaml` — опционально
 
-Результаты работы `masterspec-explore` (structured research кодовой базы). Используются `propose` / `design` / `implement` для точной привязки изменений к коду. После `apply-change` и `archive-change` директория сохраняется внутри архива для аудита.
+Результаты работы `masterspec-explore` (structured research кодовой базы). Используются `evolve` / `impl-plan` / `implement` для точной привязки изменений к коду. После `apply-change` и `archive-change` директория сохраняется внутри архива для аудита.
 
 ### 2.4. `design.md` + `tasks.md` — опционально
 
-Создаются `masterspec-design` для сложных CR. Формат — как в `openspec-design` (dev-design, привязанный к реальным классам/модулям проекта). Для простых CR шаг пропускается.
+Создаются `masterspec-impl-plan` для сложных CR. Формат — dev-design, привязанный к реальным классам/модулям проекта. Для простых CR шаг пропускается.
 
 ---
 
@@ -66,13 +66,13 @@ masterspec/
 
 Шапка `change.md` содержит поле `> **Статус**: ...`. Допустимые значения:
 
-| Статус | Переход | Кто ставит |
+| Статус | Кто ставит | Когда |
 |---|---|---|
-| На согласовании | → Согласовано | `masterspec-propose` при создании |
-| Согласовано | → В реализации | Аналитик вручную после merge PR |
-| В реализации | → Реализовано | `masterspec-implement` при первом запуске |
-| Реализовано | → Архивировано | `masterspec-apply-change` после успешного мержа |
-| Архивировано | финал | `masterspec-archive-change` при перемещении в `archive/` |
+| На согласовании | `masterspec-evolve` | при создании change (шаг 0) |
+| Согласовано | аналитик (вручную) | после merge PR |
+| В реализации | `masterspec-implement` | при первом запуске кодинга |
+| Реализовано | `masterspec-apply-change` | после успешного влития change в фабрику |
+| Архивировано | `masterspec-archive-change` | при перемещении в `archive/` |
 
 Обратные переходы (возврат из «В реализации» в «Согласовано») — только вручную, скиллы не трогают.
 
@@ -82,27 +82,28 @@ masterspec/
 
 ## 4. Гибридный формат change (diff vs new/)
 
-Выбор — на стороне `masterspec-propose`. Правила — в `masterspec-propose/references/change-format.md`. Сводка:
+Выбор делается при создании change (`masterspec-evolve`, шаг 0). Правила — в `change-format.md` (рядом). Сводка:
 
 | Тип правки | Формат |
 |---|---|
 | Правка одного bullet / AC / строки таблицы | diff-блок (§4 change.md) |
-| Правка одного раздела `## ...` целиком, < 50 строк | diff-блок `replace-section` |
+| Правка раздела `## ...` целиком | diff-блок `replace-section` |
 | Новый `cap-*` внутри существующего `cmp-` | diff-блок `add-subsection` |
-| Замена раздела целиком, ≥ 50 строк | файл в `new/<slug>-<section>.patch.md` + пометка в change.md |
-| Новый артефакт целиком (новый `fn-`, `cmp-`, `scn-`, `alg-`, `adr-`, ...) | файл в `new/<slug>.md` |
-| Удаление артефакта целиком | только §2.3 и §6 change.md, файл не трогаем до apply |
+| Новый артефакт целиком (новый `fn-`, `cmp-`, `scn-`, `alg-`, `adr-`, `dr-`, ...) | файл в `new/<slug>.md` |
+| Удаление артефакта целиком | только §2.3 и §6 change.md, файл не трогаем до apply-change |
 
 ---
 
 ## 5. Связь статусов с артефактами фабрики
 
+Таблица описывает поток ИЗМЕНЕНИЯ (`evolve` → `apply-change`). В потоке генерации с нуля (`derive`) артефакты пишутся прямо в дерево и получают `actual` сменой статуса человеком при merge — без change.md и без apply-change. Этап «В реализации» нужен, ТОЛЬКО если change требует правки кода; если меняется лишь спека — после `Согласовано` идёт сразу `apply-change`.
+
 | Статус change.md | Что означает для `masterspec/01-*/02-*/03-*/04-*` |
 |---|---|
 | На согласовании | Ничего не тронуто. Вся работа — в `masterspec/changes/<name>/`. |
-| Согласовано | PR смержен. Артефакты фабрики не тронуты. Можно идти в `design`/`implement`. |
-| В реализации | `implement` пишет код. Артефакты фабрики не тронуты. |
-| Реализовано | `apply-change` выполнен. Diff-блоки применены, файлы из `new/` скопированы, `00-masterspec-index.md` обновлён. Новые артефакты — `status: draft`, переход в `actual` — вручную после ревью. |
+| Согласовано | PR смержен. Артефакты фабрики не тронуты. Если нужен код — `impl-plan`/`implement`; если меняется только спека — сразу `apply-change`. |
+| В реализации | (опционально, только если нужен код) `implement` пишет код. Артефакты фабрики не тронуты. |
+| Реализовано | `apply-change` выполнен. Diff-блоки применены, файлы из `new/` скопированы, `00-masterspec-index.md` перегенерирован. Артефакты слоёв получают `status: actual` (merge PR уже был согласованием); `adr-`/`dr-` сохраняют свой решенческий статус. |
 | Архивировано | `changes/<name>/` перемещён в `changes/archive/YYYY-MM-DD-<name>/`. |
 
 ---
@@ -112,7 +113,7 @@ masterspec/
 Единая команда при любой проблеме после `apply-change`:
 
 ```bash
-git checkout HEAD -- masterspec/
+git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'
 ```
 
 Откатывает ВСЕ правки в `masterspec/01-*/02-*/03-*/04-*` и `00-masterspec-index.md`. Директория `masterspec/changes/<name>/` остаётся нетронутой — она под отдельным git'ом change'а.
@@ -132,4 +133,4 @@ mv masterspec/changes/<name> masterspec/changes/archive/YYYY-MM-DD-<name>
 
 Где `YYYY-MM-DD` — сегодняшняя дата (UTC). Если директория с таким именем уже есть — добавляется суффикс `-2`, `-3`.
 
-После архивации change больше не редактируется и не применяется. Для повторных изменений — новый change через `propose`.
+После архивации change больше не редактируется и не применяется. Для повторных изменений — новый change через `evolve`.
