@@ -19,6 +19,7 @@
 | `conceptual-data-model` / `cdm` | `tpl-conceptual-data-model.md` | `01-requirements/06-data-model/` | `cdm-` |
 | `dictionary` / `dict` | `tpl-dictionary.md` | `01-requirements/07-dictionaries/` | `dict-` |
 | `test-acceptance` / `tc-acc` | `tpl-test-acceptance.md` | `01-requirements/08-test-cases/` | `tc-acc-` |
+| `usage-contract` / `uc` | `tpl-usage-contract.md` | `01-requirements/09-public-contract/` | `uc-` (`generated`, проекция `expose`) |
 | `component` / `cmp` | `tpl-component.md` | `02-specifications/01-components/` | `cmp-` (разделы `cap-`) |
 | `scenario` / `scn` | `tpl-scenario.md` | `02-specifications/02-scenarios/` | `scn-` |
 | `algorithm` / `alg` | `tpl-algorithm.md` | `02-specifications/03-algorithms/` | `alg-` |
