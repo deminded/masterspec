@@ -41,7 +41,7 @@ allowed-tools:
   - `Read("<Skill dir>/references/merge-workflow.md")` — детальная механика мержа
   - `Read("<Skill dir>/../masterspec/references/artifact-routing.md")` — тип→целевая директория
   - `Read("<Skill dir>/../masterspec/references/layer-discipline.md")` — финальная проверка
-- Fallback — `Glob("**/masterspec-skills/skills/masterspec-apply-change/references/<file>")` и `Glob("**/masterspec-skills/skills/masterspec/references/<file>")`. Пусто → спроси пользователя.
+- Fallback — `Glob("**/masterspec-apply-change/references/<file>")` и `Glob("**/masterspec/references/<file>")`. Пусто → спроси пользователя.
 
 ## Bundled materials
 

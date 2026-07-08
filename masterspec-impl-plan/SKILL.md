@@ -43,7 +43,7 @@ allowed-tools:
   - `Read("<Skill dir>/templates/design.md")`
   - `Read("<Skill dir>/templates/tasks.md")`
   - `Read("<Skill dir>/../masterspec-explore/references/code-analysis-priority.md")`
-- Fallback — `Glob("**/masterspec-skills/skills/masterspec-impl-plan/templates/<file>")` и `Glob("**/masterspec-skills/skills/masterspec-explore/references/<file>")`. Пусто → спроси пользователя.
+- Fallback — `Glob("**/masterspec-impl-plan/templates/<file>")` и `Glob("**/masterspec-explore/references/<file>")`. Пусто → спроси пользователя.
 
 ## Bundled materials
 

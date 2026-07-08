@@ -42,7 +42,7 @@ allowed-tools:
   - `Read("<Skill dir>/../masterspec/references/layer-discipline.md")` — проверка diff'ов
   - `Read("<Skill dir>/../masterspec/references/artifact-routing.md")` — тип→путь для `new/`
   - `Read("<Skill dir>/../masterspec/templates/tpl-function-as.md")` — шаблон при создании нового `fn-` в `new/`
-- Fallback — `Glob("**/masterspec-skills/skills/masterspec-propose/<file>")` и `Glob("**/masterspec-skills/skills/masterspec/<file>")`. Пусто → спроси пользователя путь установки.
+- Fallback — `Glob("**/masterspec-propose/<file>")` и `Glob("**/masterspec/<file>")`. Пусто → спроси пользователя путь установки.
 
 ## Bundled materials
 
