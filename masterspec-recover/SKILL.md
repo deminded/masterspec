@@ -8,7 +8,7 @@ description: >
 when_to_use: >
   восстановить описание из документов или кода, проанализировать репозиторий,
   собрать codemap, обратное восстановление существующей системы, recover source=docs|code
-argument-hint: "source=docs|code [roots=<корневые пути кода>] [context=full|lean]"
+argument-hint: "source=docs|code [roots=<корневые пути кода>] [context=lean|full]"
 allowed-tools:
   - Read
   - Write
@@ -22,7 +22,7 @@ allowed-tools:
 
 Восстанавливаю описание из имеющегося материала. Не домысливаю: что не подтверждено источником — помечаю как открытый вопрос. Мета-модель и дисциплина слоёв — в kernel (`../masterspec/`). Раскладка и инициализация фабрики — как в `derive` (`../masterspec-derive/SKILL.md §0`, мета-модель §3).
 
-> **`context=full` (дефолт) / `context=lean`** — при восстановлении большой фабрики в `lean` (файловый контракт — `../masterspec/references/patterns/context-isolation.md §Lean в других скиллах`): субагент-планировщик пишет `recover/plan.md`; проход 1 — `explore` по коду (`.research/`) + `gen`-субагенты пишут скелет спецификаций/требований; проход 2 — codemap-субагенты, каждую висячую ссылку → `recover/_dangling.md` (поля `from/ref/evidence/resolution/handled_by`); перелинковка-субагент гонит ссылки `pending → resolved|created` по этому файлу; «Белые пятна» субагент собирает в `recover/_gaps.md` → §7 индекса. recover держит только `recover/plan.md` и сводки (`_dangling`/`_gaps`-счётчики), содержимое не читает; индекс — субагент. Для ограниченного контекста.
+> **`context=full` / `context=lean` (дефолт)** — при восстановлении большой фабрики в `lean` (файловый контракт — `../masterspec/references/patterns/context-isolation.md §Lean в других скиллах`): субагент-планировщик пишет `recover/plan.md`; проход 1 — `explore` по коду (`.research/`) + `gen`-субагенты пишут скелет спецификаций/требований; проход 2 — codemap-субагенты, каждую висячую ссылку → `recover/_dangling.md` (поля `from/ref/evidence/resolution/handled_by`); перелинковка-субагент гонит ссылки `pending → resolved|created` по этому файлу; «Белые пятна» субагент собирает в `recover/_gaps.md` → §7 индекса. recover держит только `recover/plan.md` и сводки (`_dangling`/`_gaps`-счётчики), содержимое не читает; индекс — субагент. Для ограниченного контекста.
 
 ## Provenance (обязательно для всех восстановленных артефактов)
 Каждый артефакт несёт во фронтматтере поле `provenance:` с источником: `provenance: docs:<файл/раздел>` или `provenance: code:<path>[:line]`. В разделе «Открытые вопросы» — «восстановлено из <X>, требует подтверждения владельцем». Это делает восстановление повторяемым и отличимым от знания «из головы». ОТСУТСТВИЕ источника тоже фиксируется — типизированным белым пятном (шаг 5a: `negative-provenance` «искал, не нашёл» ≠ «не смотрел»), а не молчанием.
