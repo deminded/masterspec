@@ -31,7 +31,7 @@ allowed-tools:
 
 ## Bundle-пути
 
-`references/X` — относительно директории этого скилла. Если harness даёт `Skill directory: <abs>` — используй. Иначе `Glob("**/masterspec-skills/skills/masterspec-implement/references/<file>")`. Пусто → спроси пользователя.
+`references/X` — относительно директории этого скилла. Если harness даёт `Skill directory: <abs>` — используй. Иначе `Glob("**/masterspec-implement/references/<file>")`. Пусто → спроси пользователя.
 
 ## Справочники (читай по необходимости)
 

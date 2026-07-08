@@ -28,34 +28,34 @@
 **Причина**: `fix-adr-frontmatter` — 10 ADR-файлов не имели YAML-фронтматтера. Ни `modify-bullet`, ни `replace-section`, ни `add-subsection` не покрывали кейс «дописать блок в самое начало файла».
 
 **Что добавлено**:
-- [masterspec-skills/skills/masterspec-propose/references/change-format.md](skills/masterspec-propose/references/change-format.md) §2.4 — описание типа + пример.
-- [masterspec-skills/skills/masterspec-propose/references/change-format.md](skills/masterspec-propose/references/change-format.md) §1 — строка в таблице выбора формата.
-- [masterspec-skills/skills/masterspec-apply-change/references/merge-workflow.md](skills/masterspec-apply-change/references/merge-workflow.md) §4.3 — алгоритм применения (проверка «нет ли уже фронтматтера» + prepend).
-- [masterspec-skills/skills/masterspec-apply-change/references/merge-workflow.md](skills/masterspec-apply-change/references/merge-workflow.md) §6.7 — обработка конфликта.
+- [masterspec-propose/references/change-format.md](masterspec-propose/references/change-format.md) §2.4 — описание типа + пример.
+- [masterspec-propose/references/change-format.md](masterspec-propose/references/change-format.md) §1 — строка в таблице выбора формата.
+- [masterspec-apply-change/references/merge-workflow.md](masterspec-apply-change/references/merge-workflow.md) §4.3 — алгоритм применения (проверка «нет ли уже фронтматтера» + prepend).
+- [masterspec-apply-change/references/merge-workflow.md](masterspec-apply-change/references/merge-workflow.md) §6.7 — обработка конфликта.
 
 ### 2. Новый тип артефакта `ui-view`
 **Причина**: `refactor-ui-requirements` — экраны UI не ложились ни в `fn-*` (экран агрегирует несколько функций), ни в `cmp-*` (view — не сервис), ни в `scn-*` (scn = кооперация компонентов).
 
 **Что добавлено**:
-- [masterspec-skills/skills/masterspec/references/artifact-routing.md](skills/masterspec/references/artifact-routing.md) — строка в таблице: `ui-view` → `02-specifications/09-ui-views/` → `ui-view-*`.
-- [masterspec-skills/skills/masterspec/templates/tpl-ui-view.md](skills/masterspec/templates/tpl-ui-view.md) — новый шаблон (назначение / реализует функции / элементы / состояния / взаимодействия / навигация / контракт с backend).
-- [masterspec-skills/skills/masterspec/SKILL.md](skills/masterspec/SKILL.md) §7 — схема фабрики дополнена `09-ui-views/`.
+- [masterspec/references/artifact-routing.md](masterspec/references/artifact-routing.md) — строка в таблице: `ui-view` → `02-specifications/09-ui-views/` → `ui-view-*`.
+- [masterspec/templates/tpl-ui-view.md](masterspec/templates/tpl-ui-view.md) — новый шаблон (назначение / реализует функции / элементы / состояния / взаимодействия / навигация / контракт с backend).
+- [masterspec/SKILL.md](masterspec/SKILL.md) §7 — схема фабрики дополнена `09-ui-views/`.
 
 ### 3. Очистка опустевших директорий при REMOVED
 **Причина**: `refactor-ui-requirements` — после удаления `01-requirements/07-ui/ui-requirements.md` директория `07-ui/` осталась пустой. Автоматически не убиралась.
 
 **Что добавлено**:
-- [masterspec-skills/skills/masterspec-apply-change/references/merge-workflow.md](skills/masterspec-apply-change/references/merge-workflow.md) §7.1 — `rmdir` без `-r` (безопасно: сработает только на пустой директории). Защита: не удалять канонические слой-директории из `artifact-routing.md §1`.
+- [masterspec-apply-change/references/merge-workflow.md](masterspec-apply-change/references/merge-workflow.md) §7.1 — `rmdir` без `-r` (безопасно: сработает только на пустой директории). Защита: не удалять канонические слой-директории из `artifact-routing.md §1`.
 
 ### 4. Новый тип артефакта `nav` + запрет обратных ссылок в `ui-view` (закрывает S4)
 **Причина**: прогон №3 оставил в `ui-view-*` поля вида `Navigation входы: <- ui-view-X` и формулировки «Триггер: из `ui-view-X`» — формальное нарушение «ссылки идут снизу вверх / в пределах слоя не рекомендуется ссылаться назад». Развилка из S4 решена в пользу варианта «вынести входящие переходы в отдельный артефакт».
 
 **Что добавлено**:
-- [skills/masterspec/templates/tpl-nav.md](skills/masterspec/templates/tpl-nav.md) — новый шаблон (назначение / mermaid-диаграмма / таблица переходов / точки входа / связи).
-- [skills/masterspec/references/artifact-routing.md](skills/masterspec/references/artifact-routing.md) — строка `nav` → `02-specifications/06-diagrams/` → `nav-*`.
-- [skills/masterspec/meta_model.md](skills/masterspec/meta_model.md): §6.3.6a «Карта навигации», §6.3.9 «UI View», ui-view и nav в таблице префиксов, `09-ui-views/` в структуре.
-- [skills/masterspec/SKILL.md](skills/masterspec/SKILL.md) — `06-diagrams/ # cd-*, nav-*` в структуре.
-- [skills/masterspec/templates/tpl-ui-view.md](skills/masterspec/templates/tpl-ui-view.md) — запрет backward-ссылок в «Триггер открытия» и «Связи», slot `Карта переходов: -> nav-<factory>`.
+- [masterspec/templates/tpl-nav.md](masterspec/templates/tpl-nav.md) — новый шаблон (назначение / mermaid-диаграмма / таблица переходов / точки входа / связи).
+- [masterspec/references/artifact-routing.md](masterspec/references/artifact-routing.md) — строка `nav` → `02-specifications/06-diagrams/` → `nav-*`.
+- [masterspec/meta_model.md](masterspec/meta_model.md): §6.3.6a «Карта навигации», §6.3.9 «UI View», ui-view и nav в таблице префиксов, `09-ui-views/` в структуре.
+- [masterspec/SKILL.md](masterspec/SKILL.md) — `06-diagrams/ # cd-*, nav-*` в структуре.
+- [masterspec/templates/tpl-ui-view.md](masterspec/templates/tpl-ui-view.md) — запрет backward-ссылок в «Триггер открытия» и «Связи», slot `Карта переходов: -> nav-<factory>`.
 
 **Валидация на фабрике**: прогон №4 создал [nav-sprint-management.md](../sprint-management/masterspec/02-specifications/06-diagrams/nav-sprint-management.md), убрал все `Navigation входы/выходы` из 4 ui-view, переформулировал «Триггер открытия» без имени source view.
 
@@ -63,11 +63,11 @@
 **Причина**: S1 — алгоритм обновления `00-masterspec-index.md` был недостаточно формализован; разные прогоны давали разный порядок и нумерацию. S7 — отсутствовал автогенерируемый индекс для sanity-check'ов. Обсуждение привело к выбору: md остаётся форматом индекса, но `reindex` — авторитетный генератор, ручная правка возможна только в §1 «Паспорт» и §7 «Белые пятна».
 
 **Что добавлено**:
-- [skills/masterspec/references/index-canonical.md](skills/masterspec/references/index-canonical.md) — полная спецификация: таблицы секций §1.1–§1.4, порядок строк, формат, источник комментариев, шаблон итогового файла, алгоритм (псевдокод), граничные случаи, защита от потери данных.
-- [skills/masterspec/SKILL.md](skills/masterspec/SKILL.md) — режим §4.6 `reindex` в диспетчере, ссылка на `index-canonical.md` в справочных файлах, обновлён чек-лист §3 и правила §5.
-- [skills/masterspec-apply-change/references/merge-workflow.md](skills/masterspec-apply-change/references/merge-workflow.md) §8 — заменил ручной алгоритм на вызов `reindex`, обновил dry-run-пример в §3.
-- [skills/masterspec-propose/references/change-format.md](skills/masterspec-propose/references/change-format.md) §1 — новая строка в таблице: diff-блоки по `00-masterspec-index.md` запрещены (кроме §1/§7).
-- [skills/masterspec-propose/templates/change.md](skills/masterspec-propose/templates/change.md) §8 и [example-change.md](skills/masterspec-propose/references/example-change.md) — обновлены чек-листы приёмки.
+- [masterspec/references/index-canonical.md](masterspec/references/index-canonical.md) — полная спецификация: таблицы секций §1.1–§1.4, порядок строк, формат, источник комментариев, шаблон итогового файла, алгоритм (псевдокод), граничные случаи, защита от потери данных.
+- [masterspec/SKILL.md](masterspec/SKILL.md) — режим §4.6 `reindex` в диспетчере, ссылка на `index-canonical.md` в справочных файлах, обновлён чек-лист §3 и правила §5.
+- [masterspec-apply-change/references/merge-workflow.md](masterspec-apply-change/references/merge-workflow.md) §8 — заменил ручной алгоритм на вызов `reindex`, обновил dry-run-пример в §3.
+- [masterspec-propose/references/change-format.md](masterspec-propose/references/change-format.md) §1 — новая строка в таблице: diff-блоки по `00-masterspec-index.md` запрещены (кроме §1/§7).
+- [masterspec-propose/templates/change.md](masterspec-propose/templates/change.md) §8 и [example-change.md](masterspec-propose/references/example-change.md) — обновлены чек-листы приёмки.
 
 **Побочный эффект**: нумерация разделов индекса стабилизирована — §4.9 всегда «Интеграционные тесты», §4.10 всегда «UI Views», безотносительно присутствия артефактов в конкретной фабрике.
 
@@ -85,7 +85,7 @@
 
 ### 🔴 S2. `apply-change` не блокируется при отсутствии git
 
-**Где**: [masterspec-skills/skills/masterspec-apply-change/SKILL.md](skills/masterspec-apply-change/SKILL.md) §4 + [merge-workflow.md](skills/masterspec-apply-change/references/merge-workflow.md) §1.1.
+**Где**: [masterspec-apply-change/SKILL.md](masterspec-apply-change/SKILL.md) §4 + [merge-workflow.md](masterspec-apply-change/references/merge-workflow.md) §1.1.
 
 **Проблема**: когда фабрика лежит в директории без `.git/`, `git status --porcelain masterspec/` возвращает `fatal: not a git repository` и выходит с успешным кодом. Текущая логика трактует «пустой вывод» как «чисто» и пропускает. Safety net «откат через git» в этом сценарии отсутствует.
 
@@ -102,13 +102,13 @@
 
 ### ✅ S3. Финальная валидация «файл реально получил правку» — ЗАКРЫТО
 
-**Решение**: §9 в [merge-workflow.md](skills/masterspec-apply-change/references/merge-workflow.md) разбит на три подраздела:
+**Решение**: §9 в [merge-workflow.md](masterspec-apply-change/references/merge-workflow.md) разбит на три подраздела:
 
 - **§9.1 Smoke-check** — прежние 4 структурных проверки (число файлов, ADDED в индексе, REMOVED нет в дереве, нет обратных ссылок). Провал → откат через `git checkout HEAD -- masterspec/`.
 - **§9.2 Verification** — для каждой строки §2.1/§2.2/§2.3 change.md отдельный алгоритм по типу правки: `modify-bullet` проверяется по первой + последней непустой строке `ПОСЛЕ:` (компромиссный порог, устойчив к нормализации whitespace); `replace-section` / `add-subsection` — первая строка `ПОСЛЕ:` в границах раздела; `prepend-to-file` — голова файла совпадает с головой `ПОСЛЕ:`; ADDED — файл есть, YAML валиден, нет `<!--`; REMOVED — файла нет. Строки, пропущенные пользователем в §6-конфликте, хранятся в памяти сессии и исключаются из verification. Особый случай пустого `ПОСЛЕ:` обработан явно (§9.2.5).
-- **§9.3 Вердикт** — `U == 0` → статус `Реализовано`; `U > 0` → AskUserQuestion с тремя опциями: `rollback` / `override` / `leave`. Тихий переход в `Реализовано` при `unconfirmed > 0` теперь явно помечен в [apply-change/SKILL.md Guardrails](skills/masterspec-apply-change/SKILL.md) как баг.
+- **§9.3 Вердикт** — `U == 0` → статус `Реализовано`; `U > 0` → AskUserQuestion с тремя опциями: `rollback` / `override` / `leave`. Тихий переход в `Реализовано` при `unconfirmed > 0` теперь явно помечен в [apply-change/SKILL.md Guardrails](masterspec-apply-change/SKILL.md) как баг.
 
-[apply-change/SKILL.md](skills/masterspec-apply-change/SKILL.md) §11 и §13 «Вывод» обновлены под трёхступенчатый отчёт `confirmed / skipped_by_user / unconfirmed`.
+[apply-change/SKILL.md](masterspec-apply-change/SKILL.md) §11 и §13 «Вывод» обновлены под трёхступенчатый отчёт `confirmed / skipped_by_user / unconfirmed`.
 
 **Валидация на фабрике**: требуется следующий прогон. До фактического тестирования S3 остаётся «закрыто по коду, не закрыто по эмпирике» — аналог S5, случай `---`. Включить в прогон №8.
 
@@ -124,7 +124,7 @@
 
 ### ✅ S5. Семантика `add-subsection` — ЗАКРЫТО (прогон №6)
 
-**Решение**: в [merge-workflow.md](skills/masterspec-apply-change/references/merge-workflow.md) §4.3 `add-subsection` формализованы границы раздела — следующий заголовок того же/высшего уровня, строка-разделитель `---`, или конец файла; добавлены два примера и проверка уровня `ПОСЛЕ:`.
+**Решение**: в [merge-workflow.md](masterspec-apply-change/references/merge-workflow.md) §4.3 `add-subsection` формализованы границы раздела — следующий заголовок того же/высшего уровня, строка-разделитель `---`, или конец файла; добавлены два примера и проверка уровня `ПОСЛЕ:`.
 
 **Валидация на фабрике**: прогон №6 [`add-sprint-capabilities`](../sprint-management/masterspec/changes/archive/2026-04-24-add-sprint-capabilities/change.md) применил 3 diff-блока типа `add-subsection`: два на жёсткую границу `##` с существующими подсекциями (новые `cap-*` вставлены после последней подсекции перед `## Зависимости`), один на конец файла без подсекций (новая `### AC-sprint-integration` добавлена после буллетов AC-01..AC-04 с одной пустой строкой до). Случай мягкой границы `---` в фабрике отсутствует (все `---` — YAML-фронтматтеры) — механика этого варианта остаётся непокрытой эмпирически и требует отдельной фикстуры в `tests/` (см. S8).
 
@@ -132,7 +132,7 @@
 
 ### ✅ S6. Проверка уникальности slug — ЗАКРЫТО (прогон №7)
 
-**Решение**: [masterspec-propose/SKILL.md](skills/masterspec-propose/SKILL.md) §8 шаг 1 — для каждого ADDED выполняется `Glob("masterspec/**/<slug>.md")` (исключая `masterspec/changes/`); при совпадении — блок + AskUserQuestion. Чек-лист [guardrails.md](skills/masterspec-propose/references/guardrails.md) §4.2 обновлён.
+**Решение**: [masterspec-propose/SKILL.md](masterspec-propose/SKILL.md) §8 шаг 1 — для каждого ADDED выполняется `Glob("masterspec/**/<slug>.md")` (исключая `masterspec/changes/`); при совпадении — блок + AskUserQuestion. Чек-лист [guardrails.md](masterspec-propose/references/guardrails.md) §4.2 обновлён.
 
 **Валидация на фабрике**: прогон №7 [`add-fn-manage-sprint`](../sprint-management/masterspec/changes/archive/2026-04-24-add-fn-manage-sprint/change.md) — в ходе interview предложен slug `fn-manage-release`; `Glob("**/fn-manage-release.md")` вернул `masterspec/01-requirements/02-functions/fn-manage-release.md` → защита сработала, предложена альтернатива, slug сменён на `fn-manage-sprint` (повторный Glob — пустой). Протокол коллизии зафиксирован в §1.5 change.md.
 

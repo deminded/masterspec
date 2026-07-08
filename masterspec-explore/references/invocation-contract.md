@@ -14,7 +14,7 @@ masterspec-explore/references/research-orchestration.md
 masterspec-explore/references/research-roles.md
 ```
 
-**Резолв пути.** Если harness передал `Skill directory: <abs>` в обёртке активации — бери от него. Иначе один раз `Glob("**/masterspec-skills/skills/masterspec-explore/references/<file>")` и бери первый результат. Пусто → спроси пользователя путь установки, не ищи вручную по `~`/cwd.
+**Резолв пути.** Если harness передал `Skill directory: <abs>` в обёртке активации — бери от него. Иначе один раз `Glob("**/masterspec-explore/references/<file>")` и бери первый результат. Пусто → спроси пользователя путь установки, не ищи вручную по `~`/cwd.
 
 ---
 
