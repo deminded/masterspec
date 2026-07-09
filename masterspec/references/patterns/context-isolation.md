@@ -19,7 +19,7 @@
 Оркестратор не читает ни код, ни документы.
 
 ## Режимы
-`context=full` (дефолт) — оркестратор может читать сам, меньше субагент-оверхеда (большой контекст). `context=lean` — строгая делегация по этому контракту (ограниченный контекст).
+`context=lean` (дефолт) — строгая делегация по этому контракту (ограниченный контекст). `context=full` — оркестратор может читать сам, меньше субагент-оверхеда (большой контекст).
 
 ## Рабочая зона и namespace
 Всё ЭФЕМЕРНОЕ рабочее — в `masterspec/.work/<run-id>/` (run-id = `<layer|change-name>-<ts>`), чтобы параллельные/долгоживущие прогоны не делили `plan`/`.focus` и не сносили чужую зону. Внутри: `plan.md`, `.focus/<slug>.md`, `verify/` (частичные отчёты lean-verify: `<elem>.md`, `_negative.md`, `_spec-o0o6o7.md`, `_change-nodes.md`, `<node>.md`), `apply/` (lean-apply: `_dryrun.md`, `<slug>.md`, `_smoke.md`), `recover/` (lean-recover: `plan.md`, `_dangling.md`, `_gaps.md`).

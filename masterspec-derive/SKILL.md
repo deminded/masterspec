@@ -9,7 +9,7 @@ description: >
 when_to_use: >
   спроектировать слой требований или спецификаций, описать фабрику с нуля,
   derive <factory> layer=req, derive <factory> layer=spec, сгенерировать as/fn/nfr/rules/cdm или cmp/scn/api/data
-argument-hint: "<factory-slug> layer=req|spec [pass=linear|parallel] [verify=core|full] [context=full|lean]"
+argument-hint: "<factory-slug> layer=req|spec [pass=linear|parallel] [verify=core|full] [context=lean|full]"
 allowed-tools:
   - Read
   - Write
@@ -30,7 +30,7 @@ Route-скилл: бизнес-запрос/требования → слой а
 - `layer=spec` — вход: согласованный слой требований. Выход: `02-specifications/` (контракт и физмодель рождаются здесь).
 - `pass=linear` (дефолт) — по одному элементу, человек контролирует каждый шаг. `pass=parallel` — независимые элементы разом субагентами, человек на финальной вычитке. parallel — явный выбор аналитика.
 - `verify=core` (дефолт) — дешёвое ядро осей; `verify=full` — все оси на слое и критичных элементах.
-- `context=full` (дефолт) / `context=lean` — изоляция контекста оркестратора (`patterns/context-isolation.md`). В `lean` оркестратор сам не читает мета-модель/research/артефакты, а делегирует planner-субагенту (раскладывает план и фокус-наборы в `masterspec/.work/<run-id>/`), `gen` и `verify`-субагентам; держит в контексте только план, пути и сводки. Для моделей с ограниченным контекстом (рост контекста не зависит от размера фабрики).
+- `context=full` / `context=lean` (дефолт) — изоляция контекста оркестратора (`patterns/context-isolation.md`). В `lean` оркестратор сам не читает мета-модель/research/артефакты, а делегирует planner-субагенту (раскладывает план и фокус-наборы в `masterspec/.work/<run-id>/`), `gen` и `verify`-субагентам; держит в контексте только план, пути и сводки. Для моделей с ограниченным контекстом (рост контекста не зависит от размера фабрики).
 
 ## Метод
 > **В `context=lean`** метод ниже выполняется через делегацию (контракт — `patterns/context-isolation.md`); конкретные переопределения шагов:

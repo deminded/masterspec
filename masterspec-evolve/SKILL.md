@@ -10,7 +10,7 @@ description: >
 when_to_use: >
   внести изменение в фабрику, добавить функцию или атрибут, исправить поведение, поправить правило,
   отразить изменение внешнего контракта, evolve entry=req|rule|ext
-argument-hint: "entry=req|rule|ext --root=<slug корневого узла | new:<имя нового>> [pass=linear|parallel] [context=full|lean]"
+argument-hint: "entry=req|rule|ext --root=<slug корневого узла | new:<имя нового>> [pass=linear|parallel] [context=lean|full]"
 allowed-tools:
   - Read
   - Write
@@ -35,7 +35,7 @@ allowed-tools:
 - **ДОБАВЛЕНИЕ** — нового узла ещё нет (`--root=new:<имя>`). После создания узла — forward-каскад ВНИЗ: породить обязательные нижележащие артефакты (новый атрибут сущности → правки fn/api/data, что его выводят; новая fn → scn/api/data/tc-acc; новое требование → элементы нижних слоёв). Это под-derive с корнем на новом узле.
 
 ## Метод
-> **`context=full` (дефолт) / `context=lean`** — изоляция контекста оркестратора (контракт `../masterspec/references/patterns/context-isolation.md`); конкретные переопределения шагов в `lean`:
+> **`context=full` / `context=lean` (дефолт)** — изоляция контекста оркестратора (контракт `../masterspec/references/patterns/context-isolation.md`); конкретные переопределения шагов в `lean`:
 > — §2/§4 (зона и правки) → planner-субагент раскладывает `plan.md` с явным `target_mode` на каждый шаг: существующий артефакт → `diff` (gen выдаёт diff-блок для `change.md §4`), новый → `file` (`changes/<name>/new/<slug>.md`), машинный api/data → `sidecar`; фокус-наборы (в `masterspec/.work/<run-id>/.focus/`) planner режет ПО ТАБЛИЦЕ границ (`../masterspec/references/patterns/context-isolation.md §Граница фокус-набора`); в план кладутся якоря `scope-fence` (соседи + «затронут/не затронут»);
 > — узлы-исполнения → `gen` с `from`+`target_path`+`target_mode`;
 > — §дозапрос → единый маршрут: код→`explore`, документ→`planner`, иначе→человек;
