@@ -6,7 +6,7 @@ description: >
   Вызывается оркестраторами derive/evolve, не человеком напрямую. Метод — element-workflow.
 when_to_use: >
   сгенерировать конкретный артефакт по типу в рамках derive/evolve, gen type=<артефакт>
-argument-hint: "type=<тип артефакта> [from=<путь к фокус-набору>] [target_path=<путь>] [target_mode=file|diff|sidecar]"
+argument-hint: "type=<тип артефакта> [from=<путь к фокус-набору>] [target_path=<путь>] [target_mode=file|diff|sidecar] [loop=on|off] [guardrails=auto|off]"
 allowed-tools:
   - Read
   - Write
@@ -24,6 +24,8 @@ allowed-tools:
 **Формат фокус-набора:** связный markdown — бизнес-описание элемента, процитированные (не пересказанные) срезы вышестоящих артефактов и ссылки `-> slug`, плюс какой `tpl-<type>` заполнять. Это НЕ сырой YAML-агрегат explore. Оркестратор передаёт его gen-субагенту как содержимое задачи (Task-промпт) или файлом, путь к которому даёт `from=<путь>`.
 
 **Куда писать (`target_path`/`target_mode`):** в lean-режиме приходят из плана (`patterns/context-isolation.md §Адресация`). Если не заданы — выводи по умолчанию: путь — из `artifact-routing.md` по `type` (api — по `scope`, fn — по `block`); режим — машинный api/data (`.yaml`/`.json`) → `sidecar` (+ компаньон `.md`), новый артефакт → `file`, изменение существующего `.md` → `diff` (выдай diff-блок для `change.md §4`, не пиши файл напрямую). Пиши ровно туда и так — не «по догадке».
+
+**Guardrails и цикл приёмки:** при `guardrails≠off` conformance-пункты активных правил (`../masterspec/references/patterns/guardrails.md`) входят в приёмочные критерии элемента; `loop=on` включает пятишаговый цикл с blind-verify и severity-гейтом (`../masterspec/references/patterns/generation-loop.md`; дефолт off). Применённые правила — в route-run («Guardrails applied»).
 
 ## Метод
 1. Прочитай шаблон `../masterspec/templates/tpl-<type>.md`, скопируй структуру.
