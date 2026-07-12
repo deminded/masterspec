@@ -13,6 +13,8 @@
 ```
 `source`: universal | corporate | domain | factory. При конфликте правил выигрывает более специфичный источник (factory > domain > corporate > universal); конфликт ФИКСИРУЕТСЯ в route-run как дефект пакетов, не глотается.
 
+Пакет собирается из сырого корпоративного документа скиллом `masterspec-pack` (документ → manifest + карточки по этой схеме); подключение пути к фабрике — там же.
+
 ## Подключение (per-project, файлом)
 В корне фабрики `masterspec-config.yaml`:
 ```yaml
