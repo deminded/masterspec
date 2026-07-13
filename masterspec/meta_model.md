@@ -200,7 +200,7 @@ updated: YYYY-MM-DD
 
 Артефакты слоя кодовой базы дополнительно содержат `generated: true`.
 
-Опциональные служебные поля фронтматтера: `provenance: docs:<…> | code:<path>[:line]` — источник восстановления, проставляется `recover` (для повторяемости и отличия восстановленного от знания «из головы»); `block:` — функциональный блок для `function`; `scope: internal | external` — для `api`; `about:`/`decision-scope:` — для `dr-`; `notation:` — форма поведения `scn` (`references/scenario-notation-registry.md`, дефолт `yaml-graph`); `form:` — форма `alg` (`procedural` дефолт | `decision-table`); `sidecar_format:` + `sidecar:` — машинная проекция-пара для `api`/`data` и для `scn`/`alg`, когда нотация несёт машинный файл (`references/patterns/sidecar-formats.md`).
+Опциональные служебные поля фронтматтера: `provenance: docs:<…> | code:<path>[:line]` — источник восстановления, проставляется `recover` (для повторяемости и отличия восстановленного от знания «из головы»); `block:` — функциональный блок для `function`; `scope: internal | external` (размещение) — для `api`; `boundary:` — уровень границы вызова / security-профиль `api` (`references/boundary-registry.md`, ортогонален `scope`); `about:`/`decision-scope:` — для `dr-`; `notation:` — форма поведения `scn` (`references/scenario-notation-registry.md`, дефолт `yaml-graph`); `form:` — форма `alg` (`procedural` дефолт | `decision-table`); `sidecar_format:` + `sidecar:` — машинная проекция-пара для `api`/`data` и для `scn`/`alg`, когда нотация несёт машинный файл (`references/patterns/sidecar-formats.md`).
 
 `criticality: high | medium | low` обязательна для `fn-*`, `tc-acc-*`, `tc-int-*`, `tc-flt-*`.
 Веса `5/3/1` используются детерминированным pre-gate: применимая OE-грань наследует вес функции,
@@ -454,6 +454,7 @@ path/to/file.kt:method()        # метод/функция
 - **Имя файла:** `02-specifications/04-apis/{internal,external}/api-<slug>.md` (+ опц. машинный sidecar `api-<slug>.yaml`/`.json` рядом)
 - **Шаблон:** [`templates/tpl-api.md`](templates/tpl-api.md); для `.yaml`/`.json` — OpenAPI / AsyncAPI.
 - **Содержание:** контракт (логические операции, вход/выход, ошибки, ограничения, SLA, идемпотентность) + **маппинги полей** (правила наполнения контракта: «поле ← источник», где источник — `api-`/`data-`/контекст приложения/константа; декларативно, не алгоритмом). Для внешнего участка `OE-DELIVERY` различает «принято внешней стороной» и «наблюдается конечным потребителем», фиксирует предпосылки, поздний/silent failure и reconciliation.
+- **Граница и безопасность:** атрибут `boundary` (`references/boundary-registry.md`) — `intra-factory` / `inter-factory` / `perimeter`, ортогонален `scope` (размещение). Задаёт ось применимости security-guardrails и глубину O5 (`intra→inter→perimeter`); конкретные нормы (OWASP/mTLS) — корпоративным пакетом, не kernel.
 - **Запрещено в .md-спецификации:** конкретные пути файлов, имена классов-обработчиков.
 
 #### 6.3.5. Схема данных
