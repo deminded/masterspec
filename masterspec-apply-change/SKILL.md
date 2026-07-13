@@ -52,6 +52,8 @@ allowed-tools:
 - `masterspec/references/artifact-routing.md` — таблица `type:` → целевая директория (для копирования `new/`)
 - `masterspec/references/change-conventions.md` — статусы, откат, архивация
 - `masterspec/references/layer-discipline.md` — финальная проверка на обратные ссылки
+- `masterspec/references/meta-model-version.md` — ось `meta_model_version`; версия = выход-сертификат (для §13 сертификации)
+- `masterspec/references/migration.md` — контур миграции фабрики между версиями (детектор дельты → дозаполнение → сертификация)
 - `masterspec/examples/00-masterspec-index.md` — формат строк индекса (`+` actual / `-` draft; `?` — только для планируемого, reindex его в §3–6 не ставит)
 
 **AskUserQuestion fallback**: если инструмент недоступен — задай вопрос текстом, дождись ответа. Не угадывай.
@@ -139,7 +141,7 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 По `merge-workflow.md § 5`:
 - Для каждого файла `new/<slug>.md`: прочитай YAML-фронтматтер → определи целевую директорию по `type:` через `masterspec/references/artifact-routing.md`.
 - Проверь отсутствие коллизии (`<target-dir>/<slug>.md` не существует). Коллизия → `merge-workflow.md § 6.4`.
-- Скопируй файл, `updated:` = сегодня. Статус: артефакты слоёв → `status: actual` (change согласован мержем PR); `adr-`/`dr-` сохраняют свой решенческий статус (`proposed`/`accepted`) — НЕ перезаписывать в actual.
+- Скопируй файл, `updated:` = сегодня. Статус: артефакты слоёв → `status: actual` (change согласован мержем PR); `adr-`/`dr-` сохраняют свой решенческий статус (`proposed`/`accepted`) — НЕ перезаписывать в actual. **Исключение — migration-класс** (шапка change.md `> **Класс**: migration`): сохрани объявленный `status:` из `new/` (не форси `actual`) — миграция меняет форму под новую версию мета-модели, не зрелость (`merge-workflow.md §5.5`).
 - **Машинный api/data** (компаньон, `change-format.md §3.1`): копируй ПАРУ — компаньон `<slug>.md` и sidecar `<slug>.yaml`/`.json` рядом. Метаданные и статус — из компаньона; sidecar копируется as-is (`merge-workflow.md §5.4`).
 
 ### 9. Удаление REMOVED
@@ -181,7 +183,17 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 - Вердикт §11 = `leave` → `> **Статус**: В реализации`.
 - Вердикт §11 = `rollback` → статус change.md не трогаем, выйди.
 
-### 13. Вывод
+### 13. Сертификация версии мета-модели
+
+По `merge-workflow.md § 11`. Единственный шаг, ставящий штамп `meta_model_version` фабрики; версия = выход-сертификат (`../masterspec/references/meta-model-version.md`).
+
+- Прогони детекторы инвариантов текущей версии на применимых scope: `check-operational-envelope.py masterspec --scope req` (+ `spec`, если есть `02-specifications/`; + `code`, если есть `03-codemap/`) и `check-verify-report.py <report>`, если verify-report есть. Собери все BLOCKER-строки = остаточная дельта.
+- **Все применимые scope зелёные** → впиши/обнови `meta_model_version: <текущая версия ядра>` (сейчас `3.0`, без квалификатора) и `updated:` во фронтматтере Паспорта `01-requirements/01-system/as-*.md`. Идемпотентно (уже равно → no-op).
+- **Часть scope зелёная** → scope-квалифицированный штамп `<версия>-<scope>` (напр. `3.0-req`); честно фиксирует, докуда дотянута версия.
+- **Все применимые scope красные** → штамп не ставь и не понижай; в отчёте «до-<версия>, дельта: N BLOCKER». Не откат — правки change применены.
+- **Режим сертификации без change** (миграция draft-фабрики, дозаполнение уже в дереве — `../masterspec/references/migration.md` шаг 5): §§3–12 пропускаются, выполняется только этот шаг.
+
+### 14. Вывод
 
 ```
 ## Apply Complete (Multi-artefact Merge)
@@ -208,6 +220,10 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 ### Verification (применённость)
 confirmed: K · skipped_by_user: S · unconfirmed: U
 (если U > 0 — указать, какую опцию выбрал пользователь: rollback / override / leave)
+
+### Сертификация версии
+meta_model_version: 3.0 (проставлен) | до-3.0 (дельта: N BLOCKER — <первые строки>)
+детекторы: check-oe req=OK[ spec=OK][ code=OK][ ; check-verify-report=OK]
 
 ### Конфликты (пропущенные блоки)
 (если были — список с причиной из §6 merge-workflow.md)

@@ -3,6 +3,7 @@ type: passport-as
 slug: as-<slug>
 factory: <factory-slug>
 status: draft            # draft / actual / deprecated
+meta_model_version: <оставь пустым/не ставь вручную — сертификат ставит apply-change §11 по зелёным детекторам; см. references/meta-model-version.md>
 owner: <team or person>
 updated: YYYY-MM-DD
 ---

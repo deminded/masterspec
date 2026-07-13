@@ -17,7 +17,7 @@ graph TB
 
     subgraph REQ["Слой требований"]
         AS["Паспорт АС/ФП<br/><i>as-*</i>"]
-        FN["Функция АС/ФП<br/><i>fn-*</i>"]
+        FN["Функция АС/ФП<br/>(use-case + OE-* внутри)<br/><i>fn-*</i>"]
         NFR["НФТ<br/><i>nfr-*</i>"]
         RULES["Правила<br/><i>rules-*</i>"]
         CTX["Диаграмма<br/>окружения<br/><i>context-*</i>"]
@@ -37,6 +37,7 @@ graph TB
         DATA["Схема данных<br/><i>data-*</i>"]
         LP["Профиль<br/>нагрузки<br/><i>lp-*</i>"]
         TC_INT["Интеграционный<br/>тест<br/><i>tc-int-*</i>"]
+        TC_FLT["Каталог<br/>отказов<br/><i>tc-flt-*</i>"]
     end
 
     subgraph CODE["Слой кодовой базы (LLD)"]
@@ -55,12 +56,12 @@ graph TB
     AS -->|"имеет модель данных"| CDM
     FN -.->|"группируется<br/>по блокам"| FN
     DICT -->|"опирается на<br/>сущность"| CDM
-    TC_ACC -->|"проверяет AC"| FN
+    TC_ACC -->|"проверяет AC +<br/>живые OE-fixtures"| FN
     TC_ACC -->|"использует<br/>значения"| DICT
 
     %% Связи требования → спецификации
     AS ==>|"декомпозируется"| CMP
-    FN ==>|"реализуется"| SCN
+    FN ==>|"реализуется,<br/>включая OE"| SCN
     CDM ==>|"детализируется"| DATA
 
     %% Связи внутри спецификаций
@@ -73,12 +74,15 @@ graph TB
     SCN -->|"использует"| ALG
     LP -->|"нагружает"| SCN
     NFR ==>|"верифицируется"| LP
+    FN ==>|"OE-LOAD<br/>детализируется"| LP
     TC_INT -->|"проверяет"| SCN
+    TC_FLT -->|"систематизирует<br/>отказы"| SCN
+    TC_FLT -->|"порождает строки"| TC_INT
 
     %% Связи спецификации → кодовая база
     REPO -.->|"содержит"| CMAP
     CMP ==>|"маппится (по cap)"| CMAP
-    SCN ==>|"маппится"| TRACE
+    SCN ==>|"маппится,<br/>включая OE"| TRACE
     DATA ==>|"маппится"| DMAP
     CDM ==>|"маппится"| DMAP
 
@@ -115,7 +119,7 @@ package "Сквозные артефакты" as CROSS #f3e8ff {
 ' ─── Слой требований ───
 package "Слой требований" as REQ #dbeafe {
     class "Паспорт АС/ФП\n<size:9>as-*</size>" as AS #bfdbfe
-    class "Функция АС/ФП\n<size:9>fn-*</size>" as FN #bfdbfe
+    class "Функция АС/ФП\n(use-case + OE-* внутри)\n<size:9>fn-*</size>" as FN #bfdbfe
     class "НФТ\n<size:9>nfr-*</size>" as NFR #bfdbfe
     class "Правила\n<size:9>rules-*</size>" as RULES #bfdbfe
     class "Диаграмма окружения\n<size:9>context-*</size>" as CTX #bfdbfe
@@ -136,6 +140,7 @@ package "Слой спецификаций" as SPEC #dcfce7 {
     class "Схема данных\n<size:9>data-*</size>" as DATA #bbf7d0
     class "Профиль нагрузки\n<size:9>lp-*</size>" as LP #bbf7d0
     class "Интеграционный тест\n<size:9>tc-int-*</size>" as TC_INT #bbf7d0
+    class "Каталог отказов\n<size:9>tc-flt-*</size>" as TC_FLT #bbf7d0
 }
 
 ' ─── Слой кодовой базы ───
@@ -154,12 +159,13 @@ AS "1" --> "1" CTX : отображается
 AS "1" --> "1" FD : отображается
 AS "1" --> "*" CDM : имеет модель
 DICT "*" --> "1" CDM : опирается на сущность
-TC_ACC "*" --> "1" FN : проверяет AC
+TC_ACC "*" --> "1" FN : проверяет AC + OE-fixtures
 TC_ACC "*" ..> "*" DICT : использует значения
 
 ' ─── Связи требования → спецификации ───
 AS "1" ==> "*" CMP : декомпозируется
-FN "1" ==> "*" SCN : реализуется
+FN "1" ==> "*" SCN : реализуется, включая OE
+FN "*" ==> "*" LP : OE-LOAD детализируется
 CDM "1" ==> "*" DATA : детализируется
 
 ' ─── Связи внутри спецификаций ───
@@ -173,10 +179,12 @@ SCN "*" --> "*" ALG : использует
 LP "*" --> "*" SCN : нагружает
 NFR "1" ==> "*" LP : верифицируется
 TC_INT "*" --> "1" SCN : проверяет
+TC_FLT "1" --> "1" SCN : систематизирует отказы
+TC_FLT "1" --> "*" TC_INT : связывает FLT-строки
 
 ' ─── Связи спецификации → код ───
 CMP "1" ==> "1" CMAP : маппится (по cap)
-SCN "1" ==> "1" TRACE : маппится
+SCN "1" ==> "1" TRACE : маппится, включая OE
 DATA "*" ==> "1" DMAP : маппится
 CDM "*" ==> "1" DMAP : маппится
 REPO "1" --> "*" CMAP : содержит

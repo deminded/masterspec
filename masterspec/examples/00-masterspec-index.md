@@ -101,9 +101,10 @@ updated: 2026-04-17
 ### 4.8. Профили нагрузки
  - `02-specifications/07-load-profiles/lp-notification-factory.md` # Профиль нагрузки фабрики
 
-### 4.9. Интеграционные тесты
+### 4.9. Интеграционные тесты и каталоги отказов
  + `02-specifications/08-test-cases/tc-int-send-sms-basic.md` # SMS: базовая отправка (-> scn-send-sms)
  ? `02-specifications/08-test-cases/tc-int-send-sms-retry.md` # SMS: повторная попытка при отказе провайдера
+ ? `02-specifications/08-test-cases/tc-flt-send-sms.md` # Каталог отказов (-> scn-send-sms)
 
 ---
 

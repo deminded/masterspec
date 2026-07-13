@@ -89,9 +89,10 @@ updated: YYYY-MM-DD
 ### 4.8. Профили нагрузки
  ? `02-specifications/07-load-profiles/lp-<scope>.md` # <область>
 
-### 4.9. Интеграционные тесты
-<!-- Проверяют работоспособность сценариев. -->
+### 4.9. Интеграционные тесты и каталоги отказов
+<!-- Проверяют сценарии и систематизируют точки/модусы отказов. -->
  ? `02-specifications/08-test-cases/tc-int-<slug>.md` # <название> (-> scn-...)
+ ? `02-specifications/08-test-cases/tc-flt-<scenario-slug>.md` # Каталог отказов (-> scn-...)
 
 ### 4.10. UI Views
  ? `02-specifications/09-ui-views/ui-view-<slug>.md` # <экран/представление>
