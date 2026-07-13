@@ -90,6 +90,7 @@ allowed-tools:
 - `element_type`: `fn | nfr | cdm` (req) · `cmp | scn | api | data | alg` (spec) ·
   `cmap | trace | dmap` (code) — актуальный список в `../masterspec/meta_model.md`
 - `input_type`: `ticket | business-requirement | arch-sketch | …` (для `intake`)
+- `boundary`: `intra-factory | inter-factory | perimeter` (для `element_type: api` — уровень границы/security, `../masterspec/references/boundary-registry.md`)
 - `tags`: свободные метки проекта
 Правило БЕЗ ограничения по ключу = применимо ко всем его значениям. Указывай минимально
 достаточный набор — лишний селектор сужает применимость молча.

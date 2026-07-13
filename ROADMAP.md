@@ -252,7 +252,7 @@ mailtg-bridge: lean-прогон свернул load-profile («single-user, bes
 ### Заделы к оформлению
 - [ ] Фаза 5: guardrails-выбор нотаций per-project.
 - [ ] migrate scn/alg — скилл восстановлен под 3.0 (13.07: форма-переразложение, notation/form/DMN, развязка с migration.md); доводка на живой обкатке остаётся.
-- [ ] boundary-registry + security-guardrails api (intra/inter/perimeter) — восстановить из v2 отдельным тактом, согласовав с guardrails 3.0 (вторая потеря миграции, вскрыта 13.07; вынесена из такта нотаций по договорённости).
+- [ ] boundary-registry + security-guardrails api — kernel-часть сделана (13.07: реестр значений, атрибут `boundary` в каноне/tpl-api, селектор `applies_to.boundary`, глубина O5 по границе). Осталось: корпоративный security-пакет (OWASP/mTLS через `pack`) per-project + Spectral-рулсет (Фаза 3, :211).
 - [x] tc-flt: каталог отказных тест-кейсов в маршрутизации, derive/gen и O_T verify.
 - [ ] Артефакт ops/security-роли.
 - [ ] Достроить пилот полным 3-слойным примером.
