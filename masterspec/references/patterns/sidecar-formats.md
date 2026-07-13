@@ -16,8 +16,22 @@
 | `api` (sync/REST) | **OpenAPI 3.x** | запрос-ответ, HTTP-ресурсы | `<slug>.openapi.yaml` |
 | `api` (event-driven) | **AsyncAPI 2.x** | очереди, вебхуки, стриминг, поллинг (Telegram, IMAP/SMTP, брокеры) | `<slug>.asyncapi.yaml` |
 | `data` | **JSON Schema 2020-12** | схема сущности/конфига | `<slug>.schema.json` |
-| `scn` (сценарий) | **UML sequence** (Mermaid `sequenceDiagram` или PlantUML) | последовательность взаимодействий участников | `<slug>.sequence.mmd` |
-| `alg` (алгоритм) | **workflow** (Mermaid `flowchart` или BPMN) | поток управления и решений | `<slug>.flow.mmd` |
+
+Таблица покрывает `api`/`data` — их формат выбирается по природе контракта. У `scn`/`alg` сайдкар
+устроен иначе (см. следующий раздел).
+
+## `scn` / `alg` — форму задаёт нотация, не «природа контракта»
+
+У сценария и алгоритма наличие и формат сайдкара определяются атрибутом формы во фронтматтере:
+
+- **`scn`** — атрибут `notation` (`scenario-notation-registry.md`): `yaml-graph`/`pull-rules`
+  машинно-читаемы в теле → сайдкар НЕ заводится; `sequence` → `<slug>.sequence.mmd`/`.puml`;
+  `workflow` → `<slug>.flow.mmd`; `bpmn` → `<slug>.bpmn` (сайдкар-пара обязательна).
+- **`alg`** — атрибут `form`: `procedural` — проза в теле, сайдкара нет; `decision-table` — таблица
+  решений в теле (машинно-парсима), при потребности в инструментальном DMN-движке — сайдкар
+  `<slug>.dmn` (`sidecar_format: dmn-1.x`).
+
+Когда сайдкар есть, поля фронтматтера те же (`sidecar_format` + `sidecar`).
 
 **Дефолтов может не хватить — это норма, не повод втискивать.** Если контракт по природе не
 ложится в дефолт — выбери корректный стандарт под него и запиши в `sidecar_format`:
