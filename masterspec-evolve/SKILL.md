@@ -36,6 +36,7 @@ allowed-tools:
 
 ## Метод
 > **`context=full` / `context=lean` (дефолт)** — изоляция контекста оркестратора (контракт `../masterspec/references/patterns/context-isolation.md`); конкретные переопределения шагов в `lean`:
+- `guardrails=auto|off|<paths>` — внешние корпоративные правила (`patterns/guardrails.md`): `auto` (дефолт) берёт пакеты из `masterspec-config.yaml` фабрики; активный набор режется селекторами `applies_to`; применённые правила и конфликты фиксируются в route-run секцией «Guardrails applied».
 > — §2/§4 (зона и правки) → planner-субагент раскладывает `plan.md` с явным `target_mode` на каждый шаг: существующий артефакт → `diff` (gen выдаёт diff-блок для `change.md §4`), новый → `file` (`changes/<name>/new/<slug>.md`), машинный api/data → `sidecar`; фокус-наборы (в `masterspec/.work/<run-id>/.focus/`) planner режет ПО ТАБЛИЦЕ границ (`../masterspec/references/patterns/context-isolation.md §Граница фокус-набора`); в план кладутся якоря `scope-fence` (соседи + «затронут/не затронут»);
 > — узлы-исполнения → `gen` с `from`+`target_path`+`target_mode`;
 > — §дозапрос → единый маршрут: код→`explore`, документ→`planner`, иначе→человек;
