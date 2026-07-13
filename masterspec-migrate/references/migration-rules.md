@@ -17,16 +17,15 @@
 |---|---|---|
 | `type: api` | `type: api` | без изменений |
 | `slug` | `slug` | без изменений |
-| `scope: internal` | `direction: internal` | детерминированно |
-| `scope: external` | `direction: # MIGRATE-TODO` | неоднозначно: external = provided ИЛИ consumed; не угадывать |
+| `scope: internal \| external` | `scope` — без изменений | 3.0 СОХРАНЯЕТ `scope` (размещение internal/external); НЕ переименовывать в `direction` — это был v2-концепт, 3.0 его не вводит. Тип взаимодействия — в теле «## Тип API» + per-op async `produce/consume`, переносятся as-is |
 | `factory` | `factory` | без изменений |
 | `status: actual` | `status: draft` | downgrade обязателен (есть MIGRATE-TODO → human-gate) |
 | `status: draft\|deprecated` | без изменений | |
 | `owner`, `updated` | без изменений | |
-| *(отсутствовало)* | `sidecar_format: openapi-3.1` (sync) \| `asyncapi-2.x` (event-driven) | по природе контракта; см. `../../masterspec/references/patterns/sidecar-formats.md` |
-| *(отсутствовало)* | `sidecar: <slug>.openapi.yaml` \| `<slug>.asyncapi.yaml` | имя машинного файла |
+| *(отсутствовало)* | `sidecar_format` по ПРИРОДЕ | `openapi-3.1` (sync HTTP/REST) \| `asyncapi-2.x` (event-driven) \| иной стандарт (protobuf/WSDL/SDL) под транспорт; транспорт БЕЗ готового стандарта (MTProto RPC и т.п.) — сайдкар НЕ создавать, `# MIGRATE-TODO: стандарт под транспорт не определён`. `patterns/sidecar-formats.md`, «нотацию не выдумывай» |
+| *(отсутствовало)* | `sidecar: <slug>.<ext>` | имя машинного файла (если сайдкар создаётся) |
 | *(отсутствовало)* | `produced_by: migrate` | проставить |
-| `provenance` (recover-поле) | `provenance:` (consumed-блок) | только при confirmed `direction: consumed`; весь блок — MIGRATE-TODO (источник неизвестен migrate) |
+| `provenance` (recover-поле) | `provenance:` (блок потребляемого) | только если исходник — потребляемый внешний контракт (`scope: external`, потребление внешнего API); весь блок — MIGRATE-TODO (источник неизвестен migrate) |
 
 > **boundary НЕ проставляется.** Реестр boundary (intra/inter/perimeter) и security-guardrails —
 > отдельный такт (Фаза 5). До него migrate не заводит `boundary` ни значением, ни MIGRATE-TODO.
@@ -70,6 +69,11 @@
 Остаётся в компаньоне: назначение; стейт-машина (YAML-блок, §5); логические ограничения (составная
 уникальность, TTL, state-зависимые обязательности); связи.
 
+> **Плоская data без ER-сущностей** (config-схема — таблица «ключ / тип / значение по умолчанию»,
+> без сущностей и связей): свойства идут прямо в `properties` сайдкара. Структура «Сущности /
+> Ключевые атрибуты / Связи» — типовой случай доменной data, не единственный; стейт-машины у config
+> обычно нет.
+
 ---
 
 ## 3. Конвертация логических типов → JSON Schema
@@ -82,7 +86,8 @@
 | «флаг» / «булево» / «признак» | `type: boolean` |
 | «дата-время» / «timestamp» | `type: string, format: date-time` |
 | «дата» | `type: string, format: date` |
-| «идентификатор» / «UUID» / «GUID» | `type: string, format: uuid` |
+| «UUID» / «GUID» (явно) | `type: string, format: uuid` |
+| «идентификатор» (формат не указан) | `type: string` — `format` НЕ подставлять (Telegram id, Message-ID и т.п. — не UUID); неоднозначный формат → `# MIGRATE-TODO: формат идентификатора` |
 | «URI» / «URL» | `type: string, format: uri` |
 | «список» / «массив» | `type: array` |
 | «объект» / «структура» | `type: object` |
@@ -116,8 +121,12 @@
 
 ## 5. Стейт-машина: извлечение из матрицы
 
-Канонический источник — **матрица**: строки = состояния, столбцы = события, ячейки = результат
-перехода или «ЗАПРЕЩЕНО» (мета-модель §6.3.5). Это НЕ список переходов — двумерная таблица.
+> **Только для legacy 2D-матрицы.** Если стейт-машина исходника УЖЕ в плоском формате `transitions`
+> (`from/event/to/guard` — как в текущем `tpl-data-schema.md`), она уже в целевой форме: перенести
+> as-is, §5-извлечение не применять. Ниже — для legacy, где источник оформлен двумерной матрицей.
+
+Канонический источник (legacy) — **матрица**: строки = состояния, столбцы = события, ячейки =
+результат перехода или «ЗАПРЕЩЕНО» (мета-модель §6.3.5). Это НЕ список переходов — двумерная таблица.
 
 Пример матрицы:
 
