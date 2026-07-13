@@ -31,7 +31,10 @@ ts: YYYY-MM-DDThh:mm
 - точность: тронуто / в каскаде = N / M
 - полнота: забытых узлов = 0
 - немые вердикты: 0 · немые подъёмы: 0 · немые решения: 0
+- OE: <дословная строка `OE metrics:` из check-operational-envelope.py; не вести второй реестр>
+- OE-покрытие: exit code req/spec/code = <коды реально выполненных scope>; fidelity gaps = N
 - критерий: spec_ready | codegen_ready = yes/no
+- verify-report: <путь>; telemetry gate (`check-verify-report.py`) = <exit code>
 
 ## Открытые вопросы человеку
 - <вопрос>

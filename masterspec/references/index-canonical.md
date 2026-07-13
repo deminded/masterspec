@@ -42,7 +42,7 @@
 | 4.6 | Схемы данных | `data-schema` / `data-*` |
 | 4.7 | Диаграммы | `component-diagram` + `nav` |
 | 4.8 | Профили нагрузки | `load-profile` / `lp-*` |
-| 4.9 | Интеграционные тесты | `test-integration` / `tc-int-*` |
+| 4.9 | Интеграционные тесты и каталоги отказов | `test-integration` / `tc-int-*`; `test-fault-catalog` / `tc-flt-*` |
 | 4.10 | UI Views | `ui-view` |
 
 ### 1.3. Кодовая база (§5.x)

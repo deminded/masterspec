@@ -28,10 +28,22 @@ masterspec/  _input/  01-requirements/  02-specifications/  04-decisions/
 ## Кейс 1 — Генерация с нуля
 1. 👤 Положи запрос + материалы в `_input/`.
 2. 👤 Если фабрика поверх существующего кода — `explore <factory> roots=<пути>` → 🤖 разведчики → `.research/`. С нуля без кода шаг пропускается: `derive` соберёт контекст из запроса.
-3. 👤 `derive <factory> layer=req pass=linear verify=core` → 🤖 gen (as/fn/nfr/rules/cdm) + приёмщик + verify. Выход: `01-requirements/` + `route-run-<ts>.md`.
-4. 👤 Проверь `route-run-<ts>.md`: блокеры осей O4 (динамика), O5 (негатив). Закрой, ответь на дозапросы.
+3. 👤 `derive <factory> layer=req pass=linear verify=core` → 🤖 перед генерацией каждой функции
+   классифицирует внешний I/O и только для таких функций выпытывает восемь граней OE, включая
+   общую безопасность и устойчивость; internal-only получает одну N/A-строку,
+   затем gen (as/fn/nfr/rules/context/cdm/tc-acc) + приёмщик + verify. Молчание не превращается в
+   `N/A`: только `N/A — причина`, неизвестное остаётся `OPEN` и блокирует `spec_ready`. Выход:
+   `01-requirements/` + `route-run-<ts>.md`.
+4. 👤 Проверь `route-run-<ts>.md`: вставлен реальный `OE metrics` (expected только для external-I/O),
+   OPEN = 0, без AC/tc-acc = 0; затем
+   блокеры осей O4 (динамика), O5 (негатив). Убедись, что fixtures/среды представляют названные
+   реальные клиенты, объёмы, источники и внешний путь, а stub не выдан за end-to-end. Закрой
+   дозапросы.
 5. 👤 Согласуй: ревью по git-diff, merge PR = перевод `status: draft → actual`. `apply-change` тут НЕ нужен — derive писал прямо в дерево.
-6. 👤 `derive <factory> layer=spec pass=parallel verify=full` → 🤖 gen (cmp/scn/api/data) + приёмщик + verify (O0/O6/O7). Выход: `02-specifications/`.
+6. 👤 `derive <factory> layer=spec pass=parallel verify=full` → 🤖 gen
+   (cmp/scn/alg/api/data/lp/tc-flt/tc-int) материализует каждую APPLICABLE OE: OE-LOAD→lp,
+   внешний OE-DELIVERY→external api/context, остальные→явный владелец в scn; verify делает set-diff
+   плюс O0/O6/O7. Выход: `02-specifications/`.
 7. 👤 Согласуй (codegen_ready?) → кодоген (вне набора).
 
 ## Кейс 2 — Добавление функции
@@ -57,8 +69,8 @@ masterspec/  _input/  01-requirements/  02-specifications/  04-decisions/
 1. 👤 `recover <factory> source=docs` (из ТЗ/презентаций/переписки) или `source=code roots=<пути>` (из репозитория) → 🤖 черновики артефактов с пометкой источника + «Белые пятна».
 2. 👤 `verify` → закрой блокеры, ответь на вопросы → доведи через `derive`/`evolve`.
 
-**Миграция спеки со старого формата:** структура та же (3 слоя), новое — в полноте (состояния, оракулы AC, квалификаторы, обе стороны контракта, записанные решения).
-1. 👤 `verify scope=req`, затем `verify scope=spec` на существующей спеке → отчёт = backlog дыр с severity (пустые матрицы состояний, AC-не-оракулы, односторонние контракты, немые решения).
+**Миграция спеки со старого формата:** структура та же (3 слоя), новое — в полноте (состояния, оракулы AC, OE-контракты, квалификаторы, обе стороны контракта, записанные решения).
+1. 👤 `verify scope=req`, затем `verify scope=spec` на существующей спеке → отчёт = backlog дыр с severity (отсутствующие/OPEN OE, синтетика без репрезентативности, пустые матрицы состояний, AC-не-оракулы, односторонние контракты, немые решения).
 2. 👤 Закрывай точечно через `evolve`/`derive` — дополняй, не пересоздавай. Сначала блокеры (то, что мешает codegen_ready), остальное по мере касания.
 
 ---

@@ -30,6 +30,7 @@
 | `nav` | `tpl-nav.md` | `02-specifications/06-diagrams/` | `nav-` |
 | `load-profile` / `lp` | `tpl-load-profile.md` | `02-specifications/07-load-profiles/` | `lp-` |
 | `test-integration` / `tc-int` | `tpl-test-integration.md` | `02-specifications/08-test-cases/` | `tc-int-` |
+| `test-fault-catalog` / `tc-flt` | `tpl-test-fault-catalog.md` | `02-specifications/08-test-cases/` | `tc-flt-` |
 | `ui-view` | `tpl-ui-view.md` | `02-specifications/09-ui-views/` | `ui-view-` |
 | `repo-map` | `tpl-repo-map.md` | `03-codemap/00-repo-map.md` | — |
 | `component-map` / `cmap` | `tpl-component-map.md` | `03-codemap/01-component-maps/` | `cmap-` |
@@ -37,6 +38,12 @@
 | `data-map` / `dmap` | `tpl-data-map.md` | `03-codemap/03-data-maps/` | `dmap-` |
 | `adr` | `tpl-adr.md` | `04-decisions/` | `adr-` |
 | `decision-record` / `dr` | `tpl-dr.md` | рядом с артефактом-владельцем (на ЕГО слое: 01-/02-) | `dr-` |
+
+`OE-*` не маршрутизируется и не получает `type:`/отдельный файл: это обязательные стабильные
+подразделы external-I/O `fn-`; internal-only `fn-` содержит одну N/A-строку без подразделов.
+Внутренняя ссылка имеет вид `-> fn-<slug>/OE-<ID>` и разрешается в файл владельца
+`fn-<slug>.md`. Не путать с `usage-contract` (`uc-`): `uc-` — генерируемая публичная проекция
+библиотеки, OE — исходный пофункциональный контракт реальной эксплуатации любой фабрики.
 
 ---
 
@@ -64,6 +71,8 @@ updated: YYYY-MM-DD
 ```
 
 Для кодового слоя добавить `generated: true`. Для `function` — опционально `block: <имя-блока>`. Для `api` — `scope: internal | external`.
+Для `function`, `test-acceptance`, `test-integration`, `test-fault-catalog` обязательно
+`criticality: high | medium | low`; веса покрытия — `5 | 3 | 1`.
 
 ---
 
