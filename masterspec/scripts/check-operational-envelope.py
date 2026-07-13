@@ -25,6 +25,9 @@ CRITICALITY_RANK = {"low": 1, "medium": 2, "high": 3}
 CATALOG_COVERAGE_RANK = {"single-fault": 1, "dependent-pairs": 2, "pairwise": 3}
 CRITICALITY_MIN_COVERAGE = {"low": 1, "medium": 2, "high": 3}
 FIELD_NAMES = ("Статус", "Контракт", "Основание", "Проверка")
+# Дисциплина слоёв: требования code-free. Ловим код-артефакты в полях OE-граней —
+# имена файлов (.py), leading-underscore идентификаторы (_RE/_unwrap), SCREAMING_SNAKE-константы.
+CODE_ARTIFACT = re.compile(r"\.py\b|\b_[A-Za-z]\w*[A-Za-z0-9]\b|\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b")
 BOUNDARY_FIELD = "Внешний инициатор/канал"
 INTERNAL_ONLY = "OE: N/A — internal-only"
 OE_REF = re.compile(r"->\s*(fn-[a-z0-9-]+)/(?P<oe>OE-[A-Z]+)\b")
@@ -306,6 +309,21 @@ def parse_function(path: Path) -> tuple[str, list[Facet], list[str]]:
         for name in FIELD_NAMES:
             if not values.get(name):
                 errors.append(f"{path}: {oe} has empty/template field {name}")
+
+        # Дисциплина слоёв: требования не именуют код. Контракт/Основание не должны нести
+        # код-артефакты; Основание должно быть каноничным (интервью/измерение/образец/vendor/гипотеза).
+        for name in ("Контракт", "Основание"):
+            leak = CODE_ARTIFACT.search(values.get(name, ""))
+            if leak:
+                errors.append(
+                    f"{path}: {oe} {name} names a code artifact {leak.group(0)!r} "
+                    f"(layer discipline — requirements are code-free)"
+                )
+        if re.match(r"^\s*код\b", values.get("Основание", ""), re.IGNORECASE):
+            errors.append(
+                f"{path}: {oe} Основание uses non-canonical 'код' form — "
+                f"use интервью/измерение/образец/vendor/гипотеза"
+            )
 
         status = values.get("Статус", "")
         if status == "APPLICABLE":

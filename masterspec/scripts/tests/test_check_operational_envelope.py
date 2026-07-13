@@ -75,6 +75,14 @@ class OperationalEnvelopeCheckerTest(unittest.TestCase):
         self.assertIn("tc_acc_weighted=21/21(100.00%)", output.getvalue())
         self.assertIn("fault_tc_coverage=3/3(100.00%)", output.getvalue())
 
+    def test_code_artifact_detects_code_not_prose(self) -> None:
+        # Дисциплина слоёв: требования code-free — ловим код, не трогаем прозу/markdown.
+        for code in ("код: `commands.py`", "`_RE`", "SEND_INTERVAL_SECONDS", "_unwrap"):
+            self.assertTrue(CHECKER.CODE_ARTIFACT.search(code), code)
+        for clean in ("формат `_italic_` и `*bold*`", "измерение — грамматика зафиксирована",
+                      "-> rules-control", "AC-01, AC-02"):
+            self.assertIsNone(CHECKER.CODE_ARTIFACT.search(clean), clean)
+
     def test_percentage_reports_n_a_for_empty_denominator(self) -> None:
         # 0/0 — вакуумное покрытие, не полное: n/a, а не ложные 100%.
         self.assertEqual(CHECKER.percentage(0, 0), "n/a")
