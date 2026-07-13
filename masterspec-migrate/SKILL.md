@@ -78,6 +78,10 @@ allowed-tools:
 2. Для каждого файла: определить `type` из фронтматтера.
 3. Если форма уже целевая (api/data имеет `sidecar:`; scn имеет `notation:`; alg имеет `form:`) →
    пропустить, записать «уже в целевой форме» в report.
+3a. Если артефакт несёт ЯВНОЕ записанное решение владельца о форме (напр. «.md-only — сайдкар не
+   ведём», «форма заморожена») — НЕ переопределять молча: записать в report «решение владельца,
+   migrate пропускает форму», оставить файл как есть. Снять/изменить такое решение — право владельца
+   (human-gate), не migrate.
 4. Если тип не api/data/scn/alg → «вне scope формы» в report, файл не трогать.
 5. Если `dry-run` — только вывести план, без записи файлов.
 
@@ -88,12 +92,19 @@ allowed-tools:
 **Фронтматтер** (детали — `references/migration-rules.md §1`):
 - `type/slug/factory/owner/updated` — сохранить; `status: actual` → `status: draft` (downgrade
   обязателен: после migrate всегда draft до human-gate).
-- `scope: internal` → `direction: internal`; `scope: external` → `direction: # MIGRATE-TODO:
-  provided или consumed?` (external не различал направление).
-- добавить `sidecar_format` + `sidecar`: sync/REST → `openapi-3.1` + `<slug>.openapi.yaml`;
-  event-driven (очереди/вебхуки/поллинг) → `asyncapi-2.x` + `<slug>.asyncapi.yaml`.
+- `scope: internal | external` — СОХРАНИТЬ как есть. В 3.0 `scope` — это размещение (каталог
+  internal/external), он НЕ переименовывается в `direction` (это был v2-концепт, 3.0 его не вводит).
+  Тип взаимодействия уточняется в теле «## Тип API» (internal/external × sync/async) и per-операция
+  для async (`produce`/`consume`) — migrate переносит их из исходника as-is, не синтезирует.
+- добавить `sidecar_format` + `sidecar` по ПРИРОДЕ контракта (§1 / `patterns/sidecar-formats.md`,
+  список открыт): sync HTTP/REST → `openapi-3.1`; event-driven (очереди/вебхуки/поллинг) →
+  `asyncapi-2.x`; иной транспорт (gRPC→protobuf, SOAP→WSDL, GraphQL→SDL, …) — свой стандарт.
+  **Транспорт без готового стандарта (напр. MTProto RPC) — НЕ синтезировать OpenAPI с фиктивными
+  путями/методами:** оставить только компаньон + `# MIGRATE-TODO: машинная проекция — стандарт под
+  транспорт не определён` (правило sidecar-formats «нотацию не выдумывай»).
 - добавить `produced_by: migrate`.
-- для confirmed `direction: consumed` — блок `provenance:` целиком в MIGRATE-TODO (§1).
+- потребляемый внешний контракт (в исходнике есть recover-поле `provenance`) — блок `provenance:`
+  целиком в MIGRATE-TODO (§1); migrate его не реконструирует.
 
 **Тело → сайдкар:** разделы «Операции/события» и «Контракт» переносятся в машинный файл (operationId,
 schemas). Логические типы → JSON Schema типы (`§3`). Где исходник неформален (тип прозой, путь/метод
