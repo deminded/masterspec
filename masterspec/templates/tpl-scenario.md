@@ -5,6 +5,9 @@ factory: <factory-slug>
 status: draft            # draft / actual / deprecated
 owner: <team or person>
 updated: YYYY-MM-DD
+notation: yaml-graph     # yaml-graph (дефолт) / sequence / workflow / bpmn / pull-rules — references/scenario-notation-registry.md
+# sidecar_format:        # только когда нотация несёт машинный файл: bpmn-2.0 | вынесенная sequence/workflow-диаграмма
+# sidecar:               # <slug>.bpmn | <slug>.sequence.mmd | <slug>.flow.mmd — patterns/sidecar-formats.md
 ---
 # Сценарий: <название>
 
@@ -18,6 +21,11 @@ updated: YYYY-MM-DD
        - имена полей/таблиц.
      Ссылки — вверх на fn- и в пределах слоя на cmp-, alg-, api-.
      НЕ ссылаться на cmap-, trace-, dmap-.
+     ФОРМА поведения зависит от notation (references/scenario-notation-registry.md):
+       - yaml-graph (дефолт) — разделы «Последовательность шагов» + «Ветвления» ниже;
+       - sequence/workflow — fenced-блок диаграммы (plantuml/mermaid) + секция «Участники»;
+       - bpmn — сайдкар-пара <slug>.bpmn + секция «Участники» (тело без повтора процесса словами);
+       - pull-rules — таблица правил реакции + секция «Инварианты потока» (см. реестр).
      HTML-комментарии удалить при заполнении. -->
 
 ## Цель сценария
@@ -28,6 +36,11 @@ updated: YYYY-MM-DD
 
 ## Предусловия
 <!-- Что должно быть истинно до старта. -->
+
+## Участники
+<!-- Обязательна для notation: sequence / workflow / bpmn — маппинг «имя на диаграмме → -> cmp-<slug>/cap-<name>»
+     (семантический инвариант реестра: диаграмма без резолвинга участников — иллюстрация, не спецификация,
+     не проходит O2). Для yaml-graph / pull-rules секция не нужна — ссылки -> cmp/cap стоят инлайн. -->
 
 ## Последовательность шагов
 <!-- Happy path. Формат каждой строки:

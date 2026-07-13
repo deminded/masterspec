@@ -200,7 +200,7 @@ updated: YYYY-MM-DD
 
 Артефакты слоя кодовой базы дополнительно содержат `generated: true`.
 
-Опциональные служебные поля фронтматтера: `provenance: docs:<…> | code:<path>[:line]` — источник восстановления, проставляется `recover` (для повторяемости и отличия восстановленного от знания «из головы»); `block:` — функциональный блок для `function`; `scope: internal | external` — для `api`; `about:`/`decision-scope:` — для `dr-`.
+Опциональные служебные поля фронтматтера: `provenance: docs:<…> | code:<path>[:line]` — источник восстановления, проставляется `recover` (для повторяемости и отличия восстановленного от знания «из головы»); `block:` — функциональный блок для `function`; `scope: internal | external` — для `api`; `about:`/`decision-scope:` — для `dr-`; `notation:` — форма поведения `scn` (`references/scenario-notation-registry.md`, дефолт `yaml-graph`); `form:` — форма `alg` (`procedural` дефолт | `decision-table`); `sidecar_format:` + `sidecar:` — машинная проекция-пара для `api`/`data` и для `scn`/`alg`, когда нотация несёт машинный файл (`references/patterns/sidecar-formats.md`).
 
 `criticality: high | medium | low` обязательна для `fn-*`, `tc-acc-*`, `tc-int-*`, `tc-flt-*`.
 Веса `5/3/1` используются детерминированным pre-gate: применимая OE-грань наследует вес функции,
@@ -438,6 +438,7 @@ path/to/file.kt:method()        # метод/функция
 - **Имя файла:** `02-specifications/02-scenarios/scn-<slug>.md`
 - **Шаблон:** [`templates/tpl-scenario.md`](templates/tpl-scenario.md)
 - **Содержание:** **порядок вызова возможностей компонентов** для реализации функции. Каждый шаг: `-> cmp-<slug>/cap-<name>`. Это единственное место, где фиксируется последовательность. Раздел «Реализация контракта живой эксплуатации» назначает каждому `APPLICABLE OE` функции конкретный шаг/ветку, владельца `scn-/alg-/api-/data-/lp-/ui-view-` и `tc-int-`; union связанных сценариев обязан покрыть все OE функции.
+- **Форма поведения:** атрибут `notation` (`references/scenario-notation-registry.md`) — `yaml-graph` (дефолт) / `sequence` / `workflow` / `bpmn` / `pull-rules`. Участники любой диаграммной нотации обязаны резолвиться в `cmp/cap` (секция «Участники»); `bpmn` живёт сайдкар-парой.
 - **Запрещено:** код, классы, пути, имена полей.
 
 #### 6.3.3. Алгоритм
@@ -445,6 +446,7 @@ path/to/file.kt:method()        # метод/функция
 - **Имя файла:** `02-specifications/03-algorithms/alg-<slug>.md`
 - **Шаблон:** [`templates/tpl-algorithm.md`](templates/tpl-algorithm.md)
 - **Содержание:** пошаговая логика, порядок проверок, инварианты — словами, не кодом.
+- **Форма:** атрибут `form` — `procedural` (дефолт, пошаговая проза с полными ветвлениями) / `decision-table` (таблица решений с обязательной Hit policy и покрытием комбинаций, DMN-семантика; форма — модель решений, не псевдокод — слой остаётся code-free).
 - **НЕ содержит:** маппинги полей контракта (правила наполнения «поле ← источник») — они часть контракта (`api-`), не алгоритма (single-source O0).
 
 #### 6.3.4. Спецификация API (внутренний / внешний)
