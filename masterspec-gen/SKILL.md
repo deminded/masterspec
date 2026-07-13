@@ -79,7 +79,7 @@ allowed-tools:
 Зависит от `target_mode`:
 - `file` (дефолт для нового) → `<type>-<slug>.md` (`status: draft`);
 - `diff` (изменение существующего `.md`) → diff-блок для `change.md §4` (файл напрямую НЕ пишется);
-- `sidecar` (машинный api/data) → пара: компаньон `<slug>.md` + машинный `<slug>.yaml`/`.json`.
+- `sidecar` (машинный api/data) → пара: компаньон `<slug>.md` + машинный сайдкар. Формат — по природе контракта (OpenAPI/AsyncAPI для api, JSON Schema для data, расширяемо WSDL/protobuf/…): `../masterspec/references/patterns/sidecar-formats.md`. Компаньон несёт `sidecar_format:`/`sidecar:` во фронтматтере.
 Плюс список дозапросов и открытых вопросов → оркестратору в route-run.
 
 ## Развилка внутри генерации
