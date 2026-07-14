@@ -73,12 +73,12 @@ updated: YYYY-MM-DD
 - ограничения по нагрузке:
 - версиониование:
 - безопасность границы (по `boundary`):
-  <!-- Глубина требований задаётся атрибутом boundary (references/boundary-registry.md):
-       intra-factory — relaxed (внешняя аутентификация не требуется);
-       inter-factory — service-to-service auth (mutual TLS / service-mesh);
-       perimeter — OAuth2/mTLS, rate-limiting, OWASP API Security Top 10.
-       Конкретные нормы приходят security-guardrail-пакетом (masterspec-pack), не из kernel;
-       здесь фиксируется применимый профиль и его точки на контракте. -->
+  <!-- Глубина требований растёт по атрибуту boundary (references/boundary-registry.md):
+       intra-factory (relaxed) → inter-factory (service-to-service auth) → perimeter (строгий
+       внешний профиль). Конкретные протоколы и пороги здесь не перечисляются — они
+       ИЛЛЮСТРАТИВНЫМ примером даны в boundary-registry.md и как норма приходят
+       security-guardrail-пакетом (masterspec-pack), не из kernel; здесь фиксируется применимый
+       профиль и его точки на контракте. -->
 
 ## Сквозная доставка и подтверждения
 <!-- Это нативная семантика API, не второй OE-маппинг: владельцем реализации остаётся scn-.

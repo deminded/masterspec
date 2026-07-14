@@ -160,12 +160,16 @@ decision-table), иначе вычитка человеком неуправля
 
 ## Human-gate (обязателен)
 
-Результат migrate — всегда `status: draft`. Нельзя ставить `actual`:
-- MIGRATE-TODO могут быть критическими (direction, provenance, тип поля, notation, участник, hit policy).
+Результат migrate для `actual`-артефактов — всегда `status: draft` (downgrade обязателен). Нельзя
+сразу ставить `actual`:
+- MIGRATE-TODO могут быть критическими (provenance, тип поля, notation, участник, hit policy).
 - `verify scope=spec` завалит артефакт с открытыми MIGRATE-TODO: незаполненный обязательный раздел
   формы — блокер **O1** (напр. пустая Hit policy для `decision-table`, отсутствующая секция «Участники»
   для диаграммной нотации); неразрешённая ссылка `-> cmp/cap` — **O2**; неполнота ветвлений/комбинаций
   — **O4a**.
+
+`status: deprecated` на входе ОСТАЁТСЯ `deprecated` — migrate его не поднимает в `draft` («результат
+всегда draft» относится к downgrade `actual`-артефактов, не к уже-`deprecated`).
 
 После migrate — передать владельцу migration-report; владелец закрывает MIGRATE-TODO, применяет
 `masterspec-verify scope=spec`, затем (когда фабрика целиком зелёная) сертификация штампует

@@ -24,7 +24,7 @@
 
 У сценария и алгоритма наличие и формат сайдкара определяются атрибутом формы во фронтматтере:
 
-- **`scn`** — атрибут `notation` (`scenario-notation-registry.md`): `yaml-graph`/`pull-rules`
+- **`scn`** — атрибут `notation` (`../scenario-notation-registry.md`): `yaml-graph`/`pull-rules`
   машинно-читаемы в теле → сайдкар НЕ заводится; `sequence` → `<slug>.sequence.mmd`/`.puml`;
   `workflow` → `<slug>.flow.mmd`; `bpmn` → `<slug>.bpmn` (сайдкар-пара обязательна).
 - **`alg`** — атрибут `form`: `procedural` — проза в теле, сайдкара нет; `decision-table` — таблица
