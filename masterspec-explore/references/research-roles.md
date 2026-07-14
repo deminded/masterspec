@@ -424,11 +424,15 @@ test_cases:
     test_data_note: <≤15 слов: репрезентативны ли данные или заглушка, выданная за реальность>
     fidelity: live-e2e|production-like|synthetic|stub|null    # только для tc-int
     observation_boundary: <где наблюдаем результат>|null      # только для tc-acc
-    traces_to:
-      target: <имя кандидата fn-/scn-/rules- из <b1_candidates>, к которому относится>
-      target_kind: fn|scn|rules|ac
-      confidence: exact|probable|none    # exact — привязка названа в материале; probable — выведена по смыслу; none — не нашёл
-      evidence: <цитата/якорь, ≤20 слов>
+    traces_to:                           # СПИСОК: один тест может проверять функцию И её критерий приёмки
+      - target: <имя кандидата из <b1_candidates>>
+        target_kind: fn|ac|scn|rules
+        confidence: exact|probable|none  # exact — привязка названа в материале; probable — выведена по смыслу; none — не нашёл
+        evidence: <цитата/якорь, ≤20 слов>
+    # ИНВАРИАНТ ПО ТИПУ (нарушение = gap, не «ну примерно подходит»):
+    #   kind: tc-acc → цели только fn / ac (приёмочный проверяет функцию и её критерий)
+    #   kind: tc-int → цели только scn (интеграционный проверяет кооперацию по сценарию)
+    # Тест, чья цель не того рода, — не «почти стыкованный», а нестыкованный: в gaps.
     source: <path>#<раздел | строка таблицы | id ТК>
     declared: true
 
