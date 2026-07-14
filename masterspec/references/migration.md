@@ -14,7 +14,7 @@
 ## Контур (5 шагов)
 
 1. **Детекция состояния.** Прогон детекторов на применимых scope:
-   `python3 scripts/check-operational-envelope.py <factory> --scope req|spec|code`
+   `python3 scripts/check-operational-envelope.py <factory> --layer req|spec|code`
    (+ `check-verify-report.py <report>`, если verify-report есть).
    BLOCKER-строки = ДЕЛЬТА до текущей версии. Пусто на всех применимых scope → фабрика уже
    удовлетворяет контракту → шаг 5 (сертификация/no-op).

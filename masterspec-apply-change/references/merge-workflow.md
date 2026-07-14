@@ -420,7 +420,7 @@ Smoke-check покажет, что дерево файлов в порядке, 
    - `status:` присутствует (артефакты слоёв — `actual`, уже применены; `adr-` — `proposed`/`accepted`, `dr-` — `accepted`);
    - `updated:` = сегодня.
 4. Grep по всему файлу на `<!--` — комментарии шаблона должны быть удалены (§5.6).
-5. Если артефакт машинный (api/data/scn/alg с sidecar): объявленный `<target-dir>/<sidecar>` существует И парсится по своему `sidecar_format` (yaml/json — `yaml.safe_load`/`json.loads`; xml для bpmn/dmn — well-formed; текстовые нотации — непустота без ```). Битый/отсутствующий сайдкар → `unconfirmed`. Детерминированно это же проверяет детектор формы `<Skill dir>/../masterspec/scripts/check-operational-envelope.py --scope spec` (F2).
+5. Если артефакт машинный (api/data/scn/alg с sidecar): объявленный `<target-dir>/<sidecar>` существует И парсится по своему `sidecar_format` (yaml/json — `yaml.safe_load`/`json.loads`; xml для bpmn/dmn — well-formed; текстовые нотации — непустота без ```). Битый/отсутствующий сайдкар → `unconfirmed`. Детерминированно это же проверяет детектор формы `<Skill dir>/../masterspec/scripts/check-operational-envelope.py --layer spec` (F2).
 
 Все пункты выполнены → `confirmed`. Иначе → `unconfirmed` с указанием первого непрошедшего пункта.
 
@@ -506,8 +506,8 @@ confirmed: 2 · skipped_by_user: 1 · unconfirmed: 1
 ### 11.2. Прогон детекторов
 Прогони детекторы инвариантов текущей версии на применимых scope фабрики:
 ```bash
-python3 <Skill dir>/../masterspec/scripts/check-operational-envelope.py masterspec --scope req
-# + --scope spec, если есть 02-specifications/ ; + --scope code, если есть 03-codemap/
+python3 <Skill dir>/../masterspec/scripts/check-operational-envelope.py masterspec --layer req
+# + --layer spec, если есть 02-specifications/ ; + --layer code, если есть 03-codemap/
 python3 <Skill dir>/../masterspec/scripts/check-verify-report.py <verify-report>   # если verify-report присутствует
 ```
 Собери BLOCKER-строки со всех прогонов = остаточная дельта до контракта.

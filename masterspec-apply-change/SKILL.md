@@ -187,7 +187,7 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 
 По `merge-workflow.md § 11`. Единственный шаг, ставящий штамп `meta_model_version` фабрики; версия = выход-сертификат (`../masterspec/references/meta-model-version.md`).
 
-- Прогони детекторы инвариантов текущей версии на применимых scope: `check-operational-envelope.py masterspec --scope req` (+ `spec`, если есть `02-specifications/`; + `code`, если есть `03-codemap/`) и `check-verify-report.py <report>`, если verify-report есть. Собери все BLOCKER-строки = остаточная дельта.
+- Прогони детекторы инвариантов текущей версии на применимых scope: `check-operational-envelope.py masterspec --layer req` (+ `spec`, если есть `02-specifications/`; + `code`, если есть `03-codemap/`) и `check-verify-report.py <report>`, если verify-report есть. Собери все BLOCKER-строки = остаточная дельта.
 - **Все применимые scope зелёные** → впиши/обнови `meta_model_version: <текущая версия ядра>` (сейчас `3.0`, без квалификатора) и `updated:` во фронтматтере Паспорта `01-requirements/01-system/as-*.md`. Идемпотентно (уже равно → no-op).
 - **Часть scope зелёная** → scope-квалифицированный штамп `<версия>-<scope>` (напр. `3.0-req`); честно фиксирует, докуда дотянута версия.
 - **Все применимые scope красные** → штамп не ставь и не понижай; в отчёте «до-<версия>, дельта: N BLOCKER». Не откат — правки change применены.

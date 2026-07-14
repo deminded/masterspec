@@ -1129,9 +1129,9 @@ def run(root: Path, scope: str) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("root", type=Path, help="masterspec factory root")
-    parser.add_argument("--scope", choices=("req", "spec", "code"), default="req")
+    parser.add_argument("--layer", choices=("req", "spec", "code"), default="req")
     args = parser.parse_args()
-    return run(args.root, args.scope)
+    return run(args.root, args.layer)
 
 
 if __name__ == "__main__":
