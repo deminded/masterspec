@@ -174,7 +174,7 @@ masterspec/
 - В `04-decisions/` лежат ADR.
 - Функции АС/ФП при большом количестве группируются по функциональным блокам в подпапках.
 - API разделены на `internal/` и `external/`.
-- Основной артефакт API и схемы данных — всегда `.md`. Машинная спека (OpenAPI/AsyncAPI/JSON Schema) — опциональный sidecar `.yaml`/`.json` рядом с `.md`-компаньоном (режим компаньона, `references/change-format.md §3.1`): индексация, verify и мерж идут по `.md`, а машинный файл доступен внешним процессам напрямую. Standalone `.yaml`/`.json` без компаньона не используется.
+- Основной артефакт API и схемы данных — всегда `.md`. Машинная спека — опциональный сайдкар рядом с `.md`-компаньоном (режим компаньона, `references/change-format.md §3.1`); его формат и имя объявлены полями `sidecar_format`/`sidecar` (api/data: OpenAPI/AsyncAPI/JSON Schema — `.yaml`/`.json`; `scn`/`alg` по нотации: `.bpmn`/`.dmn`/`.mmd`/… — `references/scenario-notation-registry.md`). Индексация, verify и мерж читают поле `sidecar:`, а не гадают по расширению; машинный файл доступен внешним процессам напрямую. Standalone сайдкар без компаньона не используется.
 - Тест-кейсы: приёмочные — в слое требований (`tc-acc-`), интеграционные и каталоги отказов —
   в слое спецификаций (`tc-int-`, `tc-flt-`). Юнит-тесты не выделяются в артефакты.
 - Изменения (AS-IS / TO-BE / diff) отслеживаются средствами git.
@@ -200,12 +200,13 @@ updated: YYYY-MM-DD
 
 Артефакты слоя кодовой базы дополнительно содержат `generated: true`.
 
-Опциональные служебные поля фронтматтера: `provenance: docs:<…> | code:<path>[:line]` — источник восстановления, проставляется `recover` (для повторяемости и отличия восстановленного от знания «из головы»); `block:` — функциональный блок для `function`; `scope: internal | external` (размещение) — для `api`; `boundary:` — уровень границы вызова / security-профиль `api` (`references/boundary-registry.md`, ортогонален `scope`); `about:`/`decision-scope:` — для `dr-`; `notation:` — форма поведения `scn` (`references/scenario-notation-registry.md`, дефолт `yaml-graph`); `form:` — форма `alg` (`procedural` дефолт | `decision-table`); `sidecar_format:` + `sidecar:` — машинная проекция-пара для `api`/`data` и для `scn`/`alg`, когда нотация несёт машинный файл (`references/patterns/sidecar-formats.md`); `produced_by:` — какой скилл породил/переразложил артефакт (`migrate` / `recover` / `gen`), для аудита происхождения.
+Опциональные служебные поля фронтматтера: `provenance: docs:<…> | code:<path>[:line]` — источник восстановления, проставляется `recover` (для повторяемости и отличия восстановленного от знания «из головы»); `block:` — функциональный блок для `function`; `scope: internal | external` (размещение) — для `api`; `boundary:` — уровень границы вызова / security-профиль `api` (`references/boundary-registry.md`, ортогонален `scope`); `about:`/`decision-scope:` — для `dr-`; `notation:` — форма поведения `scn`, ОБЯЗАТЕЛЬНО для `scn` (`references/scenario-notation-registry.md`, дефолт выбора `yaml-graph`); `form:` — форма `alg`, ОБЯЗАТЕЛЬНО для `alg` (`procedural` дефолт выбора | `decision-table`); `sidecar_format:` + `sidecar:` — машинная проекция-пара для `api`/`data` и для `scn`/`alg`, когда нотация несёт машинный файл (`references/patterns/sidecar-formats.md`); `produced_by:` — какой скилл породил/переразложил артефакт (`migrate` / `recover` / `gen`), для аудита происхождения.
 
-`notation` и `form` опциональны: ОТСУТСТВИЕ поля = применён дефолт (`yaml-graph` / `procedural`
-соответственно) — валидное состояние, не блокер верификации. `masterspec-migrate` при
-форма-переразложении артефакта проставляет значение ЯВНО, но само по себе отсутствие поля до этого —
-не дефект и не повод понижать статус.
+`notation` (у `scn`) и `form` (у `alg`) — ОБЯЗАТЕЛЬНЫЕ ЯВНЫЕ поля: их отсутствие в артефакте —
+блокер верификации (F1, `references/patterns/verification-axes.md §O1`). `yaml-graph`/`procedural` —
+это дефолт ВЫБОРА (значение, которое `gen`/`masterspec-migrate` ставят, когда форма не задана
+планом), а не «молчаливый дефолт при пустом поле»: значение всегда выписывается явно. Пустое поле
+трактуется как недоопределённая форма, а не как дефолт.
 
 `criticality: high | medium | low` обязательна для `fn-*`, `tc-acc-*`, `tc-int-*`, `tc-flt-*`.
 Веса `5/3/1` используются детерминированным pre-gate: применимая OE-грань наследует вес функции,
@@ -456,16 +457,16 @@ path/to/file.kt:method()        # метод/функция
 
 #### 6.3.4. Спецификация API (внутренний / внешний)
 
-- **Имя файла:** `02-specifications/04-apis/{internal,external}/api-<slug>.md` (+ опц. машинный sidecar `api-<slug>.yaml`/`.json` рядом)
-- **Шаблон:** [`templates/tpl-api.md`](templates/tpl-api.md); для `.yaml`/`.json` — OpenAPI / AsyncAPI.
+- **Имя файла:** `02-specifications/04-apis/{internal,external}/api-<slug>.md` (+ опц. машинный sidecar `api-<slug>.<ext>` рядом, имя/формат по `sidecar`/`sidecar_format`)
+- **Шаблон:** [`templates/tpl-api.md`](templates/tpl-api.md); машинный сайдкар — OpenAPI/AsyncAPI и др. по природе контракта (`references/patterns/sidecar-formats.md`, список открыт: WSDL/protobuf/GraphQL/…).
 - **Содержание:** контракт (логические операции, вход/выход, ошибки, ограничения, SLA, идемпотентность) + **маппинги полей** (правила наполнения контракта: «поле ← источник», где источник — `api-`/`data-`/контекст приложения/константа; декларативно, не алгоритмом). Для внешнего участка `OE-DELIVERY` различает «принято внешней стороной» и «наблюдается конечным потребителем», фиксирует предпосылки, поздний/silent failure и reconciliation.
 - **Граница и безопасность:** атрибут `boundary` (`references/boundary-registry.md`) — `intra-factory` / `inter-factory` / `perimeter`, ортогонален `scope` (размещение). Задаёт ось применимости security-guardrails и глубину O5 (`intra→inter→perimeter`); конкретные нормы (OWASP/mTLS) — корпоративным пакетом, не kernel.
 - **Запрещено в .md-спецификации:** конкретные пути файлов, имена классов-обработчиков.
 
 #### 6.3.5. Схема данных
 
-- **Имя файла:** `02-specifications/05-data/data-<domain>.md` (+ опц. машинный sidecar `data-<domain>.yaml`/`.json` рядом)
-- **Шаблон:** [`templates/tpl-data-schema.md`](templates/tpl-data-schema.md); для `.yaml`/`.json` — JSON Schema.
+- **Имя файла:** `02-specifications/05-data/data-<domain>.md` (+ опц. машинный sidecar `data-<domain>.<ext>` рядом, имя/формат по `sidecar`/`sidecar_format`)
+- **Шаблон:** [`templates/tpl-data-schema.md`](templates/tpl-data-schema.md); машинный сайдкар — JSON Schema и др. (`references/patterns/sidecar-formats.md`, список открыт).
 - **Содержание:** логическая схема: сущности, атрибуты, связи, **состояния и переходы (матрица состояние×событие, без пустых ячеек; для каждого перехода — триггер + момент: lazy/scheduled/on-write)**, логические ограничения.
 - **Запрещено:** конкретные таблицы, СУБД-типы, ORM-классы, миграции (это — `dmap-`).
 
@@ -575,7 +576,7 @@ path/to/file.kt:method()        # метод/функция
 7. Если знание неполное — «Открытые вопросы» или `status: draft`.
 8. Диаграмма без текстового файла — недостаточный артефакт.
 9. Описание пригодно и для человека, и для агента.
-10. `.yaml`/`.json` для API и данных — это sidecar при обязательном `.md`-компаньоне; в индексе отражается компаньон `.md` с пометкой наличия sidecar (`+yaml`/`+json`), а не отдельная строка для машинного файла.
+10. Машинный сайдкар (api/data — `.yaml`/`.json`; scn/alg по нотации — `.bpmn`/`.dmn`/`.mmd`/…) существует при обязательном `.md`-компаньоне и объявляется полем `sidecar:`; в индексе отражается компаньон `.md` с пометкой наличия сайдкара (`+<ext>`), а не отдельная строка для машинного файла.
 11. Изменения отслеживаются через git.
 12. Codemap генерируется агентом, не правится вручную.
 13. **Минимальный объём.** Не дублируй содержимое между артефактами — ставь ссылку.
