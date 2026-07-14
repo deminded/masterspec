@@ -174,7 +174,7 @@ masterspec/
 - В `04-decisions/` лежат ADR.
 - Функции АС/ФП при большом количестве группируются по функциональным блокам в подпапках.
 - API разделены на `internal/` и `external/`.
-- Артефакт API и схемы данных ВСЕГДА имеет компаньон `.md` (он несёт masterspec-фронтматтер, семантику, связи; индексация/verify/мерж идут по нему). Структуру контракта несёт машинный сайдкар — он нормативен по структуре (`references/patterns/sidecar-formats.md §Нормативное владение`), рядом с `.md`-компаньоном (режим компаньона, `references/change-format.md §3.1`); его формат и имя объявлены полями `sidecar_format`/`sidecar` (api/data: OpenAPI/AsyncAPI/JSON Schema — `.yaml`/`.json`; `scn`/`alg` по нотации: `.bpmn`/`.dmn`/`.mmd`/… — `references/scenario-notation-registry.md`). Индексация, verify и мерж читают поле `sidecar:`, а не гадают по расширению; машинный файл доступен внешним процессам напрямую. Standalone сайдкар без компаньона не используется.
+- Артефакт API и схемы данных ВСЕГДА имеет компаньон `.md` (он несёт masterspec-фронтматтер, семантику, связи; индексация/verify/мерж идут по нему). Структуру контракта несёт машинный сайдкар — он ОБЯЗАТЕЛЕН для `api`/`data` и нормативен по структуре (`references/patterns/sidecar-formats.md §Нормативное владение`); лежит рядом с `.md`-компаньоном, формат и имя объявлены полями `sidecar_format`/`sidecar` (api/data: OpenAPI/AsyncAPI/JSON Schema — `.yaml`/`.json`; `scn`/`alg` по нотации: `.bpmn`/`.dmn`/`.mmd`/… — `references/scenario-notation-registry.md`). Индексация, verify и мерж читают поле `sidecar:`, а не гадают по расширению; машинный файл доступен внешним процессам напрямую. Standalone сайдкар без компаньона не используется.
 - Тест-кейсы: приёмочные — в слое требований (`tc-acc-`), интеграционные и каталоги отказов —
   в слое спецификаций (`tc-int-`, `tc-flt-`). Юнит-тесты не выделяются в артефакты.
 - Изменения (AS-IS / TO-BE / diff) отслеживаются средствами git.
@@ -457,7 +457,7 @@ path/to/file.kt:method()        # метод/функция
 
 #### 6.3.4. Спецификация API (внутренний / внешний)
 
-- **Имя файла:** `02-specifications/04-apis/{internal,external}/api-<slug>.md` (+ опц. машинный sidecar `api-<slug>.<ext>` рядом, имя/формат по `sidecar`/`sidecar_format`)
+- **Имя файла:** `02-specifications/04-apis/{internal,external}/api-<slug>.md` + ОБЯЗАТЕЛЬНЫЙ машинный sidecar `api-<slug>.<ext>` рядом (имя/формат по `sidecar`/`sidecar_format`; структура контракта живёт в нём, компаньон её не повторяет — F1-блокер при отсутствии)
 - **Шаблон:** [`templates/tpl-api.md`](templates/tpl-api.md); машинный сайдкар — OpenAPI/AsyncAPI и др. по природе контракта (`references/patterns/sidecar-formats.md`, список открыт: WSDL/protobuf/GraphQL/…).
 - **Содержание:** контракт (логические операции, вход/выход, ошибки, ограничения, SLA, идемпотентность) + **маппинги полей** (правила наполнения контракта: «поле ← источник», где источник — `api-`/`data-`/контекст приложения/константа; декларативно, не алгоритмом). Для внешнего участка `OE-DELIVERY` различает «принято внешней стороной» и «наблюдается конечным потребителем», фиксирует предпосылки, поздний/silent failure и reconciliation.
 - **Граница и безопасность:** атрибут `boundary` (`references/boundary-registry.md`) — `intra-factory` / `inter-factory` / `perimeter`, ортогонален `scope` (размещение). Задаёт ось применимости security-guardrails и глубину O5 (`intra→inter→perimeter`); конкретные нормы (OWASP/mTLS) — корпоративным пакетом, не kernel.
@@ -465,7 +465,7 @@ path/to/file.kt:method()        # метод/функция
 
 #### 6.3.5. Схема данных
 
-- **Имя файла:** `02-specifications/05-data/data-<domain>.md` (+ опц. машинный sidecar `data-<domain>.<ext>` рядом, имя/формат по `sidecar`/`sidecar_format`)
+- **Имя файла:** `02-specifications/05-data/data-<domain>.md` + ОБЯЗАТЕЛЬНЫЙ машинный sidecar `data-<domain>.<ext>` рядом (имя/формат по `sidecar`/`sidecar_format`; схема живёт в нём, компаньон её не повторяет — F1-блокер при отсутствии)
 - **Шаблон:** [`templates/tpl-data-schema.md`](templates/tpl-data-schema.md); машинный сайдкар — JSON Schema и др. (`references/patterns/sidecar-formats.md`, список открыт).
 - **Содержание:** логическая схема: сущности, атрибуты, связи, **состояния и переходы (матрица состояние×событие, без пустых ячеек; для каждого перехода — триггер + момент: lazy/scheduled/on-write)**, логические ограничения.
 - **Запрещено:** конкретные таблицы, СУБД-типы, ORM-классы, миграции (это — `dmap-`).
