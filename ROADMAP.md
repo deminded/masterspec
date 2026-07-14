@@ -28,8 +28,8 @@
 **Причина**: `fix-adr-frontmatter` — 10 ADR-файлов не имели YAML-фронтматтера. Ни `modify-bullet`, ни `replace-section`, ни `add-subsection` не покрывали кейс «дописать блок в самое начало файла».
 
 **Что добавлено**:
-- [masterspec-propose/references/change-format.md](masterspec-propose/references/change-format.md) §2.4 — описание типа + пример.
-- [masterspec-propose/references/change-format.md](masterspec-propose/references/change-format.md) §1 — строка в таблице выбора формата.
+- [masterspec/references/change-format.md](masterspec/references/change-format.md) §2.4 — описание типа + пример.
+- [masterspec/references/change-format.md](masterspec/references/change-format.md) §1 — строка в таблице выбора формата.
 - [masterspec-apply-change/references/merge-workflow.md](masterspec-apply-change/references/merge-workflow.md) §4.3 — алгоритм применения (проверка «нет ли уже фронтматтера» + prepend).
 - [masterspec-apply-change/references/merge-workflow.md](masterspec-apply-change/references/merge-workflow.md) §6.7 — обработка конфликта.
 
@@ -66,8 +66,8 @@
 - [masterspec/references/index-canonical.md](masterspec/references/index-canonical.md) — полная спецификация: таблицы секций §1.1–§1.4, порядок строк, формат, источник комментариев, шаблон итогового файла, алгоритм (псевдокод), граничные случаи, защита от потери данных.
 - [masterspec/SKILL.md](masterspec/SKILL.md) — режим §4.6 `reindex` в диспетчере, ссылка на `index-canonical.md` в справочных файлах, обновлён чек-лист §3 и правила §5.
 - [masterspec-apply-change/references/merge-workflow.md](masterspec-apply-change/references/merge-workflow.md) §8 — заменил ручной алгоритм на вызов `reindex`, обновил dry-run-пример в §3.
-- [masterspec-propose/references/change-format.md](masterspec-propose/references/change-format.md) §1 — новая строка в таблице: diff-блоки по `00-masterspec-index.md` запрещены (кроме §1/§7).
-- [masterspec-propose/templates/change.md](masterspec-propose/templates/change.md) §8 и [example-change.md](masterspec-propose/references/example-change.md) — обновлены чек-листы приёмки.
+- [masterspec/references/change-format.md](masterspec/references/change-format.md) §1 — новая строка в таблице: diff-блоки по `00-masterspec-index.md` запрещены (кроме §1/§7).
+- [masterspec/templates/tpl-change.md](masterspec/templates/tpl-change.md) §8 — обновлены чек-листы приёмки.
 
 **Побочный эффект**: нумерация разделов индекса стабилизирована — §4.9 всегда «Интеграционные тесты», §4.10 всегда «UI Views», безотносительно присутствия артефактов в конкретной фабрике.
 
@@ -132,7 +132,7 @@
 
 ### ✅ S6. Проверка уникальности slug — ЗАКРЫТО (прогон №7)
 
-**Решение**: [masterspec-propose/SKILL.md](masterspec-propose/SKILL.md) §8 шаг 1 — для каждого ADDED выполняется `Glob("masterspec/**/<slug>.md")` (исключая `masterspec/changes/`); при совпадении — блок + AskUserQuestion. Чек-лист [guardrails.md](masterspec-propose/references/guardrails.md) §4.2 обновлён.
+**Решение**: [masterspec-evolve/SKILL.md](masterspec-evolve/SKILL.md) §Метод шаг 4 — для каждого нового артефакта выполняется `Glob("masterspec/**/<slug>.md")` (исключая `masterspec/changes/`); при совпадении — блок + AskUserQuestion. (Норма заведена в `propose`; при его упразднении перенесена в `evolve`.)
 
 **Валидация на фабрике**: прогон №7 [`add-fn-manage-sprint`](../sprint-management/masterspec/changes/archive/2026-04-24-add-fn-manage-sprint/change.md) — в ходе interview предложен slug `fn-manage-release`; `Glob("**/fn-manage-release.md")` вернул `masterspec/01-requirements/02-functions/fn-manage-release.md` → защита сработала, предложена альтернатива, slug сменён на `fn-manage-sprint` (повторный Glob — пустой). Протокол коллизии зафиксирован в §1.5 change.md.
 
