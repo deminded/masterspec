@@ -3,6 +3,7 @@ type: scenario
 slug: scn-send-notification
 factory: oe-example
 status: draft
+notation: yaml-graph
 updated: 2026-07-13
 ---
 # Сценарий: отправить уведомление

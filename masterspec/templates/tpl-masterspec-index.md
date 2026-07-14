@@ -68,19 +68,19 @@ updated: YYYY-MM-DD
    · cap-<name> — <что делает>
 
 ### 4.2. Сценарии
- ? `02-specifications/02-scenarios/scn-<slug>.md` # <название сценария>
+ ? `02-specifications/02-scenarios/scn-<slug>.md` # <название сценария> (+опц. sidecar)
 
 ### 4.3. Алгоритмы
- ? `02-specifications/03-algorithms/alg-<slug>.md` # <название алгоритма>
+ ? `02-specifications/03-algorithms/alg-<slug>.md` # <название алгоритма> (+опц. sidecar)
 
 ### 4.4. Внутренние API
- ? `02-specifications/04-apis/internal/api-<slug>.md` # <назначение> (+опц. sidecar .yaml/.json)
+ ? `02-specifications/04-apis/internal/api-<slug>.md` # <назначение> (+опц. sidecar)
 
 ### 4.5. Внешние API
- ? `02-specifications/04-apis/external/api-<slug>.md` # <назначение> (+опц. sidecar .yaml/.json)
+ ? `02-specifications/04-apis/external/api-<slug>.md` # <назначение> (+опц. sidecar)
 
 ### 4.6. Схемы данных
- ? `02-specifications/05-data/data-<domain>.md` # <домен> (+опц. sidecar .yaml/.json)
+ ? `02-specifications/05-data/data-<domain>.md` # <домен> (+опц. sidecar)
 
 ### 4.7. Диаграммы
  ? `02-specifications/06-diagrams/cd-<slug>.md` # Компонентная диаграмма
