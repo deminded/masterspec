@@ -253,6 +253,11 @@ mailtg-bridge: lean-прогон свернул load-profile («single-user, bes
 - [ ] Фаза 5: guardrails-выбор нотаций per-project.
 - [ ] migrate scn/alg — скилл восстановлен под 3.0 (13.07: форма-переразложение, notation/form/DMN, развязка с migration.md); доводка на живой обкатке остаётся.
 - [ ] boundary-registry + security-guardrails api — kernel-часть сделана (13.07: реестр значений, атрибут `boundary` в каноне/tpl-api, селектор `applies_to.boundary`, глубина O5 по границе). Осталось: корпоративный security-пакет (OWASP/mTLS через `pack`) per-project + Spectral-рулсет (Фаза 3, :211).
+
+### Крупные доработки 3.0 из thorough review (Sol, 13.07) — отдельными тактами
+- [ ] **form-detector** (blocker ревью): verify/сертификация (`migration.md`, `apply-change`) не проверяют `notation`/`form` membership, парность/парсимость sidecar, открытые `MIGRATE-TODO` (verify ходит только по `.md` — TODO в машинных sidecar / `x-migrate-todo` невидимы). Форма-инвариант версии-оси пока декларативен. Нужен детерминированный детектор формы, встроенный в migrate + verify + сертификацию.
+- [ ] **lifecycle на универсальный `sidecar:`** (blocker ревью): `change-format`/`apply-change`/`index-canonical`/O0 работают по hardcoded `.yaml/.json` — новые sidecar-форматы (`.bpmn/.mmd/.puml/.dmn`) не копируются/мержатся/проверяются. Перевести обработку на значение `sidecar:` фронтматтера + определить нормативное владение фрагментами пары (для `bpmn` sidecar — единственный носитель).
+- [ ] **boundary кардинальность** (major ревью): `boundary` на всём `api`, хотя граница может различаться per-operation / call-edge (один api потребляется intra И через perimeter). Определить кардинальность (per-api / per-operation / на связи `scn→api`); при нескольких значениях — строгий профиль; отсутствие boundary сделать блокером, а не тихим дефолтом `intra-factory`.
 - [x] tc-flt: каталог отказных тест-кейсов в маршрутизации, derive/gen и O_T verify.
 - [ ] Артефакт ops/security-роли.
 - [ ] Достроить пилот полным 3-слойным примером.

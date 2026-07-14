@@ -24,6 +24,14 @@
 | `inter-factory` | Между фабриками внутри организации. | Service-to-service auth: mutual TLS / service-mesh identity. |
 | `perimeter` | Внешний контур — API вне организации. | OAuth2/mTLS, rate-limiting, полный OWASP API Security Top 10. |
 
+> **Протоколы в столбце «Профиль безопасности» — ИЛЛЮСТРАТИВНЫЙ пример** типового уровня строгости
+> для интуиции (mTLS, OAuth2, OWASP Top 10 — то, что ОБЫЧНО стоит за каждым уровнем), а не
+> нормативное правило kernel. Единственное, что задаёт kernel, — качественную ось применимости и
+> монотонность строгости `intra-factory → inter-factory → perimeter`. Конкретные протоколы, версии и
+> пороги для ДАННОГО проекта приходят security-guardrail-пакетом (`masterspec-pack`), не отсюда — это
+> единственное место, где такие протоколы вообще упоминаются (`tpl-api.md`, `patterns/verification-axes.md`
+> ссылаются сюда, а не повторяют перечень).
+
 ## Как boundary применяется — через guardrails, не зашитым правилом
 
 Профиль безопасности НЕ зашивается в kernel (по `patterns/guardrails.md`: корпоративные нормы —

@@ -200,7 +200,12 @@ updated: YYYY-MM-DD
 
 Артефакты слоя кодовой базы дополнительно содержат `generated: true`.
 
-Опциональные служебные поля фронтматтера: `provenance: docs:<…> | code:<path>[:line]` — источник восстановления, проставляется `recover` (для повторяемости и отличия восстановленного от знания «из головы»); `block:` — функциональный блок для `function`; `scope: internal | external` (размещение) — для `api`; `boundary:` — уровень границы вызова / security-профиль `api` (`references/boundary-registry.md`, ортогонален `scope`); `about:`/`decision-scope:` — для `dr-`; `notation:` — форма поведения `scn` (`references/scenario-notation-registry.md`, дефолт `yaml-graph`); `form:` — форма `alg` (`procedural` дефолт | `decision-table`); `sidecar_format:` + `sidecar:` — машинная проекция-пара для `api`/`data` и для `scn`/`alg`, когда нотация несёт машинный файл (`references/patterns/sidecar-formats.md`).
+Опциональные служебные поля фронтматтера: `provenance: docs:<…> | code:<path>[:line]` — источник восстановления, проставляется `recover` (для повторяемости и отличия восстановленного от знания «из головы»); `block:` — функциональный блок для `function`; `scope: internal | external` (размещение) — для `api`; `boundary:` — уровень границы вызова / security-профиль `api` (`references/boundary-registry.md`, ортогонален `scope`); `about:`/`decision-scope:` — для `dr-`; `notation:` — форма поведения `scn` (`references/scenario-notation-registry.md`, дефолт `yaml-graph`); `form:` — форма `alg` (`procedural` дефолт | `decision-table`); `sidecar_format:` + `sidecar:` — машинная проекция-пара для `api`/`data` и для `scn`/`alg`, когда нотация несёт машинный файл (`references/patterns/sidecar-formats.md`); `produced_by:` — какой скилл породил/переразложил артефакт (`migrate` / `recover` / `gen`), для аудита происхождения.
+
+`notation` и `form` опциональны: ОТСУТСТВИЕ поля = применён дефолт (`yaml-graph` / `procedural`
+соответственно) — валидное состояние, не блокер верификации. `masterspec-migrate` при
+форма-переразложении артефакта проставляет значение ЯВНО, но само по себе отсутствие поля до этого —
+не дефект и не повод понижать статус.
 
 `criticality: high | medium | low` обязательна для `fn-*`, `tc-acc-*`, `tc-int-*`, `tc-flt-*`.
 Веса `5/3/1` используются детерминированным pre-gate: применимая OE-грань наследует вес функции,
