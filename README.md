@@ -22,7 +22,7 @@
 | `masterspec` (kernel) | 👤 справочник | мета-модель + шаблоны + references |
 | `explore` | 👤→🤖 | разведка кодовой базы; траектория, изолированный фокус-набор, дозапрос |
 | `derive layer=req\|spec` | 👤 | породить слой (req: инфо→требования; spec: требования→спека). Оркестратор |
-| `verify scope=req\|spec\|change` | 🤖→👤 | вычитка по осям O1–O5 (+O0/O6/O7 для spec): статика + динамика + негатив |
+| `verify layer=req\|spec\|change` | 🤖→👤 | вычитка по осям O1–O5 (+O0/O6/O7 для spec): статика + динамика + негатив |
 | `gen type=<артефакт>` | 🤖 | сгенерировать 1 артефакт (узел-исполнение) |
 | `evolve entry=req\|rule\|ext` | 👤 | изменить фабрику (правка узла ИЛИ добавление): impact, scope-fence, немой вердикт/подъём, проверка-вверх |
 | `recover source=docs\|code` | 👤 | восстановить описание из документов или кода |
@@ -45,8 +45,8 @@
 
 Два потока с разной механикой карантина — не путать:
 
-- **Генерация с нуля (пишется ПРЯМО в дерево, ревью по git-diff):** (`explore` — если фабрика поверх существующего кода) → `derive layer=req` (черновики в `01-requirements/` со `status: draft`) → `verify scope=req` → human-gate (merge PR = перевод `draft → actual`) → `derive layer=spec` → `verify scope=spec` (codegen_ready) → human-gate → кодоген. **`apply-change` здесь НЕ участвует** — карантин это сам `status: draft`, согласование = смена статуса при merge.
-- **Точечное изменение (через `changes/`):** `evolve entry=…` (правки существующих артефактов = diff-блоки в `change.md §4`; НОВЫЕ артефакты — файлами в `changes/<name>/new/`) → `verify scope=change` → human-gate (merge PR) → `apply-change` (применяет diff-блоки и вливает `new/` в дерево, артефакты слоёв → `actual`, индекс перегенерирован).
+- **Генерация с нуля (пишется ПРЯМО в дерево, ревью по git-diff):** (`explore` — если фабрика поверх существующего кода) → `derive layer=req` (черновики в `01-requirements/` со `status: draft`) → `verify layer=req` → human-gate (merge PR = перевод `draft → actual`) → `derive layer=spec` → `verify layer=spec` (codegen_ready) → human-gate → кодоген. **`apply-change` здесь НЕ участвует** — карантин это сам `status: draft`, согласование = смена статуса при merge.
+- **Точечное изменение (через `changes/`):** `evolve entry=…` (правки существующих артефактов = diff-блоки в `change.md §4`; НОВЫЕ артефакты — файлами в `changes/<name>/new/`) → `verify layer=change` → human-gate (merge PR) → `apply-change` (применяет diff-блоки и вливает `new/` в дерево, артефакты слоёв → `actual`, индекс перегенерирован).
 - **Восстановление:** `recover source=docs|code` → `verify` → доведение через `derive`/`evolve`.
 - **Hard-gate (общий для обоих потоков):** согласование — всегда merge PR человеком, агент свой PR не мержит. `actual` наступает ТОЛЬКО после этого merge, но ставит его разный актор: в потоке ГЕНЕРАЦИИ — человек сменой статуса (apply-change не участвует); в потоке ИЗМЕНЕНИЯ — `apply-change` при вливании уже согласованного change. Агент сам, без предшествующего merge, `actual` не ставит никогда.
 

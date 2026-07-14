@@ -87,7 +87,7 @@ codegen_ready этот риск должен быть закрыт production-li
 ## Hard gates и set-diff
 
 Канонический pre-gate:
-`python3 <masterspec-kernel-skill-dir>/scripts/check-operational-envelope.py <factory-root> --scope req|spec|code`.
+`python3 <masterspec-kernel-skill-dir>/scripts/check-operational-envelope.py <factory-root> --layer req|spec|code`.
 Если Python недоступен, выполняются те же множества вручную:
 
 - req/O1: для external-I/O `fn-` ожидаются восемь ID и четыре поля на грань; для internal-only —

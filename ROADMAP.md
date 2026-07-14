@@ -179,8 +179,8 @@
 
 ## Ветка rewrite (2026-06-24): переписывание под строгую мультиагентную логику
 Принцип: kernel→справочник, операции→скиллы-глаголы, паттерны→references. Итеративно вертикальными срезами.
-- [x] Срез 1 — генерация требований: kernel-справочник, `derive layer=req`, `verify scope=req`, `gen`, паттерны (decision-node/element-workflow/enforcement/verification-axes), «состояния» в meta_model.
-- [ ] Срез 2 — `derive layer=spec` + `verify scope=spec` (O0 single-source, O6 контракт, O7 физмодель), приёмщик-консолидатор.
+- [x] Срез 1 — генерация требований: kernel-справочник, `derive layer=req`, `verify layer=req`, `gen`, паттерны (decision-node/element-workflow/enforcement/verification-axes), «состояния» в meta_model.
+- [ ] Срез 2 — `derive layer=spec` + `verify layer=spec` (O0 single-source, O6 контракт, O7 физмодель), приёмщик-консолидатор.
 - [ ] Срез 3 — `evolve entry=req|rule|ext` (impact, scope-fence, немой вердикт/подъём).
 - [ ] `recover source=docs|code` (слияние режимов recover/codemap/reverse).
 - [ ] Доработка `explore` (траектория, изоляция, дозапрос).
@@ -188,8 +188,8 @@
 - [ ] Примеры использования (reference) под новую логику — добавить по мере реализации срезов (старые примеры под режимы удалены как устаревшие).
 
 ### Статус ветки rewrite (обновлено)
-- [x] Срез 1 — генерация требований (kernel-справочник, derive layer=req, verify scope=req, gen, паттерны).
-- [x] Срез 2 — спецификации (derive layer=spec, verify scope=spec O0/O6/O7; шаблоны: контракт обе стороны, матрица состояний data).
+- [x] Срез 1 — генерация требований (kernel-справочник, derive layer=req, verify layer=req, gen, паттерны).
+- [x] Срез 2 — спецификации (derive layer=spec, verify layer=spec O0/O6/O7; шаблоны: контракт обе стороны, матрица состояний data).
 - [x] decision records (adr/dr) + дисциплина в скиллах.
 - [x] Детализация генерации типов (требования + спеки).
 - [x] `evolve` (entry=req|rule|ext).

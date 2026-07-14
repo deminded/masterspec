@@ -163,7 +163,7 @@ decision-table), иначе вычитка человеком неуправля
 Результат migrate для `actual`-артефактов — всегда `status: draft` (downgrade обязателен). Нельзя
 сразу ставить `actual`:
 - MIGRATE-TODO могут быть критическими (provenance, тип поля, notation, участник, hit policy).
-- `verify scope=spec` завалит артефакт с открытыми MIGRATE-TODO: незаполненный обязательный раздел
+- `verify layer=spec` завалит артефакт с открытыми MIGRATE-TODO: незаполненный обязательный раздел
   формы — блокер **O1** (напр. пустая Hit policy для `decision-table`, отсутствующая секция «Участники»
   для диаграммной нотации); неразрешённая ссылка `-> cmp/cap` — **O2**; неполнота ветвлений/комбинаций
   — **O4a**.
@@ -172,7 +172,7 @@ decision-table), иначе вычитка человеком неуправля
 всегда draft» относится к downgrade `actual`-артефактов, не к уже-`deprecated`).
 
 После migrate — передать владельцу migration-report; владелец закрывает MIGRATE-TODO, применяет
-`masterspec-verify scope=spec`, затем (когда фабрика целиком зелёная) сертификация штампует
+`masterspec-verify layer=spec`, затем (когда фабрика целиком зелёная) сертификация штампует
 `meta_model_version` — не migrate.
 
 ---
@@ -184,4 +184,4 @@ decision-table), иначе вычитка человеком неуправля
   Для scn/alg машинный файл migrate не создаёт (`bpmn`-сайдкар не порождается).
 - `migration-report.md` с перечнем MIGRATE-TODO.
 
-После migrate — вычитка `masterspec-verify scope=spec`.
+После migrate — вычитка `masterspec-verify layer=spec`.

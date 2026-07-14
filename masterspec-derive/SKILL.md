@@ -92,12 +92,12 @@ Route-скилл: бизнес-запрос/требования → слой а
 3. **На каждый элемент — узел.** Оцени decision-worthiness (`patterns/decision-node.md`): есть реальная развилка (модель данных, набор сущностей, для spec — форма контракта/алгоритм) → **узел-РЕШЕНИЕ** (2-3 варианта → выбор → запись `adr-`/`dr-`). Нет → **узел-ИСПОЛНЕНИЕ** (`patterns/element-workflow.md`): планировщик → `gen type=<элемент>` (изолир. фокус-набор; в `lean` — с `from`+`target_path`+`target_mode`) → приёмщик.
 4. **Параллельность.** pass=parallel: независимые элементы (несколько fn) — батч `gen`-субагентов; приёмщик сводит редакции. pass=linear: по одному.
 5. **Дозапрос.** gen не хватило фокус-набора — явный запрос «не хватает X», по единому маршруту (`patterns/context-isolation.md §Дозапрос`): нужен факт из КОДА → `explore`; нужен срез ДОКУМЕНТА/артефакта (в lean) → `planner` дописывает `.focus`; нет ни там, ни там → открытый вопрос человеку. ≤2 раунда, потом человек. Не выдумывать.
-6. **Вычитка.** `verify scope=<layer>` (preset по `verify=`). До LLM-осей выполнить OE set-diff
-   командой `python3 <masterspec-kernel-skill-dir>/scripts/check-operational-envelope.py <factory-root> --scope req|spec`
+6. **Вычитка.** `verify layer=<layer>` (preset по `verify=`). До LLM-осей выполнить OE set-diff
+   командой `python3 <masterspec-kernel-skill-dir>/scripts/check-operational-envelope.py <factory-root> --layer req|spec`
    (без Python — вручную по `operational-envelope.md §Hard gates`): восемь граней на каждый external-I/O fn либо одна строка internal-only; APPLICABLE→AC/tc-acc; для spec
    APPLICABLE→union scn, OE-LOAD→lp, внешний OE-DELIVERY→external api/context, каталоги отказов
    по O_T1–O_T6. Негатив-ось (O5) —
-   отдельным проверяющим. Критерий: scope=req → spec_ready; scope=spec → codegen_ready
+   отдельным проверяющим. Критерий: layer=req → spec_ready; layer=spec → codegen_ready
    (`patterns/verification-axes.md`).
 7. **route-run.** `route-run-<ts>.md` (шаблон `../masterspec/templates/tpl-route-run.md`; в корне фабрики при генерации с нуля): вход · pass · по элементам (дозапросы/оси/итерации) · метрики, включая OE expected/applicable/N/A/open/uncovered · открытые вопросы · кто принял.
 8. **Индекс.** После генерации слоя перестрой `00-masterspec-index.md` полной перегенерацией по `../masterspec/references/index-canonical.md` — чтобы он отражал созданные артефакты (§3–§6 по реальным файлам, §1/§7 сохраняются дословно).

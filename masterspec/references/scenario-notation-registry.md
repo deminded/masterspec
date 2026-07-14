@@ -47,7 +47,7 @@
 
 Membership `notation` (по этому реестру), парность и парсимость сайдкара по объявленному
 `sidecar_format`, отсутствие открытых `MIGRATE-TODO` в компаньоне и сайдкаре проверяются
-детерминированно детектором формы (`../scripts/check-operational-envelope.py --scope spec`, оси F1–F3 в
+детерминированно детектором формы (`../scripts/check-operational-envelope.py --layer spec`, оси F1–F3 в
 `patterns/verification-axes.md §O1`) — не на глаз. Резолвинг `api` по нотации (не по «шаг N») — O_T4.
 
 ## Семантический инвариант — поверх ЛЮБОЙ нотации

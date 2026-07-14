@@ -136,7 +136,7 @@ find . -type f \( -name "*.java" -o -name "*.kt" -o -name "*.py" -o -name "*.go"
 | Спецификации | `cmp-*` | `components[]` (responsibility, boundaries), `capabilities[]` (component, name, contract) |
 | Спецификации | `scn-*` | `scenarios[]` (trigger, components_chain, happy_path, alternatives) |
 | Спецификации | `alg-*` | `algorithms[]` (steps, branches, decision_rules) |
-| Спецификации | `api-*` | `apis[]` (scope=internal/external, method, path, request, response, errors, sla) |
+| Спецификации | `api-*` | `apis[]` (layer=internal/external, method, path, request, response, errors, sla) |
 | Спецификации | `data-*` | `data_schemas[]` (logical entities, fields, constraints) |
 | Кодовая база | `repo-map` | `repo_entries[]` (root_path, stack, modules) |
 | Кодовая база | `cmap-*` | `component_maps[]` (component_slug → file:line/symbol) |
