@@ -1,0 +1,46 @@
+asyncapi: 2.6.0
+info:
+  title: Канал уведомлений
+  version: 1.0.0
+  description: Внешний канал доставки уведомлений абоненту. Структура контракта — здесь; семантика, ограничения и связи — в компаньоне api-notification-channel.md.
+channels:
+  notifications/outbound:
+    description: Публикация уведомления во внешний канал доставки.
+    publish:
+      operationId: publishNotification
+      message:
+        name: NotificationOut
+        payload:
+          type: object
+          required: [notificationId, recipient, body]
+          properties:
+            notificationId:
+              type: string
+              format: uuid
+            recipient:
+              type: string
+              description: Логический адрес получателя в терминах канала.
+            body:
+              type: string
+            sentAt:
+              type: string
+              format: date-time
+  notifications/receipts:
+    description: Приём подтверждений доставки от канала.
+    subscribe:
+      operationId: consumeDeliveryReceipt
+      message:
+        name: DeliveryReceipt
+        payload:
+          type: object
+          required: [notificationId, status]
+          properties:
+            notificationId:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum: [accepted, delivered, failed]
+            observedAt:
+              type: string
+              format: date-time

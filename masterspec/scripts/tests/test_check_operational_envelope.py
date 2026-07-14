@@ -390,6 +390,72 @@ class FormDetectorTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             self.assertTrue(any("does not parse" in e for e in self._sc(d, "x.txt", "<a><b></a>", "xml")))
 
+    # ---- schema-first (2026-07-14): семантический минимум, type-aware F1, contract_origin ----
+    def test_sidecar_valid_yaml_but_not_openapi_is_blocker(self) -> None:
+        # Парсимости мало: «foo: bar» — валидный YAML, но не OpenAPI. Пустышка не должна зеленеть.
+        with tempfile.TemporaryDirectory() as d:
+            errors = self._sc(d, "x.openapi.yaml", "foo: bar\n", "openapi-3.1")
+            self.assertTrue(any("missing root keys" in e for e in errors), errors)
+
+    def test_sidecar_valid_openapi_minimum_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            body = "openapi: 3.1.0\ninfo:\n  title: t\n  version: '1'\npaths: {}\n"
+            self.assertEqual([], self._sc(d, "x.openapi.yaml", body, "openapi-3.1"))
+
+    def test_sidecar_empty_json_object_is_not_a_schema(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            errors = self._sc(d, "x.schema.json", "{}", "json-schema-2020-12")
+            self.assertTrue(any("not a schema" in e for e in errors), errors)
+
+    def test_local_dr_beside_contract_is_not_required_to_have_sidecar(self) -> None:
+        # Регресс schema-first: F1 «no sidecar» должен бить по контрактам, а не по любому .md
+        # в каталоге контрактов. Локальный dr- рядом с api — канон (meta_model §6.1.2).
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            apis = root / "02-specifications" / "04-apis" / "external"
+            apis.mkdir(parents=True)
+            (apis / "dr-retry.md").write_text(
+                "---\ntype: dr\nslug: dr-retry\nfactory: f\nstatus: accepted\n"
+                "updated: 2026-07-14\nabout: api-x\n---\n# DR\n",
+                encoding="utf-8",
+            )
+            errors = CHECKER.validate_forms(root)
+            self.assertFalse(any("has no sidecar" in e for e in errors), errors)
+
+    def test_api_without_contract_origin_is_blocker(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            apis = root / "02-specifications" / "04-apis" / "external"
+            apis.mkdir(parents=True)
+            (apis / "api-x.openapi.yaml").write_text(
+                "openapi: 3.1.0\ninfo:\n  title: t\n  version: '1'\npaths: {}\n", encoding="utf-8"
+            )
+            (apis / "api-x.md").write_text(
+                "---\ntype: api\nslug: api-x\nscope: external\nfactory: f\nstatus: draft\n"
+                "updated: 2026-07-14\nsidecar_format: openapi-3.1\nsidecar: api-x.openapi.yaml\n---\n# API\n",
+                encoding="utf-8",
+            )
+            errors = CHECKER.validate_forms(root)
+            self.assertTrue(any("no contract_origin" in e for e in errors), errors)
+
+    def test_imported_without_contract_source_is_blocker(self) -> None:
+        # imported без {uri, revision, sha256}: «as-is» невоспроизводим, ре-импорт неотличим от подмены.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            apis = root / "02-specifications" / "04-apis" / "external"
+            apis.mkdir(parents=True)
+            (apis / "api-x.openapi.yaml").write_text(
+                "openapi: 3.1.0\ninfo:\n  title: t\n  version: '1'\npaths: {}\n", encoding="utf-8"
+            )
+            (apis / "api-x.md").write_text(
+                "---\ntype: api\nslug: api-x\nscope: external\nfactory: f\nstatus: draft\n"
+                "updated: 2026-07-14\nsidecar_format: openapi-3.1\nsidecar: api-x.openapi.yaml\n"
+                "contract_origin: imported\n---\n# API\n",
+                encoding="utf-8",
+            )
+            errors = CHECKER.validate_forms(root)
+            self.assertTrue(any("contract_source" in e for e in errors), errors)
+
     def test_sidecar_non_utf8_is_blocker(self) -> None:
         # #3b (round 3): бинарный/не-UTF-8 сайдкар — диагностический F2, а не падение всего gate.
         with tempfile.TemporaryDirectory() as d:

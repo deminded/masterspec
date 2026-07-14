@@ -32,6 +32,9 @@ allowed-tools:
 - **`factory=`** — путь к фабрике/репо со SSoT (по умолчанию — текущая).
 
 ## Шаги
+
+**Гейт расхождений (перед всем остальным).** Если в фабрике есть `recover/_reconciliation.yaml` — неразрешённые `spec-drift` / `declared-not-implemented` / `ambiguous_matches[]` блокируют приём слоя. Принять слой, в котором документы и код говорят разное, а разница не разобрана, — значит узаконить обе правды сразу. Разрешение — решение владельца (какое значение верно), не accept.
+
 1. **Гейт остатка (детерминированно, не на глаз).**
    - Прогнать form-detector: `../masterspec/scripts/check-operational-envelope.py <factory> --layer
      <layer>` → OPEN-грани, form-TODO (`MIGRATE-TODO`/`x-migrate-todo`), дыры O_T, непройденные оси.

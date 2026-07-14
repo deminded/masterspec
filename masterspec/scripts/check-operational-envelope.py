@@ -644,16 +644,61 @@ def resolve_sidecar(companion: Path, declared: str) -> tuple[Path | None, list[s
     return real, []
 
 
+# Семантический минимум по формату: корневые ключи, без которых документ не является тем, чем объявлен.
+# Полная валидация схемы — вне детектора; задача здесь — не пропустить пустышку («foo: bar» как OpenAPI).
+SIDECAR_REQUIRED_KEYS: dict[str, tuple[str, ...]] = {
+    "openapi": ("openapi", "paths"),
+    "asyncapi": ("asyncapi", "channels"),
+    "json-schema": ("$schema", "type", "properties", "$defs", "definitions"),  # достаточно ОДНОГО из
+}
+
+
+def semantic_minimum(sidecar: Path, doc: object, fmt: str) -> list[str]:
+    """Объявленный формат обязывает: документ обязан нести признаки этого формата, а не быть любым YAML/JSON."""
+    for prefix, keys in SIDECAR_REQUIRED_KEYS.items():
+        if not fmt.startswith(prefix):
+            continue
+        if not isinstance(doc, dict):
+            return [f"{sidecar}: declared {fmt} but document is not a mapping (F2)"]
+        if prefix == "json-schema":
+            if not any(key in doc for key in keys):
+                return [f"{sidecar}: declared {fmt} but has none of {list(keys)} — not a schema (F2)"]
+        else:
+            missing = [key for key in keys if key not in doc]
+            if missing:
+                return [f"{sidecar}: declared {fmt} but missing root keys {missing} — not a valid {prefix} document (F2)"]
+    return []
+
+
+def check_contract_origin(path: Path, text: str) -> list[str]:
+    """contract_origin/contract_source: владение контрактом объявляется явно и воспроизводимо."""
+    origin = fm(text, "contract_origin")
+    if not origin:
+        return [f"{path}: api/data has no contract_origin (authored|imported) — ownership undeclared (F1)"]
+    if origin not in ("authored", "imported"):
+        return [f"{path}: contract_origin {origin!r} must be authored|imported (F1)"]
+    if origin == "imported":
+        raw = frontmatter_map(text).get("contract_source")
+        if not isinstance(raw, dict) or not all(k in raw for k in ("uri", "revision", "sha256")):
+            return [
+                f"{path}: contract_origin: imported requires contract_source {{uri, revision, sha256}} — "
+                f"без ревизии и дайджеста «as-is» невоспроизводим, а ре-импорт неотличим от подмены (F1)"
+            ]
+    return []
+
+
 def parse_sidecar(sidecar: Path, raw: str, sidecar_format: str) -> list[str]:
-    """Парсимость СТРОГО по объявленному sidecar_format; расширение — лишь фолбэк при пустом формате."""
+    """Парсимость СТРОГО по объявленному sidecar_format + семантический минимум формата."""
     fmt = sidecar_format.strip().lower()
     ext = sidecar.suffix.lower()
     try:
         if fmt.startswith(("openapi", "asyncapi")) or fmt in ("yaml", "yml") or (not fmt and ext in (".yaml", ".yml")):
-            if yaml.safe_load(raw) is None:
+            doc = yaml.safe_load(raw)
+            if doc is None:
                 return [f"{sidecar}: sidecar parses to empty YAML (F2)"]
+            return semantic_minimum(sidecar, doc, fmt)
         elif "json-schema" in fmt or fmt == "json" or (not fmt and ext == ".json"):
-            json.loads(raw)
+            return semantic_minimum(sidecar, json.loads(raw), fmt)
         elif fmt.startswith(("bpmn", "dmn", "wsdl")) or fmt == "xml" or (not fmt and ext in (".bpmn", ".dmn", ".xml", ".wsdl")):
             minidom.parseString(raw)
         # прочие объявленные форматы (mermaid/plantuml/protobuf/graphql/avro/…): встроенного валидатора
@@ -788,7 +833,22 @@ def validate_forms(root: Path) -> list[str]:
             if fm_err:
                 errors.append(f"{path}: unreadable frontmatter — {fm_err} (F1)")
                 continue
-            sidecar_common(path, text)
+            kind = artifact_type(text)
+            # В каталогах контрактов легитимно живут и другие типы (локальный dr- рядом с артефактом,
+            # которого касается решение). Требование сайдкара относится ТОЛЬКО к самим контрактам.
+            if kind not in ("api", "data-schema", "data"):
+                continue
+            sidecar = sidecar_common(path, text)
+            # schema-first: структуру контракта несёт САЙДКАР (patterns/sidecar-formats.md).
+            # Компаньон без сайдкара = контракт без нормативного носителя: либо структура осталась
+            # прозой в .md (вторая редакция, O0), либо её нет вовсе. И то, и другое — блокер.
+            if not sidecar:
+                errors.append(
+                    f"{path}: api/data has no sidecar — contract structure has no normative carrier "
+                    f"(schema-first, F1). Формат под транспорт не определён? Это белое пятно к владельцу, "
+                    f"а не повод описать контракт прозой"
+                )
+            errors.extend(check_contract_origin(path, text))
 
     # Обратная сторона: любой не-.md рядом в слое спеки, не объявленный ни одним компаньоном — сирота.
     # Сравнение по РАЗРЕШЁННОМУ пути (declared хранит resolved), иначе symlink/относительность разойдутся.

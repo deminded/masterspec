@@ -7,7 +7,7 @@ criticality: medium
 coverage: dependent-pairs
 derived_from_scenario: -> scn-send-notification
 derived_from_apis: [-> api-notification-channel]
-updated: 2026-07-13
+updated: 2026-07-14
 ---
 # Каталог отказов: отправка уведомления
 
