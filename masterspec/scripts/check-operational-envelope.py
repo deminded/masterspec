@@ -788,7 +788,16 @@ def validate_forms(root: Path) -> list[str]:
             if fm_err:
                 errors.append(f"{path}: unreadable frontmatter — {fm_err} (F1)")
                 continue
-            sidecar_common(path, text)
+            sidecar = sidecar_common(path, text)
+            # schema-first: структуру контракта несёт САЙДКАР (patterns/sidecar-formats.md).
+            # Компаньон без сайдкара = контракт без нормативного носителя: либо структура осталась
+            # прозой в .md (вторая редакция, O0), либо её нет вовсе. И то, и другое — блокер.
+            if not sidecar:
+                errors.append(
+                    f"{path}: api/data has no sidecar — contract structure has no normative carrier "
+                    f"(schema-first, F1). Формат под транспорт не определён? Это белое пятно к владельцу, "
+                    f"а не повод описать контракт прозой"
+                )
 
     # Обратная сторона: любой не-.md рядом в слое спеки, не объявленный ни одним компаньоном — сирота.
     # Сравнение по РАЗРЕШЁННОМУ пути (declared хранит resolved), иначе symlink/относительность разойдутся.
