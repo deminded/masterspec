@@ -319,13 +319,13 @@ mailtg-bridge: lean-прогон свернул load-profile («single-user, bes
 #### Выкинуто из v1 (по ревью)
 graphify-mcp (CLI/JSON адаптера достаточно); блокирующий полный инвентарь кода; «мелочи ssot-tools» — это generation-loop, отдельным дизайном (inline-TBD уже O1-блокер; «файл на диске = успех» противоречит нашим gates); безусловный приоритет graphify над Serena.
 
-#### Такты (после согласования блоков)
-- [ ] (0) graph adapter contract + манифест + матрица off/auto/on + негативные/parity-тесты
-- [ ] (в) codemap hint — вертикальный пилот на mailtg-bridge
-- [ ] (а-2a) locator v2: норма + грамматика + check-code-locator (dual-read)
-- [ ] (а-2b) locator v2: writers + migration-класс для существующих фабрик
-- [ ] (б) domain sharding в explore (graph-domains.py + graph-domain-math.md + domains.json)
-- [ ] coverage gate (expected-set сверху вниз + ось O_C1)
-- [ ] (г) masterspec-sync отдельной спекой (4 стадии, пилот с acceptance-метриками)
+#### Такты (нарезка согласована 16.07, tg-7352; DoD у каждого)
+- [ ] **(0) adapter**: `masterspec/scripts/graph-adapter.py` (5 операций, JSON stdout, exit 0/2/3, наружу локаторы v2 вместо id) + `masterspec/scripts/graph-build.sh` (строит граф per root, пишет манифест) + фикстуры и негативные тесты (7 сценариев отклонений × auto/on) зелёные + parity-оракул (а) на фикстуре.
+- [ ] **(в) codemap hint**: правка `masterspec-explore/references/code-analysis-priority.md` (discovery через adapter neighbors при наличии графа) + пилот на mailtg-bridge: cmap/trace с подсказкой, verify зелёный, замер стоимости on/off.
+- [ ] **(а-2a) locator v2, норма+чекер**: правка meta_model §2.3/§4.1/§4.3 (v2 + dual-read окно) + `masterspec/scripts/check-code-locator.py` + тесты грамматики + негативный тест «примеры нормы проходят чекер» (расхождение код↔дока).
+- [ ] **(а-2b) locator v2, writers+миграция**: правки писателей и tpl-шаблонов на v2; флаг деприкации v1 = BLOCKER в чекере; migration-класс в migration.md (дельта = отчёт чекера); прогон на mailtg-bridge (codemap регенерацией, provenance через draft).
+- [ ] **(б) domain sharding**: `masterspec/scripts/graph-domains.py` + `references/graph-domain-math.md` (single source) + негативный тест код↔дока по дефолтам + правка research-orchestration §3 (шардирование среза по domains.json) + parity-оракул (б); прогон на site и mailtg-bridge.
+- [ ] **coverage gate + O_C1**: `masterspec/scripts/check-codemap-coverage.py` (три множества, set-diff, ненулевой exit при дырах; предикат O_C1 по verified_revision) + нормативная правка verification-axes (layer=code, ось O_C1) + verified_revision в tpl-фронтматтер codemap.
+- [ ] **(г) sync**: спека скилла masterspec-sync (4 стадии) + `sync-candidates.py` (стадия 1 с источниками locator|blast-graph|blast-grep) + пилот на mailtg-bridge с acceptance-метриками (recall/FP по ручной разметке; доля черновиков сквозь verify; git-status инвариант; parity ядра bit-for-bit).
 
 Что НЕ делаем: SSOT-конвейер коллег целиком (наша 3-слойность с гейтами сильнее их 4-файлов-на-BF), обязательную зависимость, коммит graph.json, их код as-is.
