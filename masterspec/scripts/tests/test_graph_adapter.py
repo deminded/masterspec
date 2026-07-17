@@ -870,7 +870,9 @@ def test_locator_invalid_flag_for_ungrammatical_label(tmp_path: Path) -> None:
     nodes_out = {n["locator"]: n for n in json.loads(result.stdout)["data"]["nodes"]}
     assert nodes_out["m.py#Cls"].get("locator_invalid") is not True
     assert nodes_out["m.py#.go()"]["locator_invalid"] is True
-    assert "locator failed grammar validation" in result.stderr
+    # Aggregate diagnostic (one line with count + examples), not per-node — 1446 per-node lines on
+    # the first live mailtg run made the stderr stream unreadable.
+    assert "locator(s) failed grammar validation" in result.stderr
 
 
 # --- M8: strict manifest schema — presence AND type, not just schema_version equality ------------
@@ -993,6 +995,55 @@ def test_dangling_edge_endpoint_is_tolerated_not_a_deviation(tmp_path: Path) -> 
     assert neighbors_result.returncode == 0
     assert json.loads(neighbors_result.stdout)["data"]["neighbors"] == []
     assert "unresolved endpoint" in neighbors_result.stderr
+
+
+def test_node_without_source_file_is_native_not_a_deviation(tmp_path: Path) -> None:
+    # Live graphify 0.9.17 materializes external symbols (builtins/stdlib: str, Path, Exception)
+    # as nodes WITHOUT source_file — found on the first real mailtg-bridge run (17 of 1991 nodes).
+    # Schema-rejecting them would fallback on every real Python codebase; they are unlocatable,
+    # so they must be skipped from output (like dangling endpoints), never poison the whole graph.
+    root = tmp_path / "extsymrepo"
+    commit = init_repo(root)
+    nodes = [
+        {"id": "a", "label": "", "source_file": "a.py", "file_type": "code"},
+        {"id": "ext_str", "label": "str", "file_type": "code"},  # no source_file — external symbol
+    ]
+    links = [
+        {"source": "a", "target": "ext_str", "relation": "references", "confidence": "EXTRACTED", "weight": 1.0},
+    ]
+    graph_path = write_pair(root, commit, nodes, links)
+
+    check_result = run_adapter("check", "--graph", str(graph_path))
+    assert check_result.returncode == 0
+    assert json.loads(check_result.stdout)["status"] == "ok"
+
+    # The external-symbol node never reaches output (no locator can exist for it), and the skip
+    # is visible on stderr as an info diagnostic, not silent.
+    neighbors_result = run_adapter("neighbors", "--of", "a.py", "--graph", str(graph_path))
+    assert neighbors_result.returncode == 0
+    assert json.loads(neighbors_result.stdout)["data"]["neighbors"] == []
+    assert "unlocatable" in neighbors_result.stderr or "without source_file" in neighbors_result.stderr
+
+
+def test_neighbors_of_isolated_node_returns_empty_ok(tmp_path: Path) -> None:
+    # Regression: a node with NO edges at all is absent from the BFS adjacency map, and the old
+    # `adjacency.get(key, ())` default made `() - visited` a TypeError — caught live on
+    # mailtg-bridge (mail_in.py had zero graph edges), never by fixtures where every origin had
+    # neighbors. The contract answer is an empty result with exit 0, not an internal error.
+    root = tmp_path / "isolrepo"
+    commit = init_repo(root)
+    nodes = [
+        {"id": "a", "label": "", "source_file": "a.py", "file_type": "code"},
+        {"id": "b", "label": "", "source_file": "b.py", "file_type": "code"},
+    ]
+    links: list[dict] = []
+    graph_path = write_pair(root, commit, nodes, links)
+
+    result = run_adapter("neighbors", "--of", "a.py", "--graph", str(graph_path))
+    assert result.returncode == 0
+    payload = json.loads(result.stdout)
+    assert payload["status"] == "ok"
+    assert payload["data"]["neighbors"] == []
 
 
 # --- graph-build.sh --------------------------------------------------------------------------

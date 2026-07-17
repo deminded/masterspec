@@ -56,7 +56,11 @@ INFERRED_CLASSES = frozenset(
     }
 )
 
-REQUIRED_NODE_FIELDS = ("id", "source_file", "file_type")
+# source_file is NOT required: live graphify 0.9.17 materializes external symbols (builtins,
+# stdlib types like `str`/`Path`/`Exception`) as nodes WITHOUT source_file — same native shape as
+# dangling edges. Such nodes are unlocatable (no v2 locator can exist), so ops skip them from
+# output with an info diagnostic instead of treating the whole graph as schema-corrupt.
+REQUIRED_NODE_FIELDS = ("id", "file_type")
 REQUIRED_LINK_FIELDS = ("source", "target", "relation")
 
 # Deviation kinds that --allow-stale/--allow-dirty/--allow-partial may override in mode=on.
@@ -400,28 +404,54 @@ def prepare_sources(sources: list[Source]) -> dict[Key, dict]:
     collision between two --graph pairs can never merge them (B3). Ops read through this map
     instead of re-deriving locators ad hoc at each call site."""
     by_key: dict[Key, dict] = {}
+    unlocatable = 0
+    invalid_examples: list[str] = []
     for idx, source in enumerate(sources):
         own_roots = sorted({os.path.realpath(r) for r in (source.manifest_data or {}).get("roots") or []})
         for node in (source.graph_data or {}).get("nodes", []):
             node_id = node.get("id")
             if node_id is None:
                 continue
+            if not node.get("source_file"):
+                # External-symbol node (see REQUIRED_NODE_FIELDS) — no file means no locator, so it
+                # can never be emitted; edges pointing at it degrade like dangling endpoints.
+                unlocatable += 1
+                continue
             path, external = normalize_source_file(node.get("source_file", ""), own_roots)
             label = node.get("label") or ""
-            invalid = not locator_path_valid(path) or (bool(label) and not locator_symbol_valid(label))
+            # The v2 symbol grammar describes CODE symbols; graphify also parses md/json/yaml,
+            # whose labels ($schema, section titles, dotted keys) legitimately fail it. Flagging
+            # those produced 1446 warning lines on the first live run (mailtg-bridge) — pure noise.
+            # Grammar is enforced for code nodes only; non-code labels pass through unvalidated.
+            is_code = node.get("file_type") == "code"
+            invalid = not locator_path_valid(path) or (is_code and bool(label) and not locator_symbol_valid(label))
             if invalid:
-                log(
-                    {
-                        "level": "warning",
-                        "kind": "locator_invalid",
-                        "message": f"locator failed grammar validation, kept but flagged: path={path!r} symbol={label!r}",
-                    }
-                )
+                invalid_examples.append(f"path={path!r} symbol={label!r}")
             prepared = dict(node)
             prepared["_locator_path"] = path
             prepared["_external"] = external
             prepared["_locator_invalid"] = invalid
             by_key[(idx, node_id)] = prepared
+    if unlocatable:
+        log(
+            {
+                "level": "info",
+                "kind": "unlocatable_nodes",
+                "message": f"{unlocatable} node(s) without source_file skipped (external symbols — native graphify shape)",
+            }
+        )
+    if invalid_examples:
+        # One aggregate line, not one per node — a real repo can have hundreds of these and the
+        # diagnostic stream must stay readable (and diff-able) for the consumer that logs it.
+        log(
+            {
+                "level": "warning",
+                "kind": "locator_invalid",
+                "count": len(invalid_examples),
+                "message": f"{len(invalid_examples)} locator(s) failed grammar validation, kept but flagged; "
+                f"first examples: {'; '.join(invalid_examples[:3])}",
+            }
+        )
     return by_key
 
 
@@ -498,7 +528,9 @@ def bfs(edges: list[tuple[Key, Key, dict]], origin_keys: set[Key], depth: int, i
     for _ in range(depth):
         next_frontier: set[Key] = set()
         for key in frontier:
-            next_frontier.update(adjacency.get(key, ()) - visited)
+            # set() default, not (): a node with no edges at all is absent from adjacency, and
+            # `() - set` is a TypeError — caught live on mailtg-bridge (mail_in.py, isolated node).
+            next_frontier.update(adjacency.get(key, set()) - visited)
         if not next_frontier:
             break
         reached |= next_frontier
