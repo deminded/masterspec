@@ -4,7 +4,8 @@
 
 ## Порядок приоритета
 
-1. **Serena (MCP)** — `find_symbol`, `get_symbols_overview`, `find_referencing_symbols`. Семантический анализ, точная навигация по символам, поиск всех мест использования.
+0. **Graphify-карта через adapter (discovery, опционально)** — если рядом с кодом построен граф (`<root>/graphify-out/graph.json` + `graph.meta.json`), первый шаг discovery — `python3 <kernel-skill-dir>/scripts/graph-adapter.py neighbors --of <path>#<symbol> --graph <путь к graph.json>` (соседи/вызовы готовыми локаторами) и `slice --root <r>` (срез по репе). Дёшево и без LLM. СТРОГО опционально: exit 2 (fallback: нет графа / stale / dirty / битый) → просто иди дальше по списку, причина уже напечатана. Граф — discovery/cache, НЕ доказательство: каждый локатор, попадающий в артефакт, подтверждается наведением/чтением (Serena/LSP/Read), не ребром графа.
+1. **Serena (MCP)** — `find_symbol`, `get_symbols_overview`, `find_referencing_symbols`. Семантический анализ, точная навигация по символам, поиск всех мест использования. Наведение и верификация — всегда здесь (или LSP/чтением), даже когда discovery дал граф.
 2. **LSP-инструменты** — go-to-definition, find-references, workspace symbols. Работают, если в среде поднят языковой сервер (gopls, pyright, jdtls и т. д.).
 3. **Code index / embeddings** — семантический поиск по кодовой базе (например, через MCP-сервер индексации).
 4. **Другие MCP-серверы** — любые специализированные инструменты анализа, навигации, индексации, которые доступны в сессии.
