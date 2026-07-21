@@ -9,7 +9,7 @@ description: >
 when_to_use: >
   спроектировать слой требований или спецификаций, описать фабрику с нуля,
   derive <factory> layer=req, derive <factory> layer=spec, сгенерировать as/fn/nfr/rules/cdm или cmp/scn/api/data
-argument-hint: "<factory-slug> layer=req|spec [pass=linear|parallel] [verify=core|full] [context=lean|full]"
+argument-hint: "<factory-slug> layer=req|spec [root=<путь>] [pass=linear|parallel] [verify=core|full] [context=lean|full]"
 allowed-tools:
   - Read
   - Write
@@ -25,26 +25,27 @@ allowed-tools:
 Route-скилл: бизнес-запрос/требования → слой артефактов. Читай kernel-справочник (`../masterspec/meta_model.md`, `../masterspec/references/layer-discipline.md`, `../masterspec/references/artifact-routing.md`), контракт живой эксплуатации (`../masterspec/references/operational-envelope.md`) и паттерны (`../masterspec/references/patterns/`).
 
 ## Параметры
-- `<factory-slug>` — обязателен: kebab-case имя фабрики; идёт в поле `factory:` фронтматтера всех артефактов. Раскладка плоская — один корень `masterspec/` на проект (мета-модель §3).
+- `<factory-slug>` — обязателен: kebab-case имя фабрики; идёт в поле `factory:` фронтматтера всех артефактов.
+- `root=<путь>` — опционально, КОРЕНЬ фабрики. По умолчанию — корень репозитория аналитики (спека отдельным репо, PLAYBOOK: дерево `01-requirements/`… лежит прямо в корне, БЕЗ обёртки `masterspec/`). Задай `root=`, когда спека живёт подпапкой ВНУТРИ кодовой репы (напр. `root=masterspec/`). ВНУТРИ корня — дерево подкаталогов по типам (`type:` → путь, `references/artifact-routing.md`; мета-модель §3); артефакт кладётся в свой канонический подкаталог, не валом в корень слоя.
 - `layer=req` — вход: бизнес-запрос (из `00-source-data/` или текста пользователя). Если у фабрики есть код — дополнительно агрегат `explore`. Выход: `01-requirements/`.
 - `layer=spec` — вход: согласованный слой требований. Выход: `02-specifications/` (контракт и физмодель рождаются здесь).
 - `pass=linear` (дефолт) — по одному элементу, человек контролирует каждый шаг. `pass=parallel` — независимые элементы разом субагентами, человек на финальной вычитке. parallel — явный выбор аналитика.
 - `verify=core` (дефолт) — дешёвое ядро осей; `verify=full` — все оси на слое и критичных элементах.
-- `context=full` / `context=lean` (дефолт) — изоляция контекста оркестратора (`patterns/context-isolation.md`). В `lean` оркестратор сам не читает мета-модель/research/артефакты, а делегирует planner-субагенту (раскладывает план и фокус-наборы в `masterspec/.work/<run-id>/`), `gen` и `verify`-субагентам; держит в контексте только план, пути и сводки. **Исключение:** OE-интервью с человеком всегда ведёт сам оркестратор и сразу пишет ответы в `masterspec/.work/<run-id>/oe-interview.md`; живое интервью нельзя делегировать субагенту. Для моделей с ограниченным контекстом (рост контекста не зависит от размера фабрики).
+- `context=full` / `context=lean` (дефолт) — изоляция контекста оркестратора (`patterns/context-isolation.md`). В `lean` оркестратор сам не читает мета-модель/research/артефакты, а делегирует planner-субагенту (раскладывает план и фокус-наборы в `<factory-root>/.work/<run-id>/`), `gen` и `verify`-субагентам; держит в контексте только план, пути и сводки. **Исключение:** OE-интервью с человеком всегда ведёт сам оркестратор и сразу пишет ответы в `<factory-root>/.work/<run-id>/oe-interview.md`; живое интервью нельзя делегировать субагенту. Для моделей с ограниченным контекстом (рост контекста не зависит от размера фабрики).
 - `guardrails=auto|off|<paths>` — внешние корпоративные правила (`patterns/guardrails.md`): `auto` (дефолт) берёт пакеты из `masterspec-config.yaml` фабрики; активный набор режется селекторами `applies_to`; применённые правила и конфликты фиксируются в route-run секцией «Guardrails applied».
 
 ## Метод
 > **В `context=lean`** метод ниже выполняется через делегацию (контракт — `patterns/context-isolation.md`); конкретные переопределения шагов:
-> — §2 (состав) → planner-субагент раскладывает `plan.md` как ПОСЛЕДОВАТЕЛЬНОСТЬ шагов + **LOOP-блок** `cdm↔fn` с условием выхода (нет новых событий/состояний или предел проходов), не линейный проход; фокус-набор каждого элемента planner режет ПО ТАБЛИЦЕ границ (`patterns/context-isolation.md §Граница фокус-набора` — свой срез для каждого типа), кладёт в `masterspec/.work/<run-id>/.focus/`;
+> — §2 (состав) → planner-субагент раскладывает `plan.md` как ПОСЛЕДОВАТЕЛЬНОСТЬ шагов + **LOOP-блок** `cdm↔fn` с условием выхода (нет новых событий/состояний или предел проходов), не линейный проход; фокус-набор каждого элемента planner режет ПО ТАБЛИЦЕ границ (`patterns/context-isolation.md §Граница фокус-набора` — свой срез для каждого типа), кладёт в `<factory-root>/.work/<run-id>/.focus/`;
 > — §3 (gen) → вызывается с `from=<focus>` + `target_path` + `target_mode` (`file`/`diff`/`sidecar`, дефолты по типу), не просто `type`; оркестратор не читает содержимое;
 > — **OE-интервью из-под делегирования выведено:** оркестратор задаёт человеку вопрос, после каждого
 > ответа немедленно дописывает `oe-interview.md` и соответствующий fn-черновик/фокус-набор; planner и
 > gen получают уже записанный факт и не реконструируют ответ из сводки;
 > — §5 (дозапрос) → единый маршрут: код→`explore`, документ→`planner`, иначе→человек;
 > — §6/§8 (`verify`, индекс) — субагенты с файл-отчётом; оркестратор держит только план, пути, сводки.
-> По завершении прогона `masterspec/.work/<run-id>/` ОБЯЗАТЕЛЬНО удаляется (фокус-наборы = срезы содержания); `route-run` сохраняется отдельно. В `context=full` оркестратор выполняет те же шаги, читая сам.
+> По завершении прогона `<factory-root>/.work/<run-id>/` ОБЯЗАТЕЛЬНО удаляется (фокус-наборы = срезы содержания); `route-run` сохраняется отдельно. В `context=full` оркестратор выполняет те же шаги, читая сам.
 
-0. **Инициализация (если фабрики ещё нет).** Создай скелет `masterspec/` по полной раскладке (`../masterspec/meta_model.md §3`): подпапки `01-requirements/{01-system,02-functions,03-nfr,04-rules,05-landscape,06-data-model,07-dictionaries,08-test-cases}`, `02-specifications/{01-components,02-scenarios,03-algorithms,04-apis/{internal,external},05-data,06-diagrams,07-load-profiles,08-test-cases,09-ui-views}`, `03-codemap/{01-component-maps,02-scenario-traces,03-data-maps}`, `04-decisions/`, `changes/`. Заведи `00-masterspec-index.md` (шаблон `tpl-masterspec-index`) и пустой `00-glossary.md`.
+0. **Инициализация (если фабрики ещё нет).** Создай скелет в КОРНЕ фабрики (по умолчанию — корень репозитория аналитики; при `root=<путь>` — внутри него, напр. `masterspec/` для спеки-подпапки в кодовой репе) по полной раскладке (`../masterspec/meta_model.md §3`): подпапки `01-requirements/{01-system,02-functions,03-nfr,04-rules,05-landscape,06-data-model,07-dictionaries,08-test-cases}`, `02-specifications/{01-components,02-scenarios,03-algorithms,04-apis/{internal,external},05-data,06-diagrams,07-load-profiles,08-test-cases,09-ui-views}`, `03-codemap/{01-component-maps,02-scenario-traces,03-data-maps}`, `04-decisions/`, `changes/`. Заведи `00-masterspec-index.md` (шаблон `tpl-masterspec-index`) и пустой `00-glossary.md`.
 1. **Контекст.** Если у фабрики есть код — собери агрегат через `explore` (target=factory-spec). Если кода нет (фабрика с нуля или только слой требований) — `explore` НЕ нужен: контекст берётся из бизнес-запроса; обратный индекс ссылок при необходимости строится `Grep` по `-> ` в уже созданных артефактах.
 
    **Агрегат persistent — им пользуются ОБА слоя, но по-разному.** `.research/` не удаляется после прогона, и `layer=spec` может его читать. Но источник у слоёв разный, и путать нельзя:
@@ -53,7 +54,7 @@ Route-скилл: бизнес-запрос/требования → слой а
 
    Спец-коллекции docs-ветки (`machine_artifacts[]`, `test_cases[]`) `derive` НЕ потребляет — их импортирует `recover` (сайдкары с `contract_origin: imported`, стыковка ТК).
 2. **Состав и порядок слоя.** layer=req: `as` → инвентарь кандидатных `fn` с явным полем
-   `Внешний инициатор/канал` → создать fn-черновики и `masterspec/.work/<run-id>/oe-interview.md` →
+   `Внешний инициатор/канал` → создать fn-черновики и `<factory-root>/.work/<run-id>/oe-interview.md` →
    **OE-интервью только по функциям с внешним I/O** (восемь вопросов ниже) → `context` внешнего пути → черновой `cdm` (сущности) →
    `rules` → `fn` (use-case + OE по cdm/rules/context) → вернись к `cdm` и заполни «Состояния и
    переходы» (по событиям из fn) → `nfr` (пороги на основании OE-LOAD) → `dict`/`fd` (если есть) →
