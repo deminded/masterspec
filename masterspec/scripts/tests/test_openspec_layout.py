@@ -102,6 +102,69 @@ class OpenspecLayoutAcceptance(unittest.TestCase):
                             "validate зелёный без моста — мост декоративен: " + r.stdout)
 
 
+class ResolveRootsScenarios(unittest.TestCase):
+    """Исполняемые сценарии резолвинга (закрытие находки Sol №5): референс-реализация
+    layout-modes §2 гоняется на четырёх раскладках, включая неоднозначную."""
+
+    def setUp(self):
+        import importlib.util
+        import sys as _sys
+        spec = importlib.util.spec_from_file_location(
+            "chk_resolver", SCRIPTS / "check-layout.py")
+        self.chk = importlib.util.module_from_spec(spec)
+        _sys.modules[spec.name] = self.chk  # без записи в sys.modules dataclass-модуль падает при exec
+        spec.loader.exec_module(self.chk)
+        self.tmp = Path(tempfile.mkdtemp(prefix="msres-"))
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _index(self, rel, layout_line=None):
+        d = self.tmp / rel
+        d.mkdir(parents=True, exist_ok=True)
+        body = "# Индекс\n\n## 1. Паспорт\n"
+        if layout_line:
+            body += layout_line + "\n"
+        (d / "00-masterspec-index.md").write_text(body, encoding="utf-8")
+        return d
+
+    def test_classic_in_root(self):
+        d = self._index(".")
+        s, c, l = self.chk.resolve_roots(self.tmp)
+        self.assertEqual((s, c, l), (d.resolve(), (d / "changes").resolve(), "classic"))
+
+    def test_classic_subdir(self):
+        d = self._index("masterspec")
+        s, c, l = self.chk.resolve_roots(self.tmp)
+        self.assertEqual((s, c, l), (d.resolve(), (d / "changes").resolve(), "classic"))
+
+    def test_openspec_by_passport_and_by_path(self):
+        d = self._index("openspec/specs", "- Раскладка (layout): openspec")
+        s, c, l = self.chk.resolve_roots(self.tmp)
+        self.assertEqual(l, "openspec")
+        self.assertEqual(c, (d.parent / "changes").resolve(),
+                         "changes-root обязан быть СОСЕДОМ specs, не подкаталогом")
+        # и без строки паспорта — по пути
+        (d / "00-masterspec-index.md").write_text("# Индекс\n", encoding="utf-8")
+        _, c2, l2 = self.chk.resolve_roots(self.tmp)
+        self.assertEqual((l2, c2), ("openspec", (d.parent / "changes").resolve()))
+
+    def test_two_indexes_is_ambiguous_not_silent(self):
+        self._index("masterspec")
+        self._index("openspec/specs")
+        with self.assertRaises(ValueError) as ctx:
+            self.chk.resolve_roots(self.tmp)
+        self.assertIn("спроси человека", str(ctx.exception),
+                      "полупереехавшая фабрика должна давать вопрос, не молчаливый выбор")
+
+    def test_archive_and_work_are_not_candidates(self):
+        self._index("masterspec")
+        self._index("masterspec/changes/archive/2026-01-01-old/snapshot")
+        self._index("masterspec/.work/run-1/copy")
+        s, _, _ = self.chk.resolve_roots(self.tmp)
+        self.assertEqual(s, (self.tmp / "masterspec").resolve())
+
+
 class MergeWorkflowNoHardcodedRoots(unittest.TestCase):
     """Страж регресса P1 (ревью Sol): обязательные команды merge-workflow не смеют
     хардкодить masterspec/ — в openspec-режиме такой rollback молча не откатывает."""
