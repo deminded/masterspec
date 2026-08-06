@@ -45,8 +45,12 @@ def _factory(root: Path) -> None:
     arch = root / "openspec" / "changes" / "archive" / "2026-08-06-old"
     arch.mkdir(parents=True)
     (arch / "change.md").write_text("# старый\n", encoding="utf-8")
-    (root / "openspec" / "config.yaml").write_text("schema: spec-driven\n",
-                                                   encoding="utf-8")
+    # config — ИЗ ШАБЛОНА поставки, не упрощённый: приёмка обязана доказывать,
+    # что поставляемый дескриптор принимается живым CLI (находка ревью Sol P3).
+    tpl = (Path(__file__).parents[1].parent / "templates" /
+           "tpl-openspec-config.md").read_text(encoding="utf-8")
+    yaml_block = tpl.split("```yaml\n", 1)[1].split("```", 1)[0]
+    (root / "openspec" / "config.yaml").write_text(yaml_block, encoding="utf-8")
 
 
 def _run_openspec(cwd: Path, *args: str) -> subprocess.CompletedProcess:
@@ -96,6 +100,30 @@ class OpenspecLayoutAcceptance(unittest.TestCase):
         r = _run_openspec(self.tmp, "validate", "--all")
         self.assertNotEqual(r.returncode, 0,
                             "validate зелёный без моста — мост декоративен: " + r.stdout)
+
+
+class MergeWorkflowNoHardcodedRoots(unittest.TestCase):
+    """Страж регресса P1 (ревью Sol): обязательные команды merge-workflow не смеют
+    хардкодить masterspec/ — в openspec-режиме такой rollback молча не откатывает."""
+
+    def test_executable_fences_use_resolved_roots(self):
+        ref = (Path(__file__).parents[1].parent / ".." / "masterspec-apply-change" /
+               "references" / "merge-workflow.md").resolve().read_text(encoding="utf-8")
+        bad = []
+        fence_lang = None
+        for i, line in enumerate(ref.splitlines(), 1):
+            if line.strip().startswith("```"):
+                fence_lang = None if fence_lang is not None else line.strip()[3:] or "plain"
+                continue
+            # исполняемое в этом файле живёт ТОЛЬКО в bash-фенсах; фенсы без языка —
+            # примеры текстов сообщений, их classic-конкретика покрыта шапкой файла
+            if fence_lang != "bash" or line.lstrip().startswith("#"):
+                continue
+            if "masterspec/" in line and "<specs-root>" not in line \
+                    and "<changes-root>" not in line \
+                    and "references/" not in line and "../masterspec/" not in line:
+                bad.append(f"{i}: {line.strip()[:90]}")
+        self.assertEqual(bad, [], "исполняемые строки с жёстким masterspec/: %s" % bad)
 
 
 if __name__ == "__main__":

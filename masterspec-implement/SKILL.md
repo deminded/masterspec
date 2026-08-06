@@ -14,7 +14,7 @@ when_to_use: >
 argument-hint: "[имя change]"
 license: MIT
 compatibility: >
-  Требуется masterspec/ layout в проекте, доступ к bash/git, система сборки/тестов проекта.
+  Требуется фабрика с раскладкой по layout-modes.md (classic или openspec) в проекте, доступ к bash/git, система сборки/тестов проекта.
 allowed-tools:
   - Read
   - Write

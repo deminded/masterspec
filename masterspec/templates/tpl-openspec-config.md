@@ -18,15 +18,16 @@ context: |
     (traces to code), 04-decisions/ (ADR). Index: specs/00-masterspec-index.md.
   - changes/<name>/change.md is the source of truth for a change (8-section
     masterspec format, Russian); proposal.md next to it is a generated bridge
-    summary, .openspec.yaml marks skip_specs because behavior details live in
+    projection of change.md §1/§2/§7 (Why / What Changes / Impact), .openspec.yaml marks skip_specs because behavior details live in
     masterspec artifacts, not in OpenSpec spec deltas.
   - Do not create specs/**/spec.md capability files unless explicitly asked:
     the masterspec tree is the requirement source here.
 
 rules:
   proposal:
-    - proposal.md is a projection of change.md §1-§2; never add facts that are
-      absent from change.md - fix change.md first, then regenerate the bridge.
+    - proposal.md is a two-way projection of change.md §1/§2/§7: never add facts
+      absent from change.md, and never drop items present there - fix change.md
+      first, then regenerate the bridge.
 ```
 
 Правила подстановки: содержимое `context:` можно дополнять фактами проекта (стек, домен),
