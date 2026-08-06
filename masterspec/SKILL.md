@@ -49,6 +49,7 @@ allowed-tools:
 | Детерминированный OE pre-gate | `scripts/check-operational-envelope.py` | Перед LLM-осями `verify layer=req|spec` |
 | Gate телеметрии verify-report | `scripts/check-verify-report.py` | После сборки каждого `verify-report.md` |
 | Маршрутизация тип→шаблон→путь→slug | `references/artifact-routing.md` | При создании/размещении артефакта |
+| Раскладки: два корня (specs-root/changes-root), резолвинг, режим openspec | `references/layout-modes.md` | При старте любой операции — шаг «найди фабрику» |
 | Канонический формат индекса | `references/index-canonical.md` | При работе с `00-masterspec-index.md` |
 | Соглашения change-workflow | `references/change-conventions.md` | При работе с `changes/` |
 | Шаблоны артефактов | `templates/tpl-*.md` | По одному при создании артефакта |
@@ -153,3 +154,5 @@ masterspec/
 ```
 
 Полная вложенная раскладка с подпапками и правилами — `meta_model.md §3` (единственный источник структуры; здесь — обзор).
+
+**Положение корней.** У фабрики два корня: **specs-root** (каталог индекса и слоёв) и **changes-root** (каталог change-директорий); их резолвинг по положению `00-masterspec-index.md` и режимы — `references/layout-modes.md`. Режим `layout=openspec` даёт совместимость со структурой OpenSpec: specs-root = `openspec/specs/`, changes-root = `openspec/changes/`, плюс мосты (`openspec/config.yaml`, `proposal.md`/`.openspec.yaml` у change'ей) — чтобы `openspec` CLI видел фабрику, а источником истины оставался masterspec. Дерево внутри specs-root во всех режимах одно; схема выше — дефолтный `classic`.

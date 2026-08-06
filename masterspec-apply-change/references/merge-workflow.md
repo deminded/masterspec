@@ -1,12 +1,14 @@
 # Merge workflow для фабрики (мультиартефактный мерж)
 
-Детальная механика вливания change.md + `new/` в артефакты фабрики. Целевой артефакт — не один `spec.md`, а дерево артефактов в `masterspec/01-*/02-*/03-*/04-*`. Применяются (а) diff-блоки из §4 change.md в существующие файлы, (б) копирование файлов из `new/` в целевые директории по `type:` фронтматтера.
+Корни — `layout-modes.md §2` (specs-root / changes-root); в примерах ниже classic-подпапка (`masterspec/`).
+
+Детальная механика вливания change.md + `new/` в артефакты фабрики. Целевой артефакт — не один `spec.md`, а дерево артефактов в `<specs-root>/01-*/02-*/03-*/04-*`. Применяются (а) diff-блоки из §4 change.md в существующие файлы, (б) копирование файлов из `new/` в целевые директории по `type:` фронтматтера.
 
 ---
 
 ## 1. Git как единая точка отката
 
-Работай над всей директорией `masterspec/` (исключая `changes/`) — она и есть «целевой артефакт». Точка отката — `HEAD`.
+Работай над всей директорией `<specs-root>/` (исключая `<changes-root>/`) — она и есть «целевой артефакт». Точка отката — `HEAD`.
 
 ### 1.1. Предпроверка
 
@@ -14,7 +16,7 @@
 git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 ```
 
-Должно быть пусто. Если есть незакоммиченные изменения в `masterspec/01-*/02-*/03-*/04-*` или `00-masterspec-index.md` — блок, попроси пользователя сначала закоммитить или откатить (через AskUserQuestion).
+Должно быть пусто. Если есть незакоммиченные изменения в `<specs-root>/01-*/02-*/03-*/04-*` или `00-masterspec-index.md` — блок, попроси пользователя сначала закоммитить или откатить (через AskUserQuestion).
 
 ### 1.2. Команда отката после мержа
 
@@ -24,7 +26,7 @@ git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
 git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'
 ```
 
-Откатит все diff-блоки, все скопированные файлы из `new/`, перегенерацию `00-masterspec-index.md`. Pathspec-исключение гарантирует, что `masterspec/changes/<name>/` (под отдельным жизненным циклом change'а) не затрагивается. Если change ещё не закоммичен — его файлы untracked, и `checkout` их и так не тронет; исключение страхует случай уже закоммиченного change.
+Откатит все diff-блоки, все скопированные файлы из `new/`, перегенерацию `00-masterspec-index.md`. Pathspec-исключение гарантирует, что `<changes-root>/<name>/` (под отдельным жизненным циклом change'а) не затрагивается. Если change ещё не закоммичен — его файлы untracked, и `checkout` их и так не тронет; исключение страхует случай уже закоммиченного change.
 
 **`.bak`-файлы создавать запрещено.**
 
@@ -32,7 +34,7 @@ git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'
 
 ## 2. Парсинг change.md
 
-Прочитай `masterspec/changes/<name>/change.md` целиком и извлеки:
+Прочитай `<changes-root>/<name>/change.md` целиком и извлеки:
 
 - Шапку: статус, фабрика.
 - §2.1 MODIFIED — таблица (slug, путь, описание правки).
@@ -48,7 +50,7 @@ git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'
 - **путь = объявленный `sidecar:`** (машинный сайдкар любого формата) → diff-блока в §4 НЕТ; есть файл-замена `new/<sidecar>` (полная замена целиком, обработка — §4.6). Отсутствие diff-блока для такой строки — норма, не ошибка парсинга.
 
 Для каждого diff-блока в §4 (т.е. для каждой `.md`-строки §2.1) извлеки:
-- `**Файл**:` — путь относительно masterspec/
+- `**Файл**:` — путь относительно specs-root
 - `**Раздел**:` — цепочка заголовков (`## ...` / `### ...`)
 - `**Тип правки**:` — `modify-bullet` | `replace-section` | `add-subsection`
 - Блок `ДО:` (в code fence)
@@ -97,7 +99,7 @@ git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'
 
 ### 4.1. Прочитай целевой файл
 
-`Read(<masterspec/<путь>)`. Если файл отсутствует — конфликт (§6).
+`Read(<specs-root>/<путь>)`. Если файл отсутствует — конфликт (§6).
 
 ### 4.2. Найди раздел по заголовку
 
@@ -183,7 +185,7 @@ updated: 2026-04-23
 ### 4.6. MODIFIED машинного сайдкара (api/data/scn/alg — любой формат по `sidecar:`)
 
 Если строка §2.1 MODIFIED указывает на машинный сайдкар (путь = значению `sidecar:` компаньона, а не `.md`) — это НЕ diff-блок, а полная замена файла (`change-format.md §3.1`):
-1. Целевой сайдкар — по ПОЛНОМУ пути из строки §2.1 (`masterspec/<путь-из-строки>`, не достраивать имя повторно) — ДОЛЖЕН существовать (иначе это ADDED — §5, не MODIFIED); его basename обязан совпадать с полем `sidecar:` компаньона того же slug. Нет файла → конфликт (§6).
+1. Целевой сайдкар — по ПОЛНОМУ пути из строки §2.1 (`<specs-root>/<путь-из-строки>`, не достраивать имя повторно) — ДОЛЖЕН существовать (иначе это ADDED — §5, не MODIFIED); его basename обязан совпадать с полем `sidecar:` компаньона того же slug. Нет файла → конфликт (§6).
 2. Проверь, что новая версия `new/<sidecar>` парсится по своему `sidecar_format`: yaml/json — `yaml.safe_load`/`json.loads`; xml (bpmn/dmn/wsdl) — well-formed XML; текстовые нотации (mermaid/plantuml) — непустота без markdown-огородок ```. Битая → конфликт (§6).
 3. Перезапиши целевой файл содержимым из `new/`. `updated:` обновляется в компаньоне `.md` (сайдкар метаданных masterspec не несёт).
 
@@ -213,13 +215,13 @@ updated: 2026-04-23
 ### 5.4. Скопируй файл(ы)
 
 ```bash
-mkdir -p masterspec/<target-dir>
+mkdir -p <specs-root>/<target-dir>
 # имя сайдкара — из поля `sidecar:` компаньона через YAML-парсер (не sed: устойчиво к кавычкам):
 sidecar=$(python3 -c "import sys,yaml; print((yaml.safe_load(open(sys.argv[1]).read().split('---',2)[1]) or {}).get('sidecar','') or '')" \
-  masterspec/changes/<name>/new/<slug>.md)
+  <changes-root>/<name>/new/<slug>.md)
 # оба целевых пути свободны (проверено §5.3) — копируем пару как одну операцию:
-cp masterspec/changes/<name>/new/<slug>.md masterspec/<target-dir>/<slug>.md
-[ -n "$sidecar" ] && cp "masterspec/changes/<name>/new/$sidecar" "masterspec/<target-dir>/$sidecar"
+cp <changes-root>/<name>/new/<slug>.md <specs-root>/<target-dir>/<slug>.md
+[ -n "$sidecar" ] && cp "<changes-root>/<name>/new/$sidecar" "<specs-root>/<target-dir>/$sidecar"
 ```
 
 ### 5.5. Нормализуй YAML-фронтматтер
@@ -242,7 +244,7 @@ cp masterspec/changes/<name>/new/<slug>.md masterspec/<target-dir>/<slug>.md
 
 ### 6.1. MODIFIED-файл отсутствует
 
-Слуг из §2.1 не найден в `masterspec/`:
+Слуг из §2.1 не найден в `<specs-root>/`:
 ```
 Change ссылается на masterspec/01-requirements/02-functions/fn-X.md, но файл не существует.
 Это рассинхрон change.md с текущим состоянием фабрики.
@@ -296,7 +298,7 @@ Change помечает masterspec/.../fn-X.md как REMOVED, но файл у�
 
 ```bash
 # REMOVED компаньона с сайдкаром удаляет ПАРУ: висячий сайдкар индекс и smoke-check (ходят по .md) не заметят.
-target="masterspec/<путь>"
+target="<specs-root>/<путь>"
 if [ "${target##*.}" = "md" ] && [ -f "$target" ]; then
   sidecar=$(python3 -c "import sys,yaml; print((yaml.safe_load(open(sys.argv[1]).read().split('---',2)[1]) or {}).get('sidecar','') or '')" "$target")
   case "$sidecar" in
@@ -310,14 +312,14 @@ rm -- "$target"
 
 dry-run и финальная verification (§9) показывают/проверяют ОБА пути пары; висячий сайдкар без компаньона иначе ловит form-detector (F2 orphan-проверка, `masterspec/references/patterns/verification-axes.md §O1`).
 
-Потом — убедись, что никакой другой артефакт не ссылается на удалённый slug (Grep по `masterspec/` за исключением `changes/`). Если есть ссылки — ВТОРОЙ конфликт (rotated §6.7): change должен был зафиксировать правку этих ссылок в §2.1 как MODIFIED. Если не зафиксировал — предупреди пользователя, но удаление выполни (пользователь потом поправит через отдельный change).
+Потом — убедись, что никакой другой артефакт не ссылается на удалённый slug (Grep по `<specs-root>/` за исключением `<changes-root>/`). Если есть ссылки — ВТОРОЙ конфликт (rotated §6.7): change должен был зафиксировать правку этих ссылок в §2.1 как MODIFIED. Если не зафиксировал — предупреди пользователя, но удаление выполни (пользователь потом поправит через отдельный change).
 
 ### 7.1. Очистка опустевших директорий
 
 После удаления всех файлов из REMOVED — проверь родительские директории удалённых файлов. Если после удаления директория опустела (и в ней нет поддиректорий):
 
 ```bash
-rmdir masterspec/<dir-path> 2>/dev/null
+rmdir <specs-root>/<dir-path> 2>/dev/null
 ```
 
 `rmdir` без `-r` — сработает только если директория реально пуста. Если внутри остались другие файлы/поддиректории (или служебные точки) — команда молча завершится и директория сохранится.
@@ -339,13 +341,13 @@ rmdir masterspec/<dir-path> 2>/dev/null
 ### 8.2. Алгоритм (что делает apply-change в §8)
 
 1. Прочитай `<Skill dir>/../masterspec/references/index-canonical.md` (spec + алгоритм reindex).
-2. Выполни полную перегенерацию индекса по `<Skill dir>/../masterspec/references/index-canonical.md` на директории `masterspec/`:
-   - прочитай текущий `masterspec/00-masterspec-index.md`, сохрани §1 «Паспорт» и §7 «Белые пятна и открытые вопросы»;
+2. Выполни полную перегенерацию индекса по `<Skill dir>/../masterspec/references/index-canonical.md` на директории `<specs-root>/`:
+   - прочитай текущий `<specs-root>/00-masterspec-index.md`, сохрани §1 «Паспорт» и §7 «Белые пятна и открытые вопросы»;
    - сохрани словарь `path → comment_text` из строк артефактов (для сохранения комментариев);
    - просканируй `00-glossary.md`, `01-requirements/**/*.md`, `02-specifications/**/*.md`, `03-codemap/**/*.md`, `04-decisions/**/*.md`;
    - распредели артефакты по каноническим секциям (§1.1–§1.4 из `index-canonical.md`);
    - сгенерируй итоговый markdown по шаблону §4 из `index-canonical.md`;
-   - перезапиши `masterspec/00-masterspec-index.md` (атомарно), проставь `updated:` = сегодня.
+   - перезапиши `<specs-root>/00-masterspec-index.md` (атомарно), проставь `updated:` = сегодня.
 3. Собери отчёт: файлы без фронтматтера, дубли `slug:`, неизвестные типы. Отчёт включи в вывод apply-change (не блокирует успех, но пользователь должен увидеть).
 
 Ручных правок в индексе на этом шаге нет. Если reindex упал (например, не найден `index-canonical.md`) — блок с сообщением, `git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'`, апдейт статуса НЕ делается.
@@ -363,7 +365,7 @@ rmdir masterspec/<dir-path> 2>/dev/null
 1. `find masterspec/ -name "*.md" -type f | wc -l` — число файлов соответствует ожидаемому (добавлены N, удалены M относительно до-apply состояния).
 2. Каждый ADDED-файл присутствует в `00-masterspec-index.md`.
 3. Каждый REMOVED-файл отсутствует и в `00-masterspec-index.md`, и в дереве; парный сайдкар удалённого компаньона (по плану dry-run) — тоже.
-4. Grep по `masterspec/` на предмет обратных ссылок — нет ссылок из требований на `cmp-`/`scn-`/`api-`/`data-`/`cmap-`/`trace-`/`dmap-`.
+4. Grep по `<specs-root>/` на предмет обратных ссылок — нет ссылок из требований на `cmp-`/`scn-`/`api-`/`data-`/`cmap-`/`trace-`/`dmap-`.
 
 Провалилась хотя бы одна проверка — `git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'`, сообщи пользователю, расследуйте причину вместе. В §9.2 не переходим.
 
@@ -412,7 +414,7 @@ Smoke-check покажет, что дерево файлов в порядке, 
 
 Для каждой строки §2.2:
 
-1. Построить целевой путь `masterspec/<target-dir>/<slug>.md` по `type:` фронтматтера `new/<slug>.md` (см. `artifact-routing.md`).
+1. Построить целевой путь `<specs-root>/<target-dir>/<slug>.md` по `type:` фронтматтера `new/<slug>.md` (см. `artifact-routing.md`).
 2. Проверить: файл существует.
 3. Read первых ~15 строк — проверить YAML-фронтматтер:
    - `slug:` = ожидаемый;
@@ -426,7 +428,7 @@ Smoke-check покажет, что дерево файлов в порядке, 
 
 #### 9.2.6. REMOVED
 
-Для каждой строки §2.3: файла по `masterspec/<путь>` **не** существует → `confirmed`; существует → `unconfirmed`. Если удалённый компаньон (по плану dry-run, §3) объявлял `sidecar:` — парный сайдкар тоже обязан отсутствовать, иначе `unconfirmed` (висячий сайдкар индекс не отражает — ходит по `.md`).
+Для каждой строки §2.3: файла по `<specs-root>/<путь>` **не** существует → `confirmed`; существует → `unconfirmed`. Если удалённый компаньон (по плану dry-run, §3) объявлял `sidecar:` — парный сайдкар тоже обязан отсутствовать, иначе `unconfirmed` (висячий сайдкар индекс не отражает — ходит по `.md`).
 
 ### 9.3. Вердикт и реакция
 
@@ -488,7 +490,7 @@ confirmed: 2 · skipped_by_user: 1 · unconfirmed: 1
 > **Статус**: Реализовано
 ```
 
-Замени строку в шапке `masterspec/changes/<name>/change.md`. Меняй **только** эту строку. YAML-фронтматтер change.md (если есть) — синхронизируй поле `status:` с текстовой шапкой.
+Замени строку в шапке `<changes-root>/<name>/change.md`. Меняй **только** эту строку. YAML-фронтматтер change.md (если есть) — синхронизируй поле `status:` с текстовой шапкой.
 
 Если §9.3 вернул `rollback` — статус change.md не трогаем, скилл выходит.
 Если §9.3 вернул `leave` — статус в change.md меняем на `В реализации` (не `Реализовано`), скилл выходит без перехода в архив.
@@ -506,7 +508,7 @@ confirmed: 2 · skipped_by_user: 1 · unconfirmed: 1
 ### 11.2. Прогон детекторов
 Прогони детекторы инвариантов текущей версии на применимых scope фабрики:
 ```bash
-python3 <Skill dir>/../masterspec/scripts/check-operational-envelope.py masterspec --layer req
+python3 <Skill dir>/../masterspec/scripts/check-operational-envelope.py <specs-root> --layer req   # например masterspec --layer req в classic-подпапке
 # + --layer spec, если есть 02-specifications/ ; + --layer code, если есть 03-codemap/
 python3 <Skill dir>/../masterspec/scripts/check-verify-report.py <verify-report>   # если verify-report присутствует
 ```
@@ -529,7 +531,7 @@ meta_model_version: 3.0 (проставлен) | до-3.0 (дельта: N BLOCK
 
 ## 12. Что скилл НЕ делает
 
-- Не модифицирует файлы в `masterspec/changes/<name>/` (кроме строки статуса в change.md). Все исходники change остаются для аудита.
+- Не модифицирует файлы в `<changes-root>/<name>/` (кроме строки статуса в change.md). Все исходники change остаются для аудита.
 - Не коммитит в git — коммит пользователь делает отдельно, видя diff.
 - Не вызывает `masterspec-archive-change` — архивация отдельный шаг.
 - Не создаёт ветки, не пушит.

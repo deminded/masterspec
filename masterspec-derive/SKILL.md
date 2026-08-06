@@ -9,7 +9,7 @@ description: >
 when_to_use: >
   спроектировать слой требований или спецификаций, описать фабрику с нуля,
   derive <factory> layer=req, derive <factory> layer=spec, сгенерировать as/fn/nfr/rules/cdm или cmp/scn/api/data
-argument-hint: "<factory-slug> layer=req|spec [root=<путь>] [pass=linear|parallel] [verify=core|full] [context=lean|full]"
+argument-hint: "<factory-slug> layer=req|spec [root=<путь>] [layout=classic|openspec] [pass=linear|parallel] [verify=core|full] [context=lean|full]"
 allowed-tools:
   - Read
   - Write
@@ -27,6 +27,7 @@ Route-скилл: бизнес-запрос/требования → слой а
 ## Параметры
 - `<factory-slug>` — обязателен: kebab-case имя фабрики; идёт в поле `factory:` фронтматтера всех артефактов.
 - `root=<путь>` — опционально, КОРЕНЬ фабрики. По умолчанию — корень репозитория аналитики (спека отдельным репо, PLAYBOOK: дерево `01-requirements/`… лежит прямо в корне, БЕЗ обёртки `masterspec/`). Задай `root=`, когда спека живёт подпапкой ВНУТРИ кодовой репы (напр. `root=masterspec/`). ВНУТРИ корня — дерево подкаталогов по типам (`type:` → путь, `references/artifact-routing.md`; мета-модель §3); артефакт кладётся в свой канонический подкаталог, не валом в корень слоя.
+- `layout=classic|openspec` — опционально, раскладка корней фабрики (`../masterspec/references/layout-modes.md`). `openspec` задаёт ОБА корня сразу: specs-root=`openspec/specs/`, changes-root=`openspec/changes/` — фабрика живёт внутри структуры OpenSpec, чтобы её инструменты видели дерево. Вместе с `root=` НЕ задаётся (оба управляют корнями) — такой вызов конфликтен: остановись и спроси человека, какой корень верен. Дефолт `classic` — поведение прежнее.
 - `layer=req` — вход: бизнес-запрос (из `00-source-data/` или текста пользователя). Если у фабрики есть код — дополнительно агрегат `explore`. Выход: `01-requirements/`.
 - `layer=spec` — вход: согласованный слой требований. Выход: `02-specifications/` (контракт и физмодель рождаются здесь).
 - `pass=linear` (дефолт) — по одному элементу, человек контролирует каждый шаг. `pass=parallel` — независимые элементы разом субагентами, человек на финальной вычитке. parallel — явный выбор аналитика.
@@ -46,6 +47,8 @@ Route-скилл: бизнес-запрос/требования → слой а
 > По завершении прогона `<factory-root>/.work/<run-id>/` ОБЯЗАТЕЛЬНО удаляется (фокус-наборы = срезы содержания); `route-run` сохраняется отдельно. В `context=full` оркестратор выполняет те же шаги, читая сам.
 
 0. **Инициализация (если фабрики ещё нет).** Создай скелет в КОРНЕ фабрики (по умолчанию — корень репозитория аналитики; при `root=<путь>` — внутри него, напр. `masterspec/` для спеки-подпапки в кодовой репе) по полной раскладке (`../masterspec/meta_model.md §3`): подпапки `01-requirements/{01-system,02-functions,03-nfr,04-rules,05-landscape,06-data-model,07-dictionaries,08-test-cases}`, `02-specifications/{01-components,02-scenarios,03-algorithms,04-apis/{internal,external},05-data,06-diagrams,07-load-profiles,08-test-cases,09-ui-views}`, `03-codemap/{01-component-maps,02-scenario-traces,03-data-maps}`, `04-decisions/`, `changes/`. Заведи `00-masterspec-index.md` (шаблон `tpl-masterspec-index`) и пустой `00-glossary.md`.
+
+   **При `layout=openspec`:** тот же скелет слоёв создаётся в `openspec/specs/`, а `changes/` — СОСЕДОМ, в `openspec/changes/` (положение корней — `../masterspec/references/layout-modes.md`). Дополнительно создай `openspec/config.yaml` по шаблону `../masterspec/templates/tpl-openspec-config.md`, ЕСЛИ файла нет (существующий не перезаписывать — в нём может жить контекст владельца), а в §1 «Паспорт» создаваемого `00-masterspec-index.md` запиши строку `- Раскладка (layout): openspec`. Последующие вызовы скиллов режим НЕ указывают — он резолвится по положению индекса (`layout-modes.md §2`).
 1. **Контекст.** Если у фабрики есть код — собери агрегат через `explore` (target=factory-spec). Если кода нет (фабрика с нуля или только слой требований) — `explore` НЕ нужен: контекст берётся из бизнес-запроса; обратный индекс ссылок при необходимости строится `Grep` по `-> ` в уже созданных артефактах.
 
    **Агрегат persistent — им пользуются ОБА слоя, но по-разному.** `.research/` не удаляется после прогона, и `layer=spec` может его читать. Но источник у слоёв разный, и путать нельзя:

@@ -4,7 +4,8 @@ description: >
   Реализовать задачи из tasks.md change'а фабрики (скилл кодинга, у границы набора) — найти первую невыполненную,
   выполнить код, отметить в tasks.md, перед завершением прогнать сборку/тесты/линтер.
   Опционально использует design.md если есть. Используй когда есть готовый change
-  в `masterspec/changes/<name>/` с tasks.md, статус `Согласовано` или `В реализации`,
+  в `masterspec/changes/<name>/` (или openspec/changes/ в openspec-режиме) с tasks.md,
+  статус `Согласовано` или `В реализации`,
   и пользователь говорит "реализуй", "implement", "начни задачи", "код по плану",
   "сделай change <name>", "продолжи реализацию".
 when_to_use: >
@@ -27,7 +28,9 @@ allowed-tools:
 
 Реализовать задачи из `tasks.md` строго по плану. Если есть `design.md` — опирайся на него; для простого CR `design.md` может отсутствовать.
 
-**Input**: Имя change (например `add-retry-for-failed-delivery`). Навык автоматически добавит префикс `masterspec/changes/<name>/`.
+**Input**: Имя change (например `add-retry-for-failed-delivery`). Навык автоматически добавит префикс `<changes-root>/<name>/` (например `masterspec/changes/<name>/` в classic-подпапке или `openspec/changes/<name>/` в openspec-режиме).
+
+Определи корни фабрики по `../masterspec/references/layout-modes.md §2` (положение `00-masterspec-index.md` → specs-root, changes-root).
 
 ## Bundle-пути
 
@@ -49,13 +52,14 @@ allowed-tools:
 
 Если имя не указано:
 ```bash
-ls masterspec/changes/ 2>/dev/null | grep -v "^archive$"
+# <changes-root> — из резолвинга layout-modes.md §2 (например masterspec/changes/ в classic-подпапке или openspec/changes/ в openspec-режиме)
+ls <changes-root>/ 2>/dev/null | grep -v "^archive$"
 ```
 Автовыбор при одном активном; AskUserQuestion если несколько. Объяви: `Реализую change: <name>`.
 
 ### 2. Проверь файлы
 
-Путь `masterspec/changes/<name>/`. `tasks.md` — **обязателен** (без него выход, см. `edge-cases.md`). `design.md` — **опционален**.
+Путь `<changes-root>/<name>/`. `tasks.md` — **обязателен** (без него выход, см. `edge-cases.md`). `design.md` — **опционален**.
 
 ### 3. Проверь статус change.md
 
@@ -117,7 +121,7 @@ ls masterspec/changes/ 2>/dev/null | grep -v "^archive$"
 - ВСЕГДА отмечай задачу сразу после выполнения.
 - В **tasks.md** — трогай ТОЛЬКО чекбоксы `- [ ]` / `- [x]` в пронумерованных секциях. НЕ трогай чеклист верификации, статус tasks.md, лог изменений.
 - В **change.md** — меняй ТОЛЬКО строку `> **Статус**:` (шаг 3). Остальное не трогай.
-- **Артефакты фабрики (`masterspec/01-*/02-*/03-*/04-*`) НЕ ТРОГАЙ.** Реализация происходит в коде проекта. Вливание в артефакты фабрики — это отдельный шаг `masterspec-apply-change`.
+- **Артефакты фабрики (`<specs-root>/01-*/02-*/03-*/04-*`) НЕ ТРОГАЙ** (например `masterspec/01-*/…` или `openspec/specs/01-*/…`). Реализация происходит в коде проекта. Вливание в артефакты фабрики — это отдельный шаг `masterspec-apply-change`.
 - ВСЕГДА запускай верификацию (шаг 8) перед объявлением завершения. НЕ пропускай сборку/тесты, даже если все чекбоксы зелёные.
 - НИКОГДА не докладывай «реализация завершена», пока верификация не прошла или не зафиксирована как технически невозможная — явно, в отчёте.
 - ЕСЛИ задача непонятна — спроси перед выполнением.

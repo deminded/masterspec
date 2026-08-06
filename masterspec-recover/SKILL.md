@@ -11,7 +11,7 @@ description: >
 when_to_use: >
   восстановить описание из документов или кода, проанализировать репозиторий,
   собрать codemap, обратное восстановление существующей системы, recover source=docs|code
-argument-hint: "source=docs|code|both [roots=<корневые пути кода>] [docs=<пути к материалам, дефолт 00-source-data>] [context=lean|full]"
+argument-hint: "source=docs|code|both [roots=<корневые пути кода>] [docs=<пути к материалам, дефолт 00-source-data>] [layout=classic|openspec] [context=lean|full]"
 allowed-tools:
   - Read
   - Write
@@ -23,7 +23,7 @@ allowed-tools:
 
 # masterspec-recover — восстановить описание
 
-Восстанавливаю описание из имеющегося материала. Не домысливаю: что не подтверждено источником — помечаю как открытый вопрос. Мета-модель и дисциплина слоёв — в kernel (`../masterspec/`). Раскладка и инициализация фабрики — как в `derive` (`../masterspec-derive/SKILL.md §0`, мета-модель §3). **Каждый артефакт кладётся строго в свой канонический подкаталог по `../masterspec/references/artifact-routing.md` (`type:` → путь; `api` — по `scope`, `fn` — по `block`), НЕ валом в корень слоя (`02-specifications/cmp-…` вместо `02-specifications/01-components/cmp-…` — дефект).** Это инвариант ПЛАНИРОВАНИЯ, не постобработки: в lean оркестратор передаёт каждому субагенту ПОЛНЫЙ `target_path` из routing (слой + подкаталог), а не папку-слой; субагент пишет ровно туда. Плоскую раскладку в корень слоя detected-и-блокирует детерминированный контроль перед перегенерацией индекса (`../masterspec/scripts/check-layout.py`, см. `verify`).
+Восстанавливаю описание из имеющегося материала. Не домысливаю: что не подтверждено источником — помечаю как открытый вопрос. Мета-модель и дисциплина слоёв — в kernel (`../masterspec/`). Раскладка и инициализация фабрики — как в `derive` (`../masterspec-derive/SKILL.md §0`, мета-модель §3). При `layout=openspec` — та же ветка derive §0: скелет слоёв в `openspec/specs/`, changes соседом в `openspec/changes/`, `openspec/config.yaml` (если нет) и строка раскладки в паспорте индекса — чтобы восстановленная фабрика сразу была видна инструментам OpenSpec при источнике истины masterspec; термины и резолвинг — `../masterspec/references/layout-modes.md`. Дефолт `classic` — поведение прежнее. **Каждый артефакт кладётся строго в свой канонический подкаталог по `../masterspec/references/artifact-routing.md` (`type:` → путь; `api` — по `scope`, `fn` — по `block`), НЕ валом в корень слоя (`02-specifications/cmp-…` вместо `02-specifications/01-components/cmp-…` — дефект).** Это инвариант ПЛАНИРОВАНИЯ, не постобработки: в lean оркестратор передаёт каждому субагенту ПОЛНЫЙ `target_path` из routing (слой + подкаталог), а не папку-слой; субагент пишет ровно туда. Плоскую раскладку в корень слоя detected-и-блокирует детерминированный контроль перед перегенерацией индекса (`../masterspec/scripts/check-layout.py`, см. `verify`).
 
 > **Lean для docs/both.** `recover/plan.md` несёт типизированные фазы, и оркестратор не читает содержимое сам ни в одной из них: `docs-research` (explore source=docs) → `docs-materialize` (gen-субагенты пишут артефакты из агрегата) → `machine-import` (субагент копирует контракты, собирает тонкие компаньоны) → `test-link` (стыковка ТК, несостыкованные → `recover/_gaps.md`) → `reconcile` (только для `both`: сверка агрегатов → `recover/_reconciliation.yaml`). Оркестратор держит план и счётчики, содержимое — субагенты.
 >
