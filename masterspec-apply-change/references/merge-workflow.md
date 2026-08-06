@@ -15,6 +15,8 @@
 ```bash
 git status --porcelain <specs-root> | grep -v "^.. <changes-root>/"
 # classic-подпапка: git status --porcelain masterspec/ | grep -v "^.. masterspec/changes/"
+# ПОДСТАНОВКА: <changes-root> в grep — БЕЗ ведущего ./ (git печатает пути без него);
+# classic-in-root: grep -v "^.. changes/"
 # openspec: git status --porcelain openspec/specs/   (changes-root — сосед, в выборку не попадает)
 ```
 
@@ -366,7 +368,7 @@ rmdir <specs-root>/<dir-path> 2>/dev/null
 
 Структурные инварианты фабрики — быстрые проверки:
 
-1. `find masterspec/ -name "*.md" -type f | wc -l` — число файлов соответствует ожидаемому (добавлены N, удалены M относительно до-apply состояния).
+1. `find <specs-root> -name "*.md" -type f | wc -l` (например `find masterspec/ …` в classic-подпапке, `find openspec/specs/ …` в openspec) — число файлов соответствует ожидаемому (добавлены N, удалены M относительно до-apply состояния).
 2. Каждый ADDED-файл присутствует в `00-masterspec-index.md`.
 3. Каждый REMOVED-файл отсутствует и в `00-masterspec-index.md`, и в дереве; парный сайдкар удалённого компаньона (по плану dry-run) — тоже.
 4. Grep по `<specs-root>/` на предмет обратных ссылок — нет ссылок из требований на `cmp-`/`scn-`/`api-`/`data-`/`cmap-`/`trace-`/`dmap-`.

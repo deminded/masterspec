@@ -124,6 +124,12 @@ class MergeWorkflowNoHardcodedRoots(unittest.TestCase):
                     and "references/" not in line and "../masterspec/" not in line:
                 bad.append(f"{i}: {line.strip()[:90]}")
         self.assertEqual(bad, [], "исполняемые строки с жёстким masterspec/: %s" % bad)
+        # inline-исполняемое вне fence: `find masterspec/ — smoke-check §9.1 ловился
+        # только этим (находка re-check Sol: страж по fence его пропустил)
+        inline_bad = [f"{i}: {l.strip()[:80]}" for i, l in
+                      enumerate(ref.splitlines(), 1)
+                      if "`find masterspec/" in l and "<specs-root>" not in l]
+        self.assertEqual(inline_bad, [], "inline-команды с жёстким masterspec/: %s" % inline_bad)
 
 
 if __name__ == "__main__":
