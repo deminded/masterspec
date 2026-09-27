@@ -84,7 +84,8 @@ stat -c '%Y' masterspec/.research-notes.md 2>/dev/null || stat -f '%m' masterspe
 |----------|----------------|
 | `target=factory-spec`, фабрики ещё нет | `derive layer=req` (использует `.research-notes.md` как черновой материал) |
 | `target=factory-spec`, фабрика есть, но не актуальна | `verify` (аудит) или `recover source=code` |
-| `target=factory-change` | `masterspec-evolve` (создаст change, подхватив `.research-notes.md`) |
+| `target=factory-change`, `source=docs` | `masterspec-evolve` (только требования/контракты из research) |
+| `target=factory-change`, `source=code` | `recover source=code` → проверка восстановленных контрактов; evolve получает проверенные артефакты `01-`/`02-`, не кодовый research |
 
 ---
 
