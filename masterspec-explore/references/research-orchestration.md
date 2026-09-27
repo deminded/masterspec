@@ -108,7 +108,9 @@ find <docs_roots> -type f \( -name "*.md" -o -name "*.html" -o -name "*.txt" \) 
 | Средний (3 агента) | [requirements-scope], [components-scope + scenarios-scope], [data-scope] |
 | Крупный (4 агента) | [requirements-scope], [components-scope], [scenarios-scope], [data-scope (+ codemap-scope при необходимости)] |
 
-Для простых change (правка одного AC, редактирование строки таблицы) исследование кода вообще можно пропустить — пользовательский чек `Нужно ли картировать код?` при создании change (`evolve`, шаг 0).
+В evolve исследование кода не выполняется независимо от размера change. Граф влияния
+строится по требованиям/спецификациям; неизвестное фактическое поведение требует отдельного
+recover и проверки контракта. Самостоятельный explore source=code остаётся доступен.
 
 ---
 

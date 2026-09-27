@@ -1,12 +1,14 @@
 # Соглашения про changes/
 
-Как организована директория изменений фабрики. Документ читают workflow-скиллы `masterspec-evolve` (создаёт change, шаг 0), `masterspec-impl-plan`, `masterspec-implement`, `masterspec-apply-change`, `masterspec-archive-change`.
+Как организована директория изменений фабрики. Документ читают workflow-скиллы `masterspec-evolve` (создаёт change, шаг 3), `masterspec-impl-plan`, `masterspec-implement`, `masterspec-apply-change`, `masterspec-archive-change`.
 
 ---
 
 ## 1. Расположение
 
-`masterspec/changes/` — внутри фабрики пользователя, рядом с артефактами слоёв.
+`changes-root` определяется по `layout-modes.md §2`: `<specs-root>/changes/` в classic,
+соседний `<specs-root>/../changes/` в openspec. Пути артефактов в change считаются от
+`specs-root`. Ниже — пример classic с фабрикой в подпапке `masterspec/`.
 
 ```
 masterspec/
@@ -36,12 +38,18 @@ masterspec/
 
 Шапка со статусом + 8 секций. Шаблон — `../templates/tpl-change.md`. Формат детально — `change-format.md` (рядом).
 
+Новые change от `evolve` содержат `> **Область**: spec-only`: изменения только `01/02`,
+словаря и относящихся к ним решений `04`. Нижние зависимости отмечаются в route-run как
+`deferred-to-implementation`, без изменений codemap и предложений по коду.
+Маркер проверяют `check-change-scope.py` и семантическая вычитка `verify layer=change`.
+Существующие change без маркера сохраняют общий формат.
+
 Секции:
 1. Мотивация (цель, инициатор, приоритет, слои)
 2. Затронутые артефакты (таблицы MODIFIED / ADDED / REMOVED)
 3. Обратная совместимость
 4. MODIFIED — diff-блоки
-5. ADDED — отсылка к `new/` + список
+5. Все файлы `new/`: ADDED и замены сайдкаров из MODIFIED
 6. REMOVED — повтор §2.3 с обоснованием
 7. Влияние на направление ссылок
 8. Критерии приёмки изменения
@@ -54,11 +62,17 @@ masterspec/
 
 ### 2.3. `.research/<role>.yaml` — опционально
 
-Результаты работы `masterspec-explore` (structured research кодовой базы). Используются `evolve` / `impl-plan` / `implement` для точной привязки изменений к коду. После `apply-change` и `archive-change` директория сохраняется внутри архива для аудита.
+Результаты работы `masterspec-explore` (structured research кодовой базы). Используются
+`impl-plan` / `implement` для точной привязки изменений к коду. `evolve` не создаёт и не читает
+`.research/code/`. После `apply-change` и `archive-change` директория сохраняется внутри
+архива для аудита. Реальное расположение research: `.research/<source>/`, где source — `code` или `docs`.
 
 ### 2.4. `design.md` + `tasks.md` — опционально
 
-Создаются `masterspec-impl-plan` для сложных CR. Формат — dev-design, привязанный к реальным классам/модулям проекта. Для простых CR шаг пропускается.
+Создаются `masterspec-impl-plan` для сложных CR после отдельного перехода к реализации.
+Формат — dev-design, привязанный к реальным классам/модулям проекта. `evolve` не создаёт,
+не читает и не редактирует эти файлы, даже если они уже лежат рядом с change.
+Для простых CR шаг пропускается.
 
 ---
 
@@ -68,7 +82,7 @@ masterspec/
 
 | Статус | Кто ставит | Когда |
 |---|---|---|
-| На согласовании | `masterspec-evolve` | при создании change (шаг 0) |
+| На согласовании | `masterspec-evolve` | при создании change (шаг 3) |
 | Согласовано | аналитик (вручную) | после merge PR |
 | В реализации | `masterspec-implement` | при первом запуске кодинга |
 | Реализовано | `masterspec-apply-change` | после успешного влития change в фабрику |
@@ -82,7 +96,7 @@ masterspec/
 
 ## 4. Гибридный формат change (diff vs new/)
 
-Выбор делается при создании change (`masterspec-evolve`, шаг 0). Правила — в `change-format.md` (рядом). Сводка:
+Выбор делается при создании change (`masterspec-evolve`, шаг 3). Правила — в `change-format.md` (рядом). Сводка:
 
 | Тип правки | Формат |
 |---|---|
@@ -98,9 +112,9 @@ masterspec/
 
 Таблица описывает поток ИЗМЕНЕНИЯ (`evolve` → `apply-change`). В потоке генерации с нуля (`derive`) артефакты пишутся прямо в дерево и получают `actual` сменой статуса человеком при merge — без change.md и без apply-change. Этап «В реализации» нужен, ТОЛЬКО если change требует правки кода; если меняется лишь спека — после `Согласовано` идёт сразу `apply-change`.
 
-| Статус change.md | Что означает для `masterspec/01-*/02-*/03-*/04-*` |
+| Статус change.md | Что означает для `<specs-root>/01-*/02-*/03-*/04-*` |
 |---|---|
-| На согласовании | Ничего не тронуто. Вся работа — в `masterspec/changes/<name>/`. |
+| На согласовании | Ничего не тронуто. Вся работа — в `<changes-root>/<name>/`. |
 | Согласовано | PR смержен. Артефакты фабрики не тронуты. Если нужен код — `impl-plan`/`implement`; если меняется только спека — сразу `apply-change`. |
 | В реализации | (опционально, только если нужен код) `implement` пишет код. Артефакты фабрики не тронуты. |
 | Реализовано | `apply-change` выполнен. Diff-блоки применены, файлы из `new/` скопированы, `00-masterspec-index.md` перегенерирован. Артефакты слоёв получают `status: actual` (merge PR уже был согласованием); `adr-`/`dr-` сохраняют свой решенческий статус. |
@@ -113,10 +127,10 @@ masterspec/
 Единая команда при любой проблеме после `apply-change`:
 
 ```bash
-git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'
+git checkout HEAD -- <specs-root>/ ':(exclude)<changes-root>/'
 ```
 
-Откатывает ВСЕ правки в `masterspec/01-*/02-*/03-*/04-*` и `00-masterspec-index.md`. Директория `masterspec/changes/<name>/` остаётся нетронутой — она под отдельным git'ом change'а.
+Откатывает ВСЕ правки в `<specs-root>/01-*/02-*/03-*/04-*` и `00-masterspec-index.md`. Директория `<changes-root>/<name>/` остаётся нетронутой — она исключена из команды отката.
 
 Никаких `.bak`-файлов. Коммит до `apply-change` обязателен.
 
@@ -127,8 +141,8 @@ git checkout HEAD -- masterspec/ ':(exclude)masterspec/changes/'
 `masterspec-archive-change` выполняет:
 
 ```bash
-mkdir -p masterspec/changes/archive
-mv masterspec/changes/<name> masterspec/changes/archive/YYYY-MM-DD-<name>
+mkdir -p <changes-root>/archive
+mv <changes-root>/<name> <changes-root>/archive/YYYY-MM-DD-<name>
 ```
 
 Где `YYYY-MM-DD` — сегодняшняя дата (UTC). Если директория с таким именем уже есть — добавляется суффикс `-2`, `-3`.

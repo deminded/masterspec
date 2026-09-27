@@ -84,7 +84,8 @@ specs-root, как и в classic (скрипты `check-layout.py`/`check-operat
 принимают specs-root первым аргументом — им всё равно, где он лежит): для openspec CLI они безвредны — он игнорирует всё, что не
 `specs/**/spec.md` и не каталог change.
 
-Почему это работает (проверено живым CLI 1.8.0, 2026-08-06):
+Почему это работает (проверено живым CLI 1.8.0, 2026-08-06;
+повторено приёмочными тестами на CLI 1.13.2, 2026-09-27):
 - `openspec list/validate` видят спеками ТОЛЬКО `specs/**/spec.md` — деревья артефактов
   masterspec игнорируются молча, не ломая команд;
 - каталог в `changes/` без файлов openspec падал бы в `validate` («no deltas»), поэтому
@@ -99,8 +100,8 @@ specs-root, как и в classic (скрипты `check-layout.py`/`check-operat
 | Артефакт | Кто создаёт | Содержимое |
 |---|---|---|
 | `openspec/config.yaml` | `derive`/`recover` при инициализации (если файла нет — создать по шаблону; если ЕСТЬ — не перезаписывать, но проверить `schema:`: отсутствует или не `spec-driven` — остановись и предложи владельцу явный merge, паспорт `layout: openspec` без валидного дескриптора не ставится) | `schema: spec-driven` + `context:` с картой мета-модели masterspec (шаблон `tpl-openspec-config.md`) |
-| `changes/<name>/.openspec.yaml` | `evolve` шаг 0 | две строки: `schema: spec-driven`, `skip_specs: true` |
-| `changes/<name>/proposal.md` | `evolve` шаг 0; обновляет тот, кто правит §1/§2/§7 change.md | проекция: `## Why` ← §1.1–1.2 сжато; `## What Changes` ← §2 списком; `## Impact` ← §7. Первая строка: `> Источник истины — change.md; этот файл — мост для OpenSpec.` |
+| `changes/<name>/.openspec.yaml` | `evolve` шаг 3 | две строки: `schema: spec-driven`, `skip_specs: true` |
+| `changes/<name>/proposal.md` | `evolve` шаг 3; обновляет тот, кто правит §1/§2/§7 change.md | проекция: `## Why` ← §1.1–1.2 сжато; `## What Changes` ← §2 списком; `## Impact` ← §7. Первая строка: `> Источник истины — change.md; этот файл — мост для OpenSpec.` |
 
 Инвариант моста ДВУСТОРОННИЙ: proposal.md не содержит фактов, которых нет в change.md,
 И отражает ВСЕ пункты §1/§2/§7 (Why/What Changes/Impact). Устаревший proposal — подмножество

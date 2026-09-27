@@ -22,7 +22,12 @@ allowed-tools:
 
 # masterspec-derive — породить слой
 
-Route-скилл: бизнес-запрос/требования → слой артефактов. Читай kernel-справочник (`../masterspec/meta_model.md`, `../masterspec/references/layer-discipline.md`, `../masterspec/references/artifact-routing.md`), контракт живой эксплуатации (`../masterspec/references/operational-envelope.md`) и паттерны (`../masterspec/references/patterns/`).
+Route-скилл: бизнес-запрос/требования → слой артефактов. Planner читает раздел целевого слоя
+в `../masterspec/meta_model.md`, `layer-discipline.md`, `artifact-routing.md` и `spec-writing.md`
+из `../masterspec/references/`. Gen получает один шаблон и применимые нормы типа.
+Оркестратор читает `patterns/context-isolation.md`, `element-workflow.md` и `enforcement.md`;
+`decision-node.md` — при реальном выборе, `guardrails.md` — при подключённых пакетах.
+Контракт OE обязателен для `fn` и связанных `tc/scn/lp/api`, а не для каждого типа.
 
 ## Параметры
 - `<factory-slug>` — обязателен: kebab-case имя фабрики; идёт в поле `factory:` фронтматтера всех артефактов.
@@ -32,7 +37,7 @@ Route-скилл: бизнес-запрос/требования → слой а
 - `layer=spec` — вход: согласованный слой требований. Выход: `02-specifications/` (контракт и физмодель рождаются здесь).
 - `pass=linear` (дефолт) — по одному элементу, человек контролирует каждый шаг. `pass=parallel` — независимые элементы разом субагентами, человек на финальной вычитке. parallel — явный выбор аналитика.
 - `verify=core` (дефолт) — дешёвое ядро осей; `verify=full` — все оси на слое и критичных элементах.
-- `context=full` / `context=lean` (дефолт) — изоляция контекста оркестратора (`patterns/context-isolation.md`). В `lean` оркестратор сам не читает мета-модель/research/артефакты, а делегирует planner-субагенту (раскладывает план и фокус-наборы в `<factory-root>/.work/<run-id>/`), `gen` и `verify`-субагентам; держит в контексте только план, пути и сводки. **Исключение:** OE-интервью с человеком всегда ведёт сам оркестратор и сразу пишет ответы в `<factory-root>/.work/<run-id>/oe-interview.md`; живое интервью нельзя делегировать субагенту. Для моделей с ограниченным контекстом (рост контекста не зависит от размера фабрики).
+- `context=full` / `context=lean` (дефолт) — изоляция контекста оркестратора (`patterns/context-isolation.md`). В `lean` оркестратор сам не читает мета-модель/research/артефакты, а делегирует planner-субагенту (раскладывает план и фокус-наборы в `<factory-root>/.work/<run-id>/`), `gen` и `verify`-субагентам; держит в контексте только план, пути и сводки. **Исключение:** OE-интервью с человеком всегда ведёт сам оркестратор и сразу пишет ответы в `<factory-root>/.work/<run-id>/oe-interview.md`; живое интервью нельзя делегировать субагенту. Для моделей с ограниченным контекстом: загружай текущий шаг и его зависимости, план растёт с фабрикой.
 - `guardrails=auto|off|<paths>` — внешние корпоративные правила (`patterns/guardrails.md`): `auto` (дефолт) берёт пакеты из `masterspec-config.yaml` фабрики; активный набор режется селекторами `applies_to`; применённые правила и конфликты фиксируются в route-run секцией «Guardrails applied».
 
 ## Метод
@@ -44,7 +49,7 @@ Route-скилл: бизнес-запрос/требования → слой а
 > gen получают уже записанный факт и не реконструируют ответ из сводки;
 > — §5 (дозапрос) → единый маршрут: код→`explore`, документ→`planner`, иначе→человек;
 > — §6/§8 (`verify`, индекс) — субагенты с файл-отчётом; оркестратор держит только план, пути, сводки.
-> По завершении прогона `<factory-root>/.work/<run-id>/` ОБЯЗАТЕЛЬНО удаляется (фокус-наборы = срезы содержания); `route-run` сохраняется отдельно. В `context=full` оркестратор выполняет те же шаги, читая сам.
+> После записи и проверки итогов успешно завершённого прогона удаляется только собственная `<factory-root>/.work/<run-id>/` (проверить абсолютный путь); прерванный прогон сохраняет состояние для продолжения; `route-run` сохраняется отдельно. В `context=full` оркестратор выполняет те же шаги, читая сам.
 
 0. **Инициализация (если фабрики ещё нет).** Создай скелет в КОРНЕ фабрики (по умолчанию — корень репозитория аналитики; при `root=<путь>` — внутри него, напр. `masterspec/` для спеки-подпапки в кодовой репе) по полной раскладке (`../masterspec/meta_model.md §3`): подпапки `01-requirements/{01-system,02-functions,03-nfr,04-rules,05-landscape,06-data-model,07-dictionaries,08-test-cases}`, `02-specifications/{01-components,02-scenarios,03-algorithms,04-apis/{internal,external},05-data,06-diagrams,07-load-profiles,08-test-cases,09-ui-views}`, `03-codemap/{01-component-maps,02-scenario-traces,03-data-maps}`, `04-decisions/` — все в specs-root. `changes/` — ОТДЕЛЬНО по режиму: classic — `<specs-root>/changes/`; openspec — ТОЛЬКО `openspec/changes/` (сосед; `openspec/specs/changes/` не создавать — дефект по layout-modes §1). Заведи `00-masterspec-index.md` (шаблон `tpl-masterspec-index`) и пустой `00-glossary.md`.
 

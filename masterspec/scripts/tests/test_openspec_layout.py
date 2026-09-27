@@ -14,6 +14,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -70,7 +71,7 @@ class OpenspecLayoutAcceptance(unittest.TestCase):
     def test_check_layout_accepts_openspec_specs_root(self):
         """Раскладка внутри specs-root канонична и проверяема штатным контролем."""
         r = subprocess.run(
-            ["python3", str(SCRIPTS / "check-layout.py"),
+            [sys.executable, str(SCRIPTS / "check-layout.py"),
              str(self.tmp / "openspec" / "specs"), "--check"],
             capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
