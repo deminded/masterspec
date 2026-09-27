@@ -106,11 +106,14 @@ kernel сам не запускается «в режиме» — выбери �
 | `verify layer=req\|spec\|change` | 🤖 (→ 👤 на гейт) | вычитка по O1–O5 (+O0/O6/O7/O_T для spec), weighted coverage и обязательная телеметрия |
 | `recover source=docs\|code` | 👤 | восстановить описание фабрики из документов или кода |
 | `apply-change` | 👤 (после merge PR) | влить change в артефакты фабрики + обновить индекс |
+| `apply-from-openspec` | 👤 | native OpenSpec delta → spec-only change с mapping и ревизиями → apply-change после согласования |
 | `archive-change` | 👤 | переместить завершённый change в archive/ |
 
 **Фокус-набор** — изолированный срез: бизнес-описание ровно одного элемента + релевантный срез вышестоящих артефактов (а не вся фабрика). Его готовит оркестратор (в `context=full`) или planner-субагент (в `context=lean` — `references/patterns/context-isolation.md`) и подаёт в `gen`, чтобы субагент не тонул в лишнем контексте.
 
-**Создание change** — это шаг 0 внутри `evolve` (отдельного скилла нет). Формат change.md — `references/change-format.md`, шаблон — `templates/tpl-change.md`.
+**Создание change** — шаг внутри `evolve` или импорт через `apply-from-openspec`.
+Оба используют `references/change-format.md` и `templates/tpl-change.md`;
+импорт дополнительно хранит источник и карту соответствий.
 
 **Граница набора:** реализация в коде (`impl-plan`, `implement`) — отдельный набор скиллов кодинга, вне этого справочника.
 

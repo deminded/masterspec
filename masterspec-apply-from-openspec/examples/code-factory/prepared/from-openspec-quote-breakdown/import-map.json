@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "inventory_id": "e0b3ea90fd4b1c9ca7cbd3325ff4028c90b925871da86385b3ad6c6a1be62574",
+  "bindings": [
+    {
+      "operation_id": "op-3234fd8dff8693de",
+      "disposition": "change",
+      "targets": [
+        {
+          "path": "01-requirements/02-functions/fn-calculate-quote.md",
+          "anchor": "AC-01"
+        },
+        {
+          "path": "01-requirements/02-functions/fn-calculate-quote.md",
+          "anchor": "AC-02"
+        },
+        {
+          "path": "01-requirements/08-test-cases/tc-acc-taxed-quote.md",
+          "anchor": "## Шаги выполнения"
+        }
+      ],
+      "reason": "Сохраняется владелец расчёта и ID AC; нулевая сумма сохранена, меняется точность."
+    },
+    {
+      "operation_id": "op-c8f6a1e7ff172101",
+      "disposition": "change",
+      "targets": [
+        {
+          "path": "01-requirements/02-functions/fn-calculate-quote.md",
+          "anchor": "## Результат"
+        },
+        {
+          "path": "01-requirements/02-functions/fn-calculate-quote.md",
+          "anchor": "AC-03"
+        },
+        {
+          "path": "01-requirements/08-test-cases/tc-acc-quote-breakdown.md",
+          "anchor": "## Шаги выполнения"
+        },
+        {
+          "path": "02-specifications/01-components/cmp-quote-policy.md",
+          "anchor": "### cap-calculate"
+        }
+      ],
+      "reason": "Разбивка дополняет результат существующей функции; новый приёмочный тест покрывает AC-03, компонент отражает состав выхода."
+    }
+  ],
+  "target_files": [
+    {
+      "path": "00-masterspec-index.md",
+      "sha256": "cdc0f9d983b3b5706cb56002a8eba809f73ac930e94f2fa25e9121e406172aa7"
+    },
+    {
+      "path": "01-requirements/02-functions/fn-calculate-quote.md",
+      "sha256": "9ae997761415975a8155cc2b49c65f1bd2ad2c79478bd27ea936275909c83aae"
+    },
+    {
+      "path": "01-requirements/08-test-cases/tc-acc-taxed-quote.md",
+      "sha256": "b8b4f91b9d5581245379325b731f3bf989bc7c4b309103c997445551e23d4931"
+    },
+    {
+      "path": "01-requirements/08-test-cases/tc-acc-quote-breakdown.md",
+      "sha256": null
+    },
+    {
+      "path": "02-specifications/01-components/cmp-quote-policy.md",
+      "sha256": "c14f55916c853afa08c8164a00656d17f36b70c8e8013140e356b87bd206316f"
+    }
+  ]
+}

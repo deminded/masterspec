@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "change": "quote-breakdown",
+  "source_files": [
+    {
+      "path": ".openspec.yaml",
+      "sha256": "65ff9df577b54daf8b21917c880c564135cf80d9e6a2de690feb0f4a842393f1"
+    },
+    {
+      "path": "specs/pricing/quotes/spec.md",
+      "sha256": "1dfe9e670226af32dacedc60ea9343493579c927b45da4625d55c199b80c0014"
+    }
+  ],
+  "base_files": [
+    {
+      "path": "pricing/quotes/spec.md",
+      "sha256": "59233060c543723d30f6b5dc8a07a881309b08a3f6ae6d04f6561c372118495d"
+    }
+  ],
+  "operations": [
+    {
+      "id": "op-3234fd8dff8693de",
+      "capability": "pricing/quotes",
+      "operation": "MODIFIED",
+      "before": {
+        "name": "Taxed quote",
+        "text": "### Requirement: Taxed quote\nThe system SHALL calculate a payable amount by applying 20 percent tax to a\nnonnegative decimal subtotal, rounding half up to the nearest whole unit.\n\n#### Scenario: Fractional subtotal\n- **WHEN** an internal caller requests a quote for subtotal 10.03\n- **THEN** the payable amount is 12\n\n#### Scenario: Zero subtotal\n- **WHEN** an internal caller requests a quote for subtotal 0\n- **THEN** the payable amount is 0\n",
+        "scenarios": [
+          {
+            "name": "Fractional subtotal",
+            "text": "#### Scenario: Fractional subtotal\n- **WHEN** an internal caller requests a quote for subtotal 10.03\n- **THEN** the payable amount is 12\n"
+          },
+          {
+            "name": "Zero subtotal",
+            "text": "#### Scenario: Zero subtotal\n- **WHEN** an internal caller requests a quote for subtotal 0\n- **THEN** the payable amount is 0\n"
+          }
+        ]
+      },
+      "after": {
+        "name": "Taxed quote",
+        "text": "### Requirement: Taxed quote\nThe system SHALL calculate a payable amount by applying 20 percent tax to a\nnonnegative decimal subtotal, rounding half up to two decimal places.\n\n#### Scenario: Fractional subtotal\n- **WHEN** an internal caller requests a quote for subtotal 10.03\n- **THEN** the payable amount is 12.04\n\n#### Scenario: Zero subtotal\n- **WHEN** an internal caller requests a quote for subtotal 0\n- **THEN** the payable amount is 0\n",
+        "scenarios": [
+          {
+            "name": "Fractional subtotal",
+            "text": "#### Scenario: Fractional subtotal\n- **WHEN** an internal caller requests a quote for subtotal 10.03\n- **THEN** the payable amount is 12.04\n"
+          },
+          {
+            "name": "Zero subtotal",
+            "text": "#### Scenario: Zero subtotal\n- **WHEN** an internal caller requests a quote for subtotal 0\n- **THEN** the payable amount is 0\n"
+          }
+        ]
+      },
+      "source": {
+        "path": "specs/pricing/quotes/spec.md",
+        "line": 5
+      },
+      "delta_text": "### Requirement: Taxed quote\nThe system SHALL calculate a payable amount by applying 20 percent tax to a\nnonnegative decimal subtotal, rounding half up to two decimal places.\n\n#### Scenario: Fractional subtotal\n- **WHEN** an internal caller requests a quote for subtotal 10.03\n- **THEN** the payable amount is 12.04\n\n#### Scenario: Zero subtotal\n- **WHEN** an internal caller requests a quote for subtotal 0\n- **THEN** the payable amount is 0\n"
+    },
+    {
+      "id": "op-c8f6a1e7ff172101",
+      "capability": "pricing/quotes",
+      "operation": "ADDED",
+      "before": null,
+      "after": {
+        "name": "Tax breakdown",
+        "text": "### Requirement: Tax breakdown\nThe system SHALL return the original subtotal and tax amount alongside the\npayable amount. Tax amount SHALL equal payable amount minus original subtotal.\n\n#### Scenario: Breakdown reconciles\n- **WHEN** an internal caller requests a quote for subtotal 10.03\n- **THEN** the result contains subtotal 10.03, tax amount 2.01 and payable amount 12.04\n",
+        "scenarios": [
+          {
+            "name": "Breakdown reconciles",
+            "text": "#### Scenario: Breakdown reconciles\n- **WHEN** an internal caller requests a quote for subtotal 10.03\n- **THEN** the result contains subtotal 10.03, tax amount 2.01 and payable amount 12.04\n"
+          }
+        ]
+      },
+      "source": {
+        "path": "specs/pricing/quotes/spec.md",
+        "line": 19
+      },
+      "delta_text": "### Requirement: Tax breakdown\nThe system SHALL return the original subtotal and tax amount alongside the\npayable amount. Tax amount SHALL equal payable amount minus original subtotal.\n\n#### Scenario: Breakdown reconciles\n- **WHEN** an internal caller requests a quote for subtotal 10.03\n- **THEN** the result contains subtotal 10.03, tax amount 2.01 and payable amount 12.04\n"
+    }
+  ],
+  "inventory_id": "e0b3ea90fd4b1c9ca7cbd3325ff4028c90b925871da86385b3ad6c6a1be62574"
+}
