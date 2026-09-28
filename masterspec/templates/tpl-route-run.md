@@ -10,7 +10,7 @@ ts: YYYY-MM-DDThh:mm
 
 Отчуждаемый аудит-след прогона derive/evolve. Метрики выносимы без содержания фабрики — для приёмки и сравнения прогонов.
 
-> **Расположение** (зависит от потока): генерация (`derive`) — `masterspec/route-run-<ts>.md` (в корне фабрики, change'а нет); изменение (`evolve`) — `masterspec/changes/<name>/route-run-<ts>.md`.
+> **Расположение** (зависит от потока): генерация (`derive`) — `<specs-root>/route-run-<ts>.md` (в корне фабрики, change'а нет); изменение (`evolve`) — `<changes-root>/<name>/route-run-<ts>.md`.
 
 ## Вход
 <!-- бизнес-запрос / зона изменения / якоря скоупа -->

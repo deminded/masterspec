@@ -1,6 +1,6 @@
 # Формат change — diff-блоки vs файлы в new/
 
-Канонический формат change.md и выбор формата для каждой правки. Читают: `evolve` (шаг 0 — заполнение change.md) и `apply-change` (мерж).
+Канонический формат change.md и выбор формата для каждой правки. Читают: `evolve` (шаг 3 — заполнение change.md) и `apply-change` (мерж).
 
 change.md состоит из шапки (статус, фабрика) и 8 секций: §1 цель, §2 таблицы (2.1 MODIFIED / 2.2 ADDED / 2.3 REMOVED), §4 diff-блоки, §5 список new/, §6 обоснования REMOVED, §7 влияние на ссылки, §8 критерии приёмки.
 
@@ -232,7 +232,7 @@ Change, переводящий фабрику на новую версию ме�
 6. §7 заполнен или `Нет изменений.`
 7. §8 критерии приёмки на месте.
 8. Дисциплина слоёв проверена для каждого MODIFIED, ADDED и сопроводительного текста.
-9. Для `evolve` есть маркер `spec-only`; запущен `python <skill-root>/masterspec/scripts/check-change-scope.py <change-dir>`.
+9. Для `evolve` есть маркер `spec-only`; запущен `python <skill-root>/masterspec/scripts/check-change-scope.py <change-dir> --factory <specs-root>`.
    Скрипт проверяет область путей и согласованность файлов, но не смысл текста.
    `verify layer=change` отдельно проверяет отсутствие предложений по коду во всём результате.
 

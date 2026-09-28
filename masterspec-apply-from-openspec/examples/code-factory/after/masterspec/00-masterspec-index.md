@@ -1,0 +1,29 @@
+---
+type: masterspec-index
+factory: pricing
+updated: 2026-09-27
+---
+# Индекс фабрики pricing
+
+## 1. Паспорт
+- Фабрика: pricing (учебный фрагмент кодовой фабрики).
+- Раскладка (layout): classic.
+- Владелец: pricing-team.
+- Статус описания: фрагмент; сертификат мета-модели не заявлен.
+
+## 3. Слой требований
+
+### 3.2. Функции АС/ФП
+ + `01-requirements/02-functions/fn-calculate-quote.md` # Расчёт суммы предложения
+
+### 3.8. Приёмочные тесты
+ + `01-requirements/08-test-cases/tc-acc-quote-breakdown.md` # Разбивка суммы
+ + `01-requirements/08-test-cases/tc-acc-taxed-quote.md` # Итог с налогом
+
+## 4. Слой спецификаций
+
+### 4.1. Компоненты и их возможности
+ + `02-specifications/01-components/cmp-quote-policy.md` # Политика расчёта предложения
+
+## 7. Белые пятна и открытые вопросы
+Фрагмент не описывает паспорт системы, внешние каналы и кодовые карты.

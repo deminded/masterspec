@@ -63,6 +63,25 @@ class ScopeTests(unittest.TestCase):
         self.write("changes/send/tasks.md", "Separate implementation work.\n")
         CHECKER.check(self.change)
 
+    def test_openspec_sibling_specs_root_and_explicit_root(self):
+        self.artifact()
+        self.document(modified=[("function", "fn-send", FN)])
+        # Move the same factory's layers below specs/ and leave changes/ beside it.
+        specs = self.factory / "specs"
+        specs.mkdir()
+        (self.factory / "01-requirements").rename(specs / "01-requirements")
+        (specs / "00-masterspec-index.md").write_text(
+            "# Index\n- Раскладка (layout): openspec\n", encoding="utf-8")
+        CHECKER.check(self.change)
+        CHECKER.check(self.change, specs)
+        result = subprocess.run([sys.executable, str(SCRIPT), str(self.change)],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        # A partially migrated factory needs an explicit choice, not first-match.
+        self.write("00-masterspec-index.md", "# Classic index\n")
+        self.assert_blocked()
+        CHECKER.check(self.change, specs)
+
     def test_new_api_pair_and_existing_sidecar_replacement(self):
         machine = "api-send.openapi.yaml"
         self.artifact("changes/send/new/api-send.md", "api", "api-send",

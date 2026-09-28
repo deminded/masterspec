@@ -51,6 +51,7 @@ allowed-tools:
 | Gate телеметрии verify-report | `scripts/check-verify-report.py` | После сборки каждого `verify-report.md` |
 | Граница change от evolve | `scripts/check-change-scope.py` | До verify и до применения spec-only change |
 | Маршрутизация тип→шаблон→путь→slug | `references/artifact-routing.md` | При создании/размещении артефакта |
+| Раскладки: два корня (specs-root/changes-root), резолвинг, режим openspec | `references/layout-modes.md` | При старте любой операции — шаг «найди фабрику» |
 | Канонический формат индекса | `references/index-canonical.md` | При работе с `00-masterspec-index.md` |
 | Соглашения change-workflow | `references/change-conventions.md` | При работе с `changes/` |
 | Шаблоны артефактов | `templates/tpl-*.md` | По одному при создании артефакта |
@@ -105,11 +106,14 @@ kernel сам не запускается «в режиме» — выбери �
 | `verify layer=req\|spec\|change` | 🤖 (→ 👤 на гейт) | вычитка по O1–O5 (+O0/O6/O7/O_T для spec), weighted coverage и обязательная телеметрия |
 | `recover source=docs\|code` | 👤 | восстановить описание фабрики из документов или кода |
 | `apply-change` | 👤 (после merge PR) | влить change в артефакты фабрики + обновить индекс |
+| `apply-from-openspec` | 👤 | native OpenSpec delta → spec-only change с mapping и ревизиями → apply-change после согласования |
 | `archive-change` | 👤 | переместить завершённый change в archive/ |
 
 **Фокус-набор** — изолированный срез: бизнес-описание ровно одного элемента + релевантный срез вышестоящих артефактов (а не вся фабрика). Его готовит оркестратор (в `context=full`) или planner-субагент (в `context=lean` — `references/patterns/context-isolation.md`) и подаёт в `gen`, чтобы субагент не тонул в лишнем контексте.
 
-**Создание change** — это шаг 0 внутри `evolve` (отдельного скилла нет). Формат change.md — `references/change-format.md`, шаблон — `templates/tpl-change.md`.
+**Создание change** — шаг внутри `evolve` или импорт через `apply-from-openspec`.
+Оба используют `references/change-format.md` и `templates/tpl-change.md`;
+импорт дополнительно хранит источник и карту соответствий.
 
 **Граница набора:** реализация в коде (`impl-plan`, `implement`) — отдельный набор скиллов кодинга, вне этого справочника.
 
@@ -158,3 +162,5 @@ masterspec/
 ```
 
 Полная вложенная раскладка с подпапками и правилами — `meta_model.md §3` (единственный источник структуры; здесь — обзор).
+
+**Положение корней.** У фабрики два корня: **specs-root** (каталог индекса и слоёв) и **changes-root** (каталог change-директорий); их резолвинг по положению `00-masterspec-index.md` и режимы — `references/layout-modes.md`. Режим `layout=openspec` даёт совместимость со структурой OpenSpec: specs-root = `openspec/specs/`, changes-root = `openspec/changes/`, плюс мосты (`openspec/config.yaml`, `proposal.md`/`.openspec.yaml` у change'ей) — чтобы `openspec` CLI видел фабрику, а источником истины оставался masterspec. Дерево внутри specs-root во всех режимах одно; схема выше — дефолтный `classic`.

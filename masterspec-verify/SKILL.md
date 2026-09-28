@@ -21,6 +21,8 @@ allowed-tools:
 
 Read-only по отношению к артефактам: я нахожу дыры и считаю метрики, НЕ правлю (правки — `derive`/`evolve`). Оси и дешёвое ядро — `../masterspec/references/patterns/verification-axes.md`.
 
+Определи корни фабрики по `../masterspec/references/layout-modes.md §2` (положение `00-masterspec-index.md` → specs-root, changes-root).
+
 При вычитке применяй `../masterspec/references/spec-writing.md`: проверяй полноту обязательств,
 а не число заголовков или объём текста. Условный раздел без предмета не является дырой.
 Дубликаты норм, непроверяемые формулировки и догадки вместо `OPEN` — содержательные дефекты.
@@ -30,7 +32,7 @@ Read-only по отношению к артефактам: я нахожу ды�
 - `layer=spec` — оси O1–O5 + **O0 single-source (hard-fail при двух редакциях контракта)** + O6 контракт + O7 физмодель + полнота воплощения applicable OE. Критерий: **codegen_ready**.
 
   **Гейт расхождений (если фабрика восстановлена из двух источников).** Есть `recover/_reconciliation.yaml` — прочитай его: неразрешённые `spec-drift`, `declared-not-implemented` и `ambiguous_matches[]` — **блокеры codegen_ready**. Спека, у которой заявленное и фактическое разошлись, к кодогенерации не готова по определению: неизвестно, какую из двух правд кодировать. Свободный текст §7 оси не читают — читается манифест.
-- `layer=change` — полнота каскада: каскад-вниз-к-верификации (правка/подъём → AC), обе стороны контракта, scope-fence (вердикт каждому соседу), правило немого вердикта и немого подъёма. Критерий выхода: **cascade_ready** (нет немых вердиктов и немых подъёмов, нет недоведённого каскад-AC, каждый сосед покрыт вердиктом scope-fence, нет `contract-both-sides: missing`, нет открытых `blockers` по узлам) — симметричен spec_ready/codegen_ready, делает результат change-аудита однозначным для gate. Покрывает ВЕСЬ контракт layer=change (включая обе стороны контракта и блокеры узлов), не только четыре списка-метрики.
+- `layer=change` — полнота каскада: каскад-вниз-к-верификации (правка/подъём → AC), обе стороны контракта, scope-fence (вердикт каждому соседу), правило немого вердикта и немого подъёма; в openspec-режиме — `proposal.md` есть ДВУСТОРОННЯЯ проекция `change.md` §1/§2/§7: не содержит фактов, которых там нет, И не теряет пунктов, которые там есть (устаревшее подмножество — тоже дефект; ось O0 single-source, результат входит в cascade_ready). Критерий выхода: **cascade_ready** (нет немых вердиктов и немых подъёмов, нет недоведённого каскад-AC, каждый сосед покрыт вердиктом scope-fence, нет `contract-both-sides: missing`, нет открытых `blockers` по узлам) — симметричен spec_ready/codegen_ready, делает результат change-аудита однозначным для gate. Покрывает ВЕСЬ контракт layer=change (включая обе стороны контракта и блокеры узлов), не только четыре списка-метрики.
 - `context=full` / `context=lean` (дефолт) — при standalone-аудите большого слоя в `lean` проверка декомпозируется по файловому контракту (`../masterspec/references/patterns/context-isolation.md §Lean в других скиллах`): `layer=req|spec` — субагент на ЭЛЕМЕНТ (оси элемента разделами в `verify/<elem>.md`), негатив-ось O5 и O0/O6/O7 — отдельными `verify/_negative.md` / `verify/_spec-o0o6o7.md`; `layer=change` — discovery узлов каскада (отдельный субагент → `verify/_change-nodes.md`, считает каскад ЗАНОВО от change-якорей), затем субагент на каждый узел (`verify/<node>.md` нормированного формата: cascade-AC / contract-both-sides / scope-fence / silent-verdict / silent-raise / blockers). verify-оркестратор сводит частичные `verify/*.md` в `verify-report.md`, сам слой не читает; `.work/<run-id>/` чистится. Для ограниченного контекста.
 - `guardrails=auto|off|<paths>` — внешние корпоративные правила (`patterns/guardrails.md`): `auto` (дефолт) берёт пакеты из `masterspec-config.yaml` фабрики; активный набор режется селекторами `applies_to`; применённые правила и конфликты фиксируются в route-run секцией «Guardrails applied».
 
@@ -44,13 +46,14 @@ Read-only по отношению к артефактам: я нахожу ды�
    однострочные internal-only, статусы и
    APPLICABLE→AC/tc-acc; для spec — APPLICABLE→scn, OE-LOAD→lp, внешний OE-DELIVERY→context/api.
    preset=full — все оси на слое + критичных элементах.
+   Пре-гейт openspec-режима (опционально, рядом с check-layout): при `layout=openspec` и наличии `openspec` CLI в PATH — прогони `openspec validate --all` из корня репо; красный = блокер ТОЛЬКО для `layer=change` (мосты `proposal.md`/`.openspec.yaml` — свойство change'ей); при `layer=req|spec` — предупреждение layout-health, в вердикт слоя не входит (чужой сломанный change не должен блокировать spec_ready фабрики); CLI недоступен — пометь «не проверено: openspec CLI недоступен». Три исхода, не два: непроверенное не выдавать за зелёное.
 2. **Негатив-ось (O5) — отдельным антагонистом** (`Task`-субагент с единственной задачей «найди что сломается / чего не хватает»): состязательность ловит false-positive, недоступный кооперативному ревью. Не самопроверка автора.
 3. **Эталон, не «похоже на правду».** Ревьюер прогоняет спеку через конкретные тесты (GWT-оракул, матрица состояний, трасса), а не оценивает «выглядит ли полным». Против ложной зелёной галочки.
 4. Для layer=change — независимость: считать каскад ЗАНОВО, не доверяя зоне генератора.
    Для change от evolve соблюдать spec-only границу из `layer-discipline.md`: обход только
    `01-`/`02-` и относящихся решений `04-`; нижние рёбра — `deferred-to-implementation`,
    без чтения кода/codemap. Они не входят в ожидаемое множество каскада.
-   До LLM-осей запустить `python3 <kernel-skill-dir>/scripts/check-change-scope.py <change-dir>`.
+   До LLM-осей запустить `python3 <kernel-skill-dir>/scripts/check-change-scope.py <change-dir> --factory <specs-root>`.
    Ошибка — blocker и `cascade_ready: no`. Нет Python — явная ручная сверка тех же множеств
    §2/§4/§5/new и путей; не записывать её как машинный PASS.
    Отдельно проверить смысл `change.md`, `new/`, route-run и итогового ответа: предложения
@@ -83,7 +86,7 @@ cascade_AC_missing: [узлы]   # каскад-вниз-к-AC не доведё
 scope_fence_uncovered: [соседи]  # соседи без вердикта
 ```
 Полная форма отчёта — обязательный `../masterspec/templates/tpl-verify-report.md`; сокращённая
-сводка выше не заменяет поля телеметрии. В lean этот же `verify-report.md` собирается агрегатором из частичных `verify/*.md` и хранится ВНЕ `.work/` — в корне фабрики (`layer=req|spec`) или в `changes/<name>/` (`layer=change`), как `route-run` (переживает чистку — это метрики, не содержание).
+сводка выше не заменяет поля телеметрии. В lean этот же `verify-report.md` собирается агрегатором из частичных `verify/*.md` и хранится ВНЕ `.work/` — в корне фабрики (`layer=req|spec`) или в `<changes-root>/<name>/` (`layer=change`; например `masterspec/changes/<name>/` в classic-подпапке, `openspec/changes/<name>/` в openspec-режиме), как `route-run` (переживает чистку — это метрики, не содержание).
 Блокеры → человеку на hard-gate. Метрики выносимы без содержания (приёмка, отчёт).
 
 ## Немое решение (проверка дисциплины записей)

@@ -2,7 +2,8 @@
 name: masterspec-archive-change
 description: >
   Заархивировать завершённый change — перенести директорию masterspec/changes/<name>/ в
-  masterspec/changes/archive/YYYY-MM-DD-<name>/. Используй после применения change
+  masterspec/changes/archive/YYYY-MM-DD-<name>/ (или openspec/changes/ в openspec-режиме).
+  Используй после применения change
   (статус `Реализовано`), либо когда пользователь говорит "архивируй change",
   "закрой change", "убери из активных", "archive".
 when_to_use: >
@@ -23,6 +24,8 @@ allowed-tools:
 
 **Input**: Опционально — имя change. Если не указано — выбор из активных через AskUserQuestion.
 
+Определи корни фабрики по `../masterspec/references/layout-modes.md §2` (положение `00-masterspec-index.md` → specs-root, changes-root).
+
 **AskUserQuestion fallback**: если инструмент недоступен — задай вопрос обычным текстом и дождись ответа.
 
 ---
@@ -33,7 +36,8 @@ allowed-tools:
 
 Найди активные changes:
 ```bash
-ls masterspec/changes/ 2>/dev/null
+# <changes-root> — из резолвинга layout-modes.md §2 (например masterspec/changes/ в classic-подпапке или openspec/changes/ в openspec-режиме)
+ls <changes-root>/ 2>/dev/null
 ```
 Исключи `archive/` из списка. Используй AskUserQuestion для выбора.
 
@@ -41,26 +45,26 @@ ls masterspec/changes/ 2>/dev/null
 
 ### 2. Проверь наличие change.md
 
-Проверь, что `masterspec/changes/<name>/change.md` существует.
+Проверь, что `<changes-root>/<name>/change.md` существует.
 
 Если не существует — покажи предупреждение, спроси подтверждение через AskUserQuestion, продолжи при подтверждении.
 
 ### 3. Проверь статус change.md
 
-Прочитай `masterspec/changes/<name>/change.md` и проверь поле `> **Статус**:` в шапке:
+Прочитай `<changes-root>/<name>/change.md` и проверь поле `> **Статус**:` в шапке:
 
 | Статус | Действие |
 |--------|----------|
 | `Реализовано` | Готов к архивации. На шаге 4 поменяй статус на `Архивировано` ДО `mv`. |
 | `Применено, не сертифицировано` | **СТОП, не архивируй.** Изменение внесено, но фабрика не прошла сертификацию (остались BLOCKER). Архивация спрячет незакрытые блокеры: папка уедет в архив, а дерево останется красным. Покажи остаточные блокеры из change.md и предложи закрыть их, затем пересертифицировать (`apply-change` §13, режим без change). |
-| `Архивировано` | Change уже помечен архивированным. Если директория всё ещё в `masterspec/changes/<name>/` (не в `archive/`) — предложи через AskUserQuestion переместить без правки статуса. Иначе выйди с сообщением «уже в архиве». |
+| `Архивировано` | Change уже помечен архивированным. Если директория всё ещё в `<changes-root>/<name>/` (не в `archive/`) — предложи через AskUserQuestion переместить без правки статуса. Иначе выйди с сообщением «уже в архиве». |
 | `На согласовании` / `Согласовано` / `В реализации` / отсутствует | Предупреди о незавершённом состоянии, спроси подтверждение через AskUserQuestion. При подтверждении — архивируй, но **статус НЕ трогай** (сохрани фактический для аудита незавершённой работы). |
 
 ### 4. Выполни архивацию
 
 **a. Обнови статус (условно)**
 
-Если на шаге 3 статус был `Реализовано` — замени в `masterspec/changes/<name>/change.md` строку `> **Статус**: Реализовано` на `> **Статус**: Архивировано`.
+Если на шаге 3 статус был `Реализовано` — замени в `<changes-root>/<name>/change.md` строку `> **Статус**: Реализовано` на `> **Статус**: Архивировано`.
 
 Если статус был другой (архивируем с предупреждением) — **не** меняй статус. Это сохраняет сигнал о незавершённой работе.
 
@@ -69,7 +73,7 @@ ls masterspec/changes/ 2>/dev/null
 **b. Перемести директорию**
 
 ```bash
-mkdir -p masterspec/changes/archive
+mkdir -p <changes-root>/archive
 ```
 
 Имя архива: `YYYY-MM-DD-<change-name>` (YYYY-MM-DD — сегодняшняя дата).
@@ -79,8 +83,10 @@ mkdir -p masterspec/changes/archive
 - Если нет — перемести:
 
 ```bash
-mv masterspec/changes/<name> masterspec/changes/archive/YYYY-MM-DD-<name>
+mv <changes-root>/<name> <changes-root>/archive/YYYY-MM-DD-<name>
 ```
+
+Openspec-режим: перенос в `<changes-root>/archive/YYYY-MM-DD-<name>/` безопасен — openspec игнорирует `archive/` (проверено CLI 1.8.0).
 
 ### 5. Покажи результат
 
@@ -92,7 +98,7 @@ mv masterspec/changes/<name> masterspec/changes/archive/YYYY-MM-DD-<name>
 ## Archive Complete
 
 **Change:** <change-name>
-**Archived to:** masterspec/changes/archive/YYYY-MM-DD-<name>/
+**Archived to:** <changes-root>/archive/YYYY-MM-DD-<name>/
 
 Все артефакты завершены. Change архивирован.
 ```
@@ -103,7 +109,7 @@ mv masterspec/changes/<name> masterspec/changes/archive/YYYY-MM-DD-<name>
 ## Archive Complete (с предупреждениями)
 
 **Change:** <change-name>
-**Archived to:** masterspec/changes/archive/YYYY-MM-DD-<name>/
+**Archived to:** <changes-root>/archive/YYYY-MM-DD-<name>/
 
 **Предупреждения:**
 - change.md не в статусе `Реализовано` (статус сохранён как есть для аудита, `Архивировано` НЕ поставлен).
@@ -120,5 +126,5 @@ mv masterspec/changes/<name> masterspec/changes/archive/YYYY-MM-DD-<name>
 - Проверяй статус по содержимому change.md, а не через CLI.
 - НЕ блокируй архивацию при предупреждениях — информируй и подтверждай через AskUserQuestion.
 - Вся директория change перемещается целиком (включая `.research/`, `new/`, `design.md`, `tasks.md` — всё для аудита).
-- **НЕ трогай артефакты фабрики** (`masterspec/01-*/02-*/03-*/04-*`) — они уже вмержены через `masterspec-apply-change`.
+- **НЕ трогай артефакты фабрики** (`<specs-root>/01-*/02-*/03-*/04-*`, например `masterspec/01-*/…` или `openspec/specs/01-*/…`) — они уже вмержены через `masterspec-apply-change`.
 - Покажи понятный итог.

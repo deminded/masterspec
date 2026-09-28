@@ -15,7 +15,7 @@ when_to_use: >
 argument-hint: "[имя change]"
 license: MIT
 compatibility: >
-  Требуется masterspec/ layout в проекте с готовым change.md, доступ к bash/git,
+  Требуется фабрика с раскладкой по layout-modes.md (classic или openspec) в проекте с готовым change.md, доступ к bash/git,
   AskUserQuestion tool. Опционально Serena/LSP/embedding MCP-серверы для анализа кода.
 allowed-tools:
   - Read
@@ -33,7 +33,9 @@ allowed-tools:
 
 Создаёт `design.md` (технический проект) и `tasks.md` (план задач на реализацию) в директории active change. Опирается на `change.md` + содержимое `new/` + опционально `.research-notes.md` от `masterspec-explore`.
 
-**Input**: Опционально — имя change. Если не указано — автовыбор через `ls masterspec/changes/`.
+**Input**: Опционально — имя change. Если не указано — автовыбор через `ls <changes-root>/`.
+
+Определи корни фабрики по `../masterspec/references/layout-modes.md §2` (положение `00-masterspec-index.md` → specs-root, changes-root).
 
 ## Bundle-пути
 
@@ -64,7 +66,8 @@ allowed-tools:
 
 Если имя указано — использовать. Иначе:
 ```bash
-ls masterspec/changes/ 2>/dev/null | grep -v "^archive$"
+# <changes-root> — из резолвинга layout-modes.md §2 (например masterspec/changes/ в classic-подпапке или openspec/changes/ в openspec-режиме)
+ls <changes-root>/ 2>/dev/null | grep -v "^archive$"
 ```
 - Автовыбор, если только один активный change (исключая `archive/`).
 - Если несколько — предложить выбор через AskUserQuestion.
@@ -73,7 +76,7 @@ ls masterspec/changes/ 2>/dev/null | grep -v "^archive$"
 
 ### 2. Проверь наличие change.md
 
-Прочитай `masterspec/changes/<name>/change.md`.
+Прочитай `<changes-root>/<name>/change.md`.
 
 - **Если файла нет**: предложи сначала запустить `masterspec-propose`.
 - **Если `design.md` уже существует**: AskUserQuestion — продолжить редактирование или создать заново.
@@ -90,13 +93,13 @@ ls masterspec/changes/ 2>/dev/null | grep -v "^archive$"
 - §7 Влияние на ссылки
 - §8 Критерии приёмки изменения
 
-Прочитай также все файлы в `masterspec/changes/<name>/new/*.md` — они описывают новые артефакты, которые появятся после apply-change.
+Прочитай также все файлы в `<changes-root>/<name>/new/*.md` — они описывают новые артефакты, которые появятся после apply-change.
 
 ### 4. Изучи контекст
 
-a. **Проверь наличие `.research-notes.md`** в `masterspec/changes/<name>/`. Если есть и актуален (создан недавно в `masterspec-propose`) — используй агрегат как источник информации о текущей реализации. Экономит время — исследование уже проведено.
+a. **Проверь наличие `.research-notes.md`** в `<changes-root>/<name>/`. Если есть и актуален (создан недавно в `masterspec-evolve`/`masterspec-explore`) — используй агрегат как источник информации о текущей реализации. Экономит время — исследование уже проведено.
 
-b. **Прочитай целевые артефакты фабрики** из §2.1 MODIFIED change.md — каждый `masterspec/01-*/02-*/03-*/04-*/<slug>.md`. Они описывают логику ДО изменения.
+b. **Прочитай целевые артефакты фабрики** из §2.1 MODIFIED change.md — каждый `<specs-root>/01-*/02-*/03-*/04-*/<slug>.md` (например `masterspec/01-*/…` или `openspec/specs/01-*/…`). Они описывают логику ДО изменения.
 
 b2. 🔴 **Собери МАРШРУТ, а не только изменяемое** (правка 04.08.2026, повод — ниже). Список MODIFIED отвечает на вопрос «что меняется», но НЕ на вопрос «через какие компоненты идёт поток, который мы трогаем». Сценарии, которые change не меняет, в §2.1 не попадают — и до исполнителя не доезжают вовсе.
 
@@ -122,10 +125,10 @@ e. **Анализ кода** — приоритет: Serena (MCP) → LSP → em
 
 ### 5. Директория
 
-Каталог `masterspec/changes/<name>/` уже существует. Просто проверь:
+Каталог `<changes-root>/<name>/` уже существует. Просто проверь:
 
 ```bash
-test -d masterspec/changes/<name>
+test -d <changes-root>/<name>
 ```
 
 ### 6. Прочитай шаблоны
@@ -143,7 +146,13 @@ test -d masterspec/changes/<name>
 - СЛЕДУЕТ — рекомендуется
 - МОЖЕТ — опционально
 
-Удали все HTML-комментарии из шаблона. Запиши в `masterspec/changes/<name>/design.md`.
+**Контракт живой эксплуатации:** для каждой затронутой external-I/O функции выполни set-diff её
+`APPLICABLE OE-*` против таблиц единственных владельцев `scn-`. В `design.md` не копируй строки:
+оставь ссылки на затронутые `scn-` и будущие `trace-`; code/evidence-маппинг принадлежит `trace-`,
+а не плану. Пустое воплощение не превращай в общую задачу «учесть требования» —
+это blocker техпроекта.
+
+Удали все HTML-комментарии из шаблона. Запиши в `<changes-root>/<name>/design.md`.
 
 ### 8. Создай tasks.md
 
@@ -161,7 +170,9 @@ test -d masterspec/changes/<name>
 - Обязательно включи задачи верификации (запуск сборки/тестов/линтера)
 - **Последняя фаза** — шаг запуска `masterspec-apply-change` для вливания в артефакты фабрики
 
-Запиши в `masterspec/changes/<name>/tasks.md`.
+Запиши в `<changes-root>/<name>/tasks.md`.
+
+Имя `tasks.md` совместимо с openspec — прогресс задач виден в `openspec list`, ничего специально делать не нужно.
 
 ### 9. Предложи ревью
 
@@ -175,8 +186,8 @@ test -d masterspec/changes/<name>
 ## Design Complete
 
 **Change:** <change-name>
-**Design:** masterspec/changes/<name>/design.md
-**Tasks:** masterspec/changes/<name>/tasks.md
+**Design:** <changes-root>/<name>/design.md
+**Tasks:** <changes-root>/<name>/tasks.md
 
 ### Технические решения
 - Архитектура реализации change: ...

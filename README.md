@@ -34,6 +34,7 @@
 | `accept` | 👤 | закрыть слой после вычитки: гейт остатка → отложить остаток в §7 «Белые пятна» → промоушен чистых артефактов `draft→actual` → reindex. Содержание не правит |
 | `evolve` | 👤 | подготовить spec-only изменение требований и спецификаций: impact в `01/02`, scope-fence, проверка-вверх. Код и планы реализации не предлагает |
 | `apply-change` | 👤 | влить согласованный change (diff-блоки + `new/`) в дерево артефактов, проставить `actual`, обновить индекс |
+| `apply-from-openspec` | 👤 | перенести native OpenSpec delta в spec-only change с картой соответствий и проверкой ревизий; после согласования применить через apply-change |
 | `archive-change` | 👤 | перенести завершённый change в `changes/archive/YYYY-MM-DD-<name>/` |
 | `migrate` | 👤 | переразложить артефакт на текущую schema-first/нотационную форму (api/data → сайдкар, scn → `notation`, alg → `form`). Без домысла: неоднозначное → `MIGRATE-TODO`, результат всегда `draft` |
 | `expose` | 👤 | спроецировать полную спеку библиотеки в потребительский usage-контракт («как пользоваться», без внутреннего устройства); `generated`-вид, руками не правится |
@@ -68,7 +69,8 @@
 | `verify` | `layer=req\|spec\|change` `[preset=core\|full]` `[context=]` — `preset` здесь то же, что `verify=` внутри `derive`: базовый набор осей или полный |
 | `accept` | `layer=req\|spec` `[factory=<путь к фабрике>]` |
 | `evolve` | `entry=req\|rule\|ext` `--root=<slug узла \| new:<имя>>` `[pass=]` `[context=]` — `entry` = точка входа: правите требование/функцию (`req`), конкретное бизнес-правило (`rule`), внешний контракт смежника (`ext`). `--root` = откуда пойдёт impact: существующий узел (режим ПРАВКА) или `new:<имя>` (режим ДОБАВЛЕНИЕ, каскад вниз) |
-| `apply-change` | `[имя change]` `[context=]` |
+| `apply-change` | `[имя change]` `[context=]` `[certify=all\|req-spec]` |
+| `apply-from-openspec` | `source=<native change-dir>` `factory=<specs-root>` `[specs=<native main specs>]` `[name=]` `[mode=prepare\|apply]` `[context=]` |
 | `archive-change` | `[имя change]` |
 | `migrate` | `artifact=<путь к .md>` \| `factory=<путь к папке фабрики>` `[dry-run]` — один артефакт или вся фабрика; `dry-run` печатает план, ничего не записывая |
 | `expose` | `lib=<factory-slug>` `[target=uc-<slug>]` `[context=]` — `target` сужает проекцию до одного usage-контракта |
@@ -82,6 +84,10 @@
 ## Мета-модель: три слоя
 Требования (`01-`, ЧТО) → Спецификации (`02-`, КАК) → Кодовая база (`03-`, ГДЕ) + `04-decisions/`. Ссылки **снизу вверх** — дисциплина изоляции слоёв. Решения: `adr-` (сквозные, в `04-decisions/`) и `dr-` (локальные, рядом с артефактом на его слое). Полная мета-модель — `masterspec/meta_model.md`.
 
+## Совместимость с OpenSpec
+
+Режим `layout=openspec` (задаётся один раз при инициализации фабрики через `derive`/`recover`) размещает фабрику внутри структуры [OpenSpec](https://github.com/Fission-AI/OpenSpec): слои — в `openspec/specs/`, changes — в `openspec/changes/`; дерево артефактов внутри — то же самое. Файлы-мосты (`openspec/config.yaml`, `proposal.md`/`.openspec.yaml` у change'ей) делают фабрику и её changes видимыми для `openspec` CLI, источником истины остаётся masterspec. Режим фиксируется в паспорте индекса и дальше резолвится автоматически. Дефолт — прежняя раскладка (`classic`); термины, резолвинг и мосты — `masterspec/references/layout-modes.md`.
+
 ## Жизненный цикл
 
 Два потока с разной механикой карантина — не путать:
@@ -92,7 +98,18 @@
 - **Где оседают тест-кейсы (следствие дисциплины слоёв):** `derive layer=req` кладёт приёмочные `tc-acc` в `01-requirements/08-test-cases/` (ссылаются на `fn-` и критерий приёмки, про API не знают); `derive layer=spec` кладёт интеграционные `tc-int` и каталоги отказов `tc-flt` в `02-specifications/08-test-cases/` (ссылаются на `scn-`). `testgen` берёт на вход оба каталога.
 - **Hard-gate (общий для обоих потоков):** согласование — всегда merge PR человеком, агент свой PR не мержит. `actual` наступает ТОЛЬКО после этого merge, но ставит его разный актор: в потоке ГЕНЕРАЦИИ — человек сменой статуса (apply-change не участвует); в потоке ИЗМЕНЕНИЯ — `apply-change` при вливании уже согласованного change. Агент сам, без предшествующего merge, `actual` не ставит никогда.
 
+## Импорт из OpenSpec
+
+Native OpenSpec → MasterSpec: `openspec-propose` создаёт delta specs, затем
+[`apply-from-openspec`](masterspec-apply-from-openspec/SKILL.md) сопоставляет нормы
+и сценарии с артефактами фабрики и готовит обычный change. Согласованный change
+применяется существующим `apply-change`; код, tasks и исходное дерево OpenSpec
+не входят в эту транзакцию. Это отдельная операция от `layout=openspec`, который
+обеспечивает совместимость каталогов. [Воспроизводимый пример](masterspec-apply-from-openspec/examples/code-factory/README.md)
+содержит исходный проект, OpenSpec change, подготовленный MasterSpec change и результат.
+
 ## Масштаб по контексту
+
 По умолчанию `context=lean`: оркестратор держит текущий шаг, пути и короткие сводки;
 planner/gen/verify читают свои источники. Один фокус содержит задачу, границы чтения/записи,
 срезы с ревизиями, неизвестные факты и критерии приёмки. План растёт с фабрикой, поэтому

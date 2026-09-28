@@ -374,6 +374,59 @@ def run_fix(factory_root: Path, aliases: dict[str, RouteRule], apply: bool) -> i
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Резолвинг корней фабрики (референс-реализация layout-modes.md §2)
+# ---------------------------------------------------------------------------
+# ЗАЧЕМ КОДОМ: правило «собери всех кандидатов, >1 — спроси человека» жило только
+# текстом скилла, и приёмке нечего было исполнять (находка ревью Sol №5). Этот
+# резолвер — исполняемый референс: его гоняют тесты, его же может звать скилл
+# bash-строкой вместо пересказа алгоритма своими словами.
+
+_RESOLVE_SKIP_PARTS = {"archive", ".work", "node_modules", ".git"}
+
+
+def resolve_roots(search_root: Path):
+    """Возвращает (specs_root, changes_root, layout) или бросает ValueError.
+
+    Кандидаты собираются ОДНИМ проходом без short-circuit: молчаливый выбор
+    «первого по приоритету» прятал бы полупереехавшую фабрику (layout-modes §2).
+    """
+    search_root = search_root.resolve()
+    candidates = [
+        p for p in search_root.rglob("00-masterspec-index.md")
+        if not (_RESOLVE_SKIP_PARTS & set(p.parts))
+    ]
+    if not candidates:
+        raise ValueError("фабрика не найдена: нет 00-masterspec-index.md под %s" % search_root)
+    if len(candidates) > 1:
+        raise ValueError(
+            "неоднозначно: найдено %d индексов — спроси человека, какая фабрика рабочая:\n%s"
+            % (len(candidates), "\n".join("  - %s" % c for c in sorted(candidates))))
+    index = candidates[0]
+    specs_root = index.parent
+    layout = None
+    for line in index.read_text(encoding="utf-8").splitlines():
+        if "Раскладка (layout)" in line and ":" in line:
+            layout = line.rsplit(":", 1)[1].strip().strip("*`").strip()
+            break
+    if layout is None:
+        layout = "openspec" if specs_root.as_posix().endswith("openspec/specs") else "classic"
+    changes_root = (specs_root.parent / "changes") if layout == "openspec" else (specs_root / "changes")
+    return specs_root, changes_root, layout
+
+
+def run_resolve(search_root: Path) -> int:
+    try:
+        specs_root, changes_root, layout = resolve_roots(search_root)
+    except ValueError as exc:
+        print(str(exc))
+        return 2
+    print("specs-root=%s" % specs_root)
+    print("changes-root=%s" % changes_root)
+    print("layout=%s" % layout)
+    return 0
+
+
 def run(root: Path, fix: bool, apply: bool, routing_path: Path | None = None) -> int:
     routing_text = (routing_path or default_routing_path()).read_text(encoding="utf-8")
     aliases = load_routing_map(routing_text)
@@ -391,7 +444,11 @@ def main() -> int:
     parser.add_argument("--check", action="store_true", help="report misplaced artifacts (default mode)")
     parser.add_argument("--fix", action="store_true", help="plan (default) or apply layout fixes")
     parser.add_argument("--apply", action="store_true", help="with --fix, actually move files (default: dry-run)")
+    parser.add_argument("--resolve-roots", action="store_true",
+                        help="resolve specs-root/changes-root/layout per layout-modes.md §2 (root = search dir)")
     args = parser.parse_args()
+    if args.resolve_roots:
+        return run_resolve(args.root)
     return run(args.root, fix=args.fix, apply=args.apply)
 
 

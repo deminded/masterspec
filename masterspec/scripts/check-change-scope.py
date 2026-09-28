@@ -196,6 +196,13 @@ def check(change_dir: Path, factory: Path | None = None) -> None:
     if factory is None:
         require(change_dir.parent.name == "changes", "noncanonical change location: pass --factory")
         factory = change_dir.parent.parent
+        # classic: <factory>/changes/<name>; openspec: <root>/changes/<name>
+        # next to <root>/specs/. Do not silently select a half-migrated factory.
+        sibling_specs = factory / "specs"
+        if (sibling_specs / "00-masterspec-index.md").is_file():
+            require(not (factory / "00-masterspec-index.md").is_file(),
+                    "ambiguous classic/openspec roots: pass --factory explicitly")
+            factory = sibling_specs
     factory = factory.resolve()
     change_file = bounded_file(change_dir, PurePosixPath("change.md"))
     lines = markdown_lines(change_file.read_text(encoding="utf-8-sig"))
@@ -322,7 +329,8 @@ def check(change_dir: Path, factory: Path | None = None) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("change_dir", type=Path, help="evolve change directory containing change.md")
-    parser.add_argument("--factory", type=Path, help="factory root; default: parent of canonical changes/")
+    parser.add_argument("--factory", type=Path,
+                        help="specs-root; default: classic parent or indexed sibling specs/ of changes/")
     args = parser.parse_args()
     try:
         check(args.change_dir, args.factory)
