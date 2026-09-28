@@ -177,6 +177,34 @@ class OperationalEnvelopeCheckerTest(unittest.TestCase):
                     self.assertTrue(any("no OE-EVIDENCE reference" in error for error in errors), errors)
                     self.assertTrue(any("no separate log-check step" in error for error in errors), errors)
 
+    def test_explicit_not_failure_labels_do_not_require_error_oracles(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            for title in (
+                "Нота длины, не отказ", "Предупреждение — не ошибка", "Задержка — не сбой",
+            ):
+                with self.subTest(title=title):
+                    self.assertEqual(self._test_case_errors(directory, title), [])
+
+    def test_not_failure_labels_do_not_hide_actual_failures(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            for title in (
+                "Не отказ, а ошибка", "Ошибка валидации, не отказ канала",
+                "Не ошибка, а сбой", "Не только отказ, но и предупреждение",
+                "Отказ не зарегистрирован",
+            ):
+                with self.subTest(title=title):
+                    errors = self._test_case_errors(directory, title)
+                    self.assertTrue(any("no OE-EVIDENCE reference" in error for error in errors), errors)
+                    self.assertTrue(any("no separate log-check step" in error for error in errors), errors)
+
+    def test_not_failure_label_cannot_hide_fault_reference(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            errors = self._test_case_errors(
+                directory, "Предупреждение, не отказ", "- Каталог: -> tc-flt-demo/FLT-001"
+            )
+            self.assertTrue(any("no OE-EVIDENCE reference" in error for error in errors), errors)
+            self.assertTrue(any("no separate log-check step" in error for error in errors), errors)
+
     def test_positive_title_cannot_hide_fault_reference_or_failure_path(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             for extra in (

@@ -37,6 +37,11 @@ Read-only по отношению к артефактам: я нахожу ды�
 - `guardrails=auto|off|<paths>` — внешние корпоративные правила (`patterns/guardrails.md`): `auto` (дефолт) берёт пакеты из `masterspec-config.yaml` фабрики; активный набор режется селекторами `applies_to`; применённые правила и конфликты фиксируются в route-run секцией «Guardrails applied».
 
 ## Метод
+
+При вызове из другого workflow используй переданный `work_root` и его правила
+сохранения доказательств вместо default `.work`/чистки. В OpenSpec import границы
+заданы `masterspec-apply-from-openspec/references/workspace.md`.
+
 1. preset=core (дефолт) — дешёвое ядро на каждом элементе: структполнота (+ раскладка: `python3 ../masterspec/scripts/check-layout.py <factory-root> --check` — каждый артефакт ↔ канонический подкаталог по `type:` из `artifact-routing.md`; вал в корень слоя = блокер структуры) → обязательный OE set-diff
    (`python3 <masterspec-kernel-skill-dir>/scripts/check-operational-envelope.py <factory-root> --layer req|spec`;
    путь резолвить относительно соседнего kernel-скилла; если Python недоступен — ручная сверка по

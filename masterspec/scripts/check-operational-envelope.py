@@ -601,6 +601,7 @@ def describes_failure(description: str) -> bool:
     description = re.sub(
         r"\b(?:(?:без|нет|отсутствие)\s+(?:ошиб\w*|отказ\w*|сбо(?:я|ев))"
         r"|не\s+превращается\s+в\s+отказ\w*"
+        r"|не\s+(?:отказ|ошибка|сбой)"
         r"|(?:no|without)\s+(?:errors?|failures?))\b",
         "", description, flags=re.I,
     )

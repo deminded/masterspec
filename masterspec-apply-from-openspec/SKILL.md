@@ -26,8 +26,9 @@ description: >
 1. Найди соседний kernel `../masterspec`. Прочитай `references/layout-modes.md`
    и разреши `specs-root` / `changes-root`. Явный `factory=` обозначает каталог
    с `00-masterspec-index.md`; несколько фабрик без выбора — блокер.
-2. Выбери native OpenSpec change. При доступном CLI используй его `status --json`
-   и возвращённые пути; для store сохраняй `--store` на всех командах.
+2. Выбери native OpenSpec change. При доступном CLI выполни
+   `openspec status --change <source-name> --json` и сверь `changeRoot` / пути дельт;
+   это не путь native main specs. Для store сохраняй `--store` на всех командах.
    Для локального стандартного дерева `specs=` — соседний с `changes/` каталог `specs/`.
    В остальных случаях требуется явный путь; не угадывай его по MasterSpec layout.
 3. Источник должен содержать `specs/**/spec.md` с дельтами требований.
@@ -50,6 +51,12 @@ description: >
 отчётах. Совпадение исходных файлов и подтверждённые текущие постусловия дают
 read-only no-op **до** pre-apply gates; порядок и случай отдельного native sync —
 [review-policy.md](references/review-policy.md). Имя change само по себе не доказательство.
+Незавершённый `prepare` продолжай в прежнем destination; повторная проверка без
+изменений сохраняет `blocked` или готовность к review, но сама по себе не даёт no-op
+(подробности — [mapping.md](references/mapping.md#источник-и-повторные-запуски)).
+
+До первой записи создай workspace командой `init` по [workspace.md](references/workspace.md).
+Логи и временные файлы размещай в возвращённом `work_root`; его же передавай делегатам.
 
 ```bash
 python <skill-dir>/scripts/openspec_inventory.py --source <source> --specs <native-specs-root>
@@ -70,7 +77,7 @@ python <skill-dir>/scripts/openspec_inventory.py --source <source> --specs <nati
 Прочитай [mapping.md](references/mapping.md), [review-policy.md](references/review-policy.md), kernel `references/change-format.md`
 и `references/layer-discipline.md`. Для записи артефакта — `references/spec-writing.md`
 и только шаблон его типа. Для каскада используй спецификационный impact из `evolve`;
-при вызове передай существующий destination, рабочий каталог `<destination>/.work/<run>`
+при вызове передай существующий destination, фактический `work_root` из workspace
 и запрет создания второго change или записи в общий `.work` фабрики.
 
 1. Для каждой операции найди владельца нормы и точный раздел/AC в MasterSpec.
@@ -91,6 +98,9 @@ python <skill-dir>/scripts/openspec_inventory.py --source <source> --specs <nati
    которую отвергает структурный gate, не исключай ради зелёного результата.
    Известное влияние ниже — только `deferred-to-implementation` в review.
 
+Подготовленный change спроецируй через `project` по [workspace.md](references/workspace.md)
+и сравни baseline/after детекторами из review-policy перед переходом к §4.
+
 **Свежий no-op:** если все нормы уже выполнены без прежнего импорта, сохрани новую
 карту с `already-satisfied` и доказательства, проверь `check_import.py`, затем
 верни `no-op`. Пустой change.md не создавай; scope-check и apply не запускай.
@@ -104,7 +114,8 @@ python <kernel-dir>/scripts/check-change-scope.py <destination> --factory <specs
 
 Первый gate сверяет источник, полноту mapping и снимок целевой базы даже при blocked:
 JSON показывает все доступные diagnostics и checks (passed/failed/skipped), exit 1
-не разрешает apply. Второй проверяет структуру change, если change.md создан.
+не разрешает apply. Семантические blocked вынесены в `readiness`; зелёный `scope`
+не означает готовности. Второй проверяет структуру change, если change.md создан.
 Оба необходимы, но не доказывают смысл. Не снимай blocked ради диагностической пробы.
 Запусти `masterspec-verify layer=change` с read_scope из §1. В `import-review.md`:
 покрытие операций **и всех сценариев**, отсутствие потерянных/новых условий,

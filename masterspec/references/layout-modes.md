@@ -79,9 +79,12 @@ openspec он сосед (`openspec/changes/`). Скелет фабрики пр
 │       └── archive/YYYY-MM-DD-<name>/   ← openspec игнорирует archive/ — совпадение форматов
 ```
 
-Служебные каталоги фабрики (`.work/<run-id>/`, `.research/`, `00-source-data/`) живут в
-specs-root, как и в classic (скрипты `check-layout.py`/`check-operational-envelope.py`
-принимают specs-root первым аргументом — им всё равно, где он лежит): для openspec CLI они безвредны — он игнорирует всё, что не
+По умолчанию служебные каталоги фабрики (`.work/<run-id>/`, `.research/`, `00-source-data/`) живут в
+specs-root, как и в classic. Явный work_root вызывающего workflow имеет приоритет:
+OpenSpec import использует `<destination>/.work/<run>/`, включая логи и делегатов.
+Скрипты `check-layout.py`/`check-operational-envelope.py`
+принимают specs-root первым аргументом — им всё равно, где он лежит. Для openspec CLI
+служебные каталоги безвредны — он игнорирует всё, что не
 `specs/**/spec.md` и не каталог change.
 
 Почему это работает (проверено живым CLI 1.8.0, 2026-08-06;
@@ -101,7 +104,7 @@ specs-root, как и в classic (скрипты `check-layout.py`/`check-operat
 |---|---|---|
 | `openspec/config.yaml` | `derive`/`recover` при инициализации (если файла нет — создать по шаблону; если ЕСТЬ — не перезаписывать, но проверить `schema:`: отсутствует или не `spec-driven` — остановись и предложи владельцу явный merge, паспорт `layout: openspec` без валидного дескриптора не ставится) | `schema: spec-driven` + `context:` с картой мета-модели masterspec (шаблон `tpl-openspec-config.md`) |
 | `changes/<name>/.openspec.yaml` | `evolve` шаг 3 | две строки: `schema: spec-driven`, `skip_specs: true` |
-| `changes/<name>/proposal.md` | `evolve` шаг 3; обновляет тот, кто правит §1/§2/§7 change.md | проекция: `## Why` ← §1.1–1.2 сжато; `## What Changes` ← §2 списком; `## Impact` ← §7. Первая строка: `> Источник истины — change.md; этот файл — мост для OpenSpec.` |
+| `changes/<name>/proposal.md` | `evolve` шаг 3; обновляет тот, кто правит §1/§2/§7 change.md | проекция: `## Why` ← все пункты §1 сжато; `## What Changes` ← §2 списком; `## Impact` ← §7. Первая строка: `> Источник истины — change.md; этот файл — мост для OpenSpec.` |
 
 Инвариант моста ДВУСТОРОННИЙ: proposal.md не содержит фактов, которых нет в change.md,
 И отражает ВСЕ пункты §1/§2/§7 (Why/What Changes/Impact). Устаревший proposal — подмножество

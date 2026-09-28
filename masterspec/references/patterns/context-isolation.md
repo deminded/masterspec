@@ -33,6 +33,13 @@
 при нехватке контекста возвращай `SPLIT_REQUIRED`; границы слоёв остаются обязательными.
 
 ## Рабочая зона и namespace
+
+Если вызывающий workflow передал явный `work_root`, используй его вместо default
+ниже и соблюдай его политику сохранения. Для OpenSpec import это
+`<destination>/.work/<run>/`, выданный prepare_workspace, с сохранением доказательств
+по `masterspec-apply-from-openspec/references/workspace.md`. Это относится и к
+делегатам evolve/verify; они не создают собственный общий `.work` фабрики.
+
 Всё ЭФЕМЕРНОЕ рабочее — в `<factory-root>/.work/<run-id>/` (run-id = `<layer|change-name>-<ts>`), чтобы параллельные/долгоживущие прогоны не делили `plan`/`.focus` и не сносили чужую зону. Внутри: `plan.md`, `oe-interview.md` (только derive req), `.focus/<slug>.md`, `verify/` (частичные отчёты lean-verify: `<elem>.md`, `_negative.md`, `_spec-o0o6o7.md`, `_change-nodes.md`, `<node>.md`), `apply/` (lean-apply: `_dryrun.md`, `<slug>.md`, `_smoke.md`), `recover/` (lean-recover: `plan.md`, `_dangling.md`, `_gaps.md`).
 РЕЗУЛЬТАТЫ-метрики (отчуждаемые ОТ содержания) хранятся ОТДЕЛЬНО и переживают чистку: `route-run-<ts>.md`, `verify-report.md`, `apply-report.md` — в корне фабрики (генерация) или `changes/<name>/` (изменение). В `.work/` их НЕ держим (иначе чистка их снесёт). Частичные `*/*.md` (verify/apply/recover) — эфемерны (в `.work/`), отчёты-результаты — вынесены. `verify-report.md` всегда следует `templates/tpl-verify-report.md`: стоимость, last_verified/возраст и доля машинных axis-run обязательны.
 После записи и проверки итоговых артефактов/отчётов удаляется только собственная
