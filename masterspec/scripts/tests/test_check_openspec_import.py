@@ -98,6 +98,108 @@ class ImportGateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unresolved mapping"):
             self.check()
 
+    def test_blocked_draft_still_checks_scope_and_declared_snapshots(self):
+        self.mapping["bindings"][0].update(disposition="blocked", reason="Owner must choose.", targets=[])
+        self.save("import-map.json", self.mapping)
+        report = gate.diagnose(self.change, self.factory, self.source, self.specs)
+        self.assertEqual(report["result"], "blocked")
+        self.assertEqual(report["checks"]["scope"], "passed")
+        self.assertEqual([item["kind"] for item in report["diagnostics"]], ["semantic"])
+        self.mapping["target_files"] = self.mapping["target_files"][1:]
+        self.save("import-map.json", self.mapping)
+        with self.assertRaisesRegex(gate.ImportCheckError, "missing target snapshots") as caught:
+            self.check()
+        self.assertEqual(caught.exception.report["checks"]["target-snapshots"], "failed")
+
+    def test_blocked_mapping_without_draft_skips_scope_but_checks_snapshots(self):
+        self.mapping["bindings"][0].update(disposition="blocked", reason="Owner must choose.", targets=[])
+        self.save("import-map.json", self.mapping)
+        (self.change / "change.md").unlink()
+        report = gate.diagnose(self.change, self.factory, self.source, self.specs)
+        self.assertEqual(report["result"], "blocked")
+        self.assertEqual(report["checks"]["scope"], "skipped")
+        self.assertEqual(report["checks"]["source-snapshot"], "passed")
+        self.assertEqual(report["checks"]["target-snapshots"], "passed")
+        self.assertEqual([item["kind"] for item in report["diagnostics"]], ["semantic"])
+
+    def test_all_blockers_and_independent_failures_are_reported_without_mutation(self):
+        delta = SOURCE + SOURCE.partition("\n")[2].replace("Requirement: Price", "Requirement: Tax")
+        delta += SOURCE.partition("\n")[2].replace("Requirement: Price", "Requirement: Discount")
+        self.put(self.source / "specs/pricing/spec.md", delta)
+        inventory = gate.inventory(self.source, self.specs)
+        self.save("source-inventory.json", inventory)
+        self.mapping["inventory_id"] = inventory["inventory_id"]
+        operation_ids = [operation["id"] for operation in inventory["operations"]]
+        self.mapping["bindings"] = [
+            {"operation_id": operation, "disposition": "blocked", "reason": f"Resolve {operation}.", "targets": []}
+            for operation in operation_ids[:2]
+        ] + ["malformed binding"]
+        self.save("import-map.json", self.mapping)
+        # Independent source staleness, target staleness and a forbidden draft path.
+        self.put(self.source / "specs/pricing/spec.md", delta + "\n")
+        self.put(self.factory / FN, (self.factory / FN).read_text(encoding="utf-8") + "\nExternal edit\n")
+        change_file = self.change / "change.md"
+        self.put(change_file, change_file.read_text(encoding="utf-8").replace(FN, "src/pricing.py"))
+        before = {p.relative_to(self.root): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
+        result = subprocess.run([sys.executable, str(SCRIPTS / "check_import.py"), "--change", str(self.change),
+                                 "--factory", str(self.factory), "--source", str(self.source), "--specs", str(self.specs)],
+                                capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(result.returncode, 1, result.stderr)
+        report = json.loads(result.stdout)
+        self.assertEqual(report["result"], "blocked")
+        blocked_ids = {item["operation_id"] for item in report["diagnostics"] if item["kind"] == "semantic"}
+        self.assertEqual(blocked_ids, set(operation_ids[:2]))
+        for expected in ("inventory is stale", "binding must be an object", "unmapped source operations",
+                         operation_ids[2], "stale target", "outside spec-only scope"):
+            self.assertIn(expected, result.stderr)
+        for phase in ("source-snapshot", "mapping", "operation-coverage", "target-snapshots", "scope"):
+            self.assertEqual(report["checks"][phase], "failed")
+        after = {p.relative_to(self.root): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
+        self.assertEqual(before, after)
+
+    def test_invalid_source_only_skips_dependent_source_snapshot_check(self):
+        self.put(self.source / "specs/pricing/spec.md", "Not a native delta\n")
+        self.mapping["bindings"][0].update(disposition="blocked", reason="No owner.", targets=[])
+        self.save("import-map.json", self.mapping)
+        self.put(self.factory / "00-masterspec-index.md", "Changed index\n")
+        report = gate.diagnose(self.change, self.factory, self.source, self.specs)
+        self.assertEqual(report["checks"]["inventory"], "failed")
+        self.assertEqual(report["checks"]["source-snapshot"], "skipped")
+        self.assertEqual(report["checks"]["operation-coverage"], "skipped")
+        self.assertEqual(report["checks"]["target-snapshots"], "failed")
+        self.assertEqual(report["checks"]["scope"], "passed")
+        self.assertEqual(sum(item["kind"] == "semantic" for item in report["diagnostics"]), 1)
+
+    def test_unreadable_map_still_checks_source_and_scope(self):
+        self.put(self.change / "import-map.json", "{ invalid JSON")
+        change_file = self.change / "change.md"
+        self.put(change_file, change_file.read_text(encoding="utf-8").replace(FN, "src/pricing.py"))
+        report = gate.diagnose(self.change, self.factory, self.source, self.specs)
+        self.assertEqual(report["checks"]["mapping"], "failed")
+        self.assertEqual(report["checks"]["source-snapshot"], "passed")
+        self.assertEqual(report["checks"]["target-snapshots"], "skipped")
+        self.assertEqual(report["checks"]["scope"], "failed")
+
+    def test_malformed_fields_do_not_hide_later_bindings_or_snapshots(self):
+        self.mapping["bindings"].insert(0, {"operation_id": [], "disposition": {}, "reason": None, "targets": []})
+        self.mapping["bindings"][1].update(disposition="blocked", reason="Owner choice.", targets=[])
+        self.mapping["target_files"].insert(0, {"path": [], "sha256": {}})
+        self.save("import-map.json", self.mapping)
+        self.put(self.factory / "00-masterspec-index.md", "Changed index\n")
+        report = gate.diagnose(self.change, self.factory, self.source, self.specs)
+        messages = "\n".join(item["message"] for item in report["diagnostics"])
+        for expected in ("unknown or repeated", "missing reason", "invalid disposition", "unresolved mapping",
+                         "mapping path must be a string", "stale target"):
+            self.assertIn(expected, messages)
+
+    def test_blocked_change_status_cannot_claim_readiness(self):
+        change_file = self.change / "change.md"
+        self.put(change_file, "> **Статус**: Заблокировано\n" + change_file.read_text(encoding="utf-8"))
+        with self.assertRaisesRegex(gate.ImportCheckError, "Статус|status") as caught:
+            self.check()
+        self.assertEqual(caught.exception.report["result"], "blocked")
+        self.assertEqual(caught.exception.report["diagnostics"][0]["kind"], "semantic")
+
     def test_every_mapping_target_needs_snapshot(self):
         self.mapping["target_files"] = self.mapping["target_files"][1:]
         self.save("import-map.json", self.mapping)
@@ -143,7 +245,9 @@ class ImportGateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "no-op import"):
             self.check()
         (self.change / "change.md").unlink()
-        self.assertEqual(self.check()["result"], "no-op-needs-semantic-verification")
+        report = self.check()
+        self.assertEqual(report["result"], "no-op-needs-semantic-verification")
+        self.assertEqual(report["checks"]["scope"], "passed")
 
     def test_source_destination_overlap_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "overlap"):

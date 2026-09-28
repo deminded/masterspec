@@ -60,6 +60,23 @@ def _run_openspec(cwd: Path, *args: str) -> subprocess.CompletedProcess:
                           capture_output=True, text=True, timeout=120)
 
 
+def _native_spec(root: Path) -> None:
+    capability = root / "openspec" / "specs" / "mail" / "control"
+    capability.mkdir(parents=True)
+    (capability / "spec.md").write_text(
+        "# Mail control Specification\n\n"
+        "## Purpose\n"
+        "Allow a mailbox owner to disable forwarding through an explicit command.\n\n"
+        "## Requirements\n"
+        "### Requirement: Stop forwarding\n"
+        "The system SHALL stop forwarding after accepting the owner's OFF command.\n\n"
+        "#### Scenario: Owner disables forwarding\n"
+        "- **WHEN** the mailbox owner sends the OFF command\n"
+        "- **THEN** subsequent messages are not forwarded\n",
+        encoding="utf-8",
+    )
+
+
 class OpenspecLayoutAcceptance(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp(prefix="msos-"))
@@ -101,6 +118,47 @@ class OpenspecLayoutAcceptance(unittest.TestCase):
         r = _run_openspec(self.tmp, "validate", "--all")
         self.assertNotEqual(r.returncode, 0,
                             "validate зелёный без моста — мост декоративен: " + r.stdout)
+
+    @unittest.skipUnless(OPENSPEC, "не проверено: openspec CLI недоступен")
+    def test_native_spec_coexists_without_registering_masterspec_as_native(self):
+        """Native capability видна CLI; соседние слои MasterSpec не становятся native specs."""
+        _native_spec(self.tmp)
+        listed = _run_openspec(self.tmp, "list", "--specs", "--json")
+        self.assertEqual(listed.returncode, 0, listed.stdout + listed.stderr)
+        self.assertEqual(
+            json.loads(listed.stdout)["specs"],
+            [{"id": "mail/control", "requirementCount": 1}],
+        )
+        validated = _run_openspec(self.tmp, "validate", "--all", "--strict")
+        self.assertEqual(validated.returncode, 0, validated.stdout + validated.stderr)
+        layout = subprocess.run(
+            [sys.executable, str(SCRIPTS / "check-layout.py"),
+             str(self.tmp / "openspec" / "specs"), "--check"],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(layout.returncode, 0, layout.stdout + layout.stderr)
+        self.assertIn("misplaced: 0", layout.stdout)
+
+    @unittest.skipUnless(OPENSPEC, "не проверено: openspec CLI недоступен")
+    def test_foreign_broken_change_does_not_invalidate_selected_bridge(self):
+        """Scope gate выбранного change и общий layout-health дают разные вердикты."""
+        _native_spec(self.tmp)
+        foreign = self.tmp / "openspec" / "changes" / "foreign-broken"
+        foreign.mkdir()
+        (foreign / "proposal.md").write_text(
+            "## Why\nA separate unfinished change.\n\n"
+            "## What Changes\n- Pending specification delta.\n\n"
+            "## Impact\n- Mail control.\n",
+            encoding="utf-8",
+        )
+        selected = _run_openspec(
+            self.tmp, "validate", "nostory-20260806-probe", "--type", "change", "--strict"
+        )
+        self.assertEqual(selected.returncode, 0, selected.stdout + selected.stderr)
+        all_changes = _run_openspec(self.tmp, "validate", "--all", "--strict")
+        self.assertNotEqual(all_changes.returncode, 0, all_changes.stdout + all_changes.stderr)
+        self.assertIn("change/foreign-broken", all_changes.stdout + all_changes.stderr)
+        self.assertIn("1 failed", all_changes.stdout + all_changes.stderr)
 
 
 class ResolveRootsScenarios(unittest.TestCase):

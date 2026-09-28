@@ -112,8 +112,11 @@ change.md — тоже дефект: OpenSpec показал бы неполно
 ## 5. Что режим НЕ делает (граница, названная явно)
 
 - НЕ конвертирует артефакты masterspec в openspec-спеки (`spec.md` с Requirement/Scenario).
-  Мост форматов — отдельная работа; эскиз: scn-* → capability-спеки, постусловия → Scenario.
-  До неё `openspec list --specs` в фабрике openspec-режима штатно показывает пусто.
+  Без native capabilities `openspec list --specs` пуст. Native `specs/<capability>/spec.md`
+  может сосуществовать с деревом MasterSpec: CLI показывает native specs, а MasterSpec
+  индексирует свои артефакты. Импорт через `masterspec-apply-from-openspec` — отдельная
+  операция; она не синхронизирует native main. До отдельного sync владельцем две
+  редакции могут отличаться; apply-report обязан обозначить `native_sync: pending-owner`.
 - НЕ переносит существующие фабрики автоматически. Перенос classic → openspec: переместить
   дерево слоёв в `openspec/specs/`, `changes/` в `openspec/changes/`, дописать паспорт,
   создать мосты для АКТИВНЫХ changes (архивные не трогать), прогнать
@@ -122,6 +125,8 @@ change.md — тоже дефект: OpenSpec показал бы неполно
 ## 6. Приёмка режима (что считается «работает»)
 
 1. `openspec validate --all` на фабрике зелёный (мосты признаны, деревья не мешают);
+   это проверка всей раскладки; при отдельном change gate относится к выбранному
+   `validate <name> --strict`, а чужие ошибки отмечаются как layout-health;
 2. `openspec list` показывает changes фабрики с task-прогрессом из tasks.md;
 3. `check-layout.py <specs-root> --check` зелёный — раскладка внутри specs-root канонична;
 4. дефолтное поведение (classic) не изменилось ни в одном скилле: без строки в паспорте и

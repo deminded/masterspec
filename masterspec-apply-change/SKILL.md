@@ -77,7 +77,19 @@ allowed-tools:
 
 ### Шаг 0 — ПРЕФЛАЙТ происхождения (до первой записи на диск)
 
+Сначала выбери change и проверь статус (§1–2). Для уже применённого импорта
+сверяй постусловия apply-report по `review-policy.md` ниже: исторические pre-apply
+snapshots не сравниваются с после-состоянием и diff повторно не применяются.
+
 Гейт, поставленный после мутации, — не гейт. Поэтому ДО применения любых diff-блоков и копирования файлов:
+
+Если есть `import-map.json` или `source-inventory.json`, это импорт OpenSpec:
+нужны оба файла и повторный `../masterspec-apply-from-openspec/scripts/check_import.py`
+с `--change`, `--factory`, `--source`, `--specs`. Source-пути возьми из вызова или
+import-review; если их нельзя установить, это блокер применения. Проверь semantic
+review и scope-fence по `../masterspec-apply-from-openspec/references/review-policy.md`.
+Используй `certify=req-spec` и границы чтения импорта, даже при прямом вызове apply.
+Нельзя обходить unresolved mapping прямым вызовом apply-change или сменой статуса.
 
 Если шапка change содержит `Область: spec-only`, сначала запусти
 `python3 <kernel-skill-dir>/scripts/check-change-scope.py <change-dir> --factory <specs-root>`.
@@ -122,10 +134,12 @@ ls <changes-root>/ 2>/dev/null | grep -v "^archive$"
 | Статус | Действие |
 |--------|----------|
 | `Согласовано` / `В реализации` | OK, можно мержить |
+| `Черновик` / `Заблокировано` | **БЛОК**: сначала устранить блокеры, повторить проверки и согласовать конкретный change. Подтверждение обхода не предлагать. |
 | `На согласовании` | **БЛОК**: change не согласован. Попроси дождаться merge PR и ручной установки статуса `Согласовано`. Выйди. |
 | `Реализовано` | Поздравь, предложи запустить `masterspec-archive-change`. Выйди. |
 | `Архивировано` | Сообщи, что change уже заархивирован. Выйди. |
-| Другой / отсутствует | Предупреди, спроси подтверждение через AskUserQuestion. |
+| `Применено, не сертифицировано` | Не применять diff повторно; продолжить отдельную сертификацию/устранение остатка. |
+| Другой / отсутствует | **БЛОК**: привести статус к документированному lifecycle с основанием; неизвестный статус не означает разрешение на apply. |
 
 ### 3. Прочитай контекст
 
@@ -138,6 +152,13 @@ ls <changes-root>/ 2>/dev/null | grep -v "^archive$"
 Опционально (для ориентира): `<specs-root>/00-masterspec-index.md` (например `masterspec/00-masterspec-index.md`).
 
 ### 4. Проверь git-состояние фабрики
+
+Сначала проверь успешный `git rev-parse --show-toplevel` и наличие HEAD. Ошибка Git,
+отсутствие tracked baseline для существующей цели/индекса — блокер до первой записи.
+Prepare вне Git разрешён. Создание репозитория и первого коммита не выполняется
+неявно; нужен уже разрешённый пользователем объём. Пустой stdout при nonzero exit
+не является чистым рабочим деревом. Резервная копия без проверяемого rollback
+не заменяет этот production-контракт.
 
 Точка отката — через git, не через `.bak`. Запусти:
 
@@ -188,9 +209,16 @@ git status --porcelain <specs-root>/ | grep -v "^.. <changes-root>/"
 - Для каждой строки §2.3: `rm <specs-root>/<путь>`. Если REMOVED-компаньон объявляет `sidecar:` — удали ПАРУ (компаньон + сайдкар) атомарно; сайдкар — только локальный basename рядом (без traversal). Висячий сайдкар индекс и smoke-check не видят (ходят по `.md`) — его ловит form-detector (F2 orphan).
 - Grep по `<specs-root>/` на ссылки на удалённый slug. Если ссылки остались — предупреди пользователя (рассинхрон change.md).
 
+Для spec-only поиск ограничен `01/02/04`, словарём и индексом; код/codemap,
+changes и служебные файлы не читаются. Новая висячая ссылка в этом scope при
+OpenSpec import — rollback и исправление change, не предупреждение об успехе.
+
 ### 10. Обновление `00-masterspec-index.md`
 
-Один алгоритм — **полная перегенерация** по `merge-workflow.md § 8` и `../masterspec/references/index-canonical.md`: §3–§6 индекса перестраиваются по реально существующим файлам фабрики (маркеры `+`/`-` по `status`), §1 «Паспорт» и §7 «Белые пятна» сохраняются дословно. Точечных правок строк индекса (ручное добавление `?`/удаление) НЕ делается — это и исключает рассинхрон.
+Перегенерируй индекс по `merge-workflow.md §8` и `../masterspec/references/index-canonical.md`.
+§1/§7 сохраняются; для spec-only также сохраняется §5 кодового слоя без чтения codemap,
+а §3/§4/§6 перестраиваются по артефактам. Вне spec-only перестраиваются все §3–§6.
+Точечных правок строк индекса нет; непроверенный code scope укажи в отчёте.
 
 ### 11. Финальная валидация
 
@@ -202,7 +230,11 @@ git status --porcelain <specs-root>/ | grep -v "^.. <changes-root>/"
 - Каждый REMOVED отсутствует и в `00-masterspec-index.md`, и в дереве.
 - Grep на обратные ссылки (`masterspec/references/layer-discipline.md § 4`) — нет ссылок сверху вниз.
 
-Провал smoke-check → `git checkout HEAD -- <specs-root>/ ':(exclude)<changes-root>/'`, расследуй причину. В verification не переходим.
+Проверки используют тот же разрешённый scope, что §9; считай только нормативные
+артефакты, без changes/.work и native specs. Нижние зависимости spec-only остаются
+`deferred-to-implementation`, их актуальность здесь не подтверждается.
+
+Провал smoke-check → откат по `merge-workflow.md §1.2` (включая новые untracked-файлы), расследуй причину. В verification не переходим.
 
 **§9.2 Verification** (применённость по каждой строке §2.1/§2.2/§2.3):
 - Для каждого `modify-bullet` / `replace-section` / `add-subsection` — проверь, что `ПОСЛЕ:` реально в файле (первая + последняя непустая строка для `modify-bullet`; первая строка в границах раздела для `replace-section` / `add-subsection`). Детальный алгоритм — `merge-workflow.md § 9.2`.
@@ -212,7 +244,7 @@ git status --porcelain <specs-root>/ | grep -v "^.. <changes-root>/"
 
 **§9.3 Вердикт**:
 - `unconfirmed == 0` → переходи в §12.
-- `unconfirmed > 0` → AskUserQuestion с тремя опциями: **rollback** (`git checkout HEAD -- <specs-root>/ ':(exclude)<changes-root>/'`), **override** (пользователь подтверждает применение глазами), **leave** (статус `В реализации`, без архивации). См. `merge-workflow.md § 9.3`.
+- `unconfirmed > 0` → AskUserQuestion с тремя опциями: **rollback** (откат по `merge-workflow.md §1.2` (включая новые untracked-файлы)), **override** (пользователь подтверждает применение глазами), **leave** (статус `В реализации`, без архивации). См. `merge-workflow.md § 9.3`.
 
 ### 12. Обновление статуса change.md
 
@@ -282,11 +314,12 @@ meta_model_version: 3.0 (проставлен) | до-3.0 (дельта: N BLOCK
 (если были — список с причиной из §6 merge-workflow.md)
 
 ### Откат
-`git checkout HEAD -- <specs-root>/ ':(exclude)<changes-root>/'`
+откат по `merge-workflow.md §1.2` (включая новые untracked-файлы)
 
 ### Next step
-- Вердикт = `confirmed` / `override` → Готово к архивации: запусти скилл `masterspec-archive-change`.
-- Вердикт = `leave` → разберись с unconfirmed-строками, потом перезапусти `apply-change` или переведи статус в `Реализовано` вручную.
+- Вердикт = `confirmed` / `override` и полный сертификат → готово к архивации.
+  При частичной сертификации сначала доведи оставшийся scope.
+- Вердикт = `leave` → разберись с unconfirmed-строками, проверь фактически применённые операции и продолжи verification/сертификацию; не накатывай уже применённые diff повторно.
 - Вердикт = `rollback` → правки отменены; расследуй, почему verification не прошёл, и перезапусти `apply-change`.
 ```
 
@@ -301,7 +334,8 @@ meta_model_version: 3.0 (проставлен) | до-3.0 (дельта: N BLOCK
 - **НЕ пытайся создать раздел самостоятельно** — сигнал о рассинхроне change.md с состоянием файла.
 - НИКОГДА не удаляй контент, не упомянутый в change (кроме REMOVED из §2.3).
 - НИКОГДА не создавай `.bak`-файлы.
-- НЕ трогай файлы в `<changes-root>/<name>/` (кроме строки статуса в change.md).
+- Не меняй исходные diff/new/import snapshots. В каталоге change разрешены изменение
+  lifecycle-статуса и служебные apply-report/apply-transaction; они сохраняют аудит.
 - НЕ коммитай автоматически — коммит пользователь делает отдельно, видя diff.
-- Если smoke-check (§11 / `merge-workflow.md §9.1`) провалился — `git checkout HEAD -- <specs-root>/ ':(exclude)<changes-root>/'`, сообщи, в verification не переходи.
+- Если smoke-check (§11 / `merge-workflow.md §9.1`) провалился — откат по `merge-workflow.md §1.2` (включая новые untracked-файлы), сообщи, в verification не переходи.
 - Если verification (§11 / `merge-workflow.md §9.2`) нашёл `unconfirmed`-строки — **НЕ переводи статус change.md в `Реализовано` автоматически**. Только через явный `override`, `leave` или `rollback` пользователя в §9.3. Тихий переход в `Реализовано` при unconfirmed — баг.
