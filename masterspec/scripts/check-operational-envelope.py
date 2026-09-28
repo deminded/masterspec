@@ -41,6 +41,8 @@ FN_REF = re.compile(r"->\s*(fn-[a-z0-9-]+)\b")
 API_REF = re.compile(r"->\s*(api-[a-z0-9-]+)\b")
 TC_INT_REF = re.compile(r"->\s*(tc-int-[a-z0-9-]+)\b")
 FAULT_REF = re.compile(r"->\s*(tc-flt-[a-z0-9-]+)/(?P<fault>FLT-[A-Z0-9-]+)\b")
+AC_ID = r"(?:AC-[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*|A[0-9]+)"
+AC_REF = re.compile(rf"(?<![\w-]){AC_ID}(?![\w-])")
 COMMENT = re.compile(r"<!--.*?-->", re.S)
 PLACEHOLDER = re.compile(r"<[^>]+>|\b(?:TBD|TODO|placeholder)\b|…", re.I)
 GENERIC_EXPECTED = re.compile(
@@ -83,6 +85,7 @@ class Facet:
     status: str
     criticality: str
     path: Path
+    acceptance_resolved: bool = True
 
     @property
     def ref(self) -> tuple[str, str]:
@@ -343,6 +346,44 @@ def section_lines(lines: list[str], heading: Heading, headings: list[Heading]) -
     return lines[heading.line + 1 : end]
 
 
+def acceptance_definitions(lines: list[str], headings: list[Heading]) -> set[str]:
+    """Read criterion definitions in the owning function, never incidental references."""
+    result: set[str] = set()
+    for heading in headings:
+        title = heading.title.replace("**", "").replace("__", "").strip(" `")
+        title = re.sub(r"^\d+[.)]\s+", "", title)
+        if not re.fullmatch(r"(?:Критерии при[её]мки|Acceptance criteria)(?:\s+\(AC\))?", title, re.I):
+            continue
+        body = section_lines(lines, heading, headings)
+        body_headings = headings_in(body)
+        for number, line in enumerate(body):
+            definition_heading = heading_of(line, number)
+            if definition_heading:
+                candidate = definition_heading.title
+            else:
+                candidate = bullet_body(line)
+                if candidate is None:
+                    candidate = re.sub(r"^\s*\d+[.)]\s+", "", line).strip()
+            candidate = candidate.replace("**", "").replace("__", "").replace("`", "")
+            match = re.match(rf"^({AC_ID})(?![\w-])(?:\s*[:.\u2014\u2013-]\s*|\s*$)(.*)$", candidate)
+            if not match:
+                continue
+            content = match.group(2)
+            if definition_heading:
+                content += "\n" + "\n".join(section_lines(body, definition_heading, body_headings))
+            elif not clean(content):
+                # A criterion may wrap onto indented continuation lines.
+                for following in body[number + 1 :]:
+                    if not following.strip():
+                        continue
+                    if not following[:1].isspace() or bullet_body(following) is not None:
+                        break
+                    content += "\n" + following.strip()
+            if clean(content):
+                result.add(match.group(1))
+    return result
+
+
 def scenario_section_apis(text: str, title: str) -> set[str]:
     """api-ссылки из конкретной секции сценария (по заголовку)."""
     return set(API_REF.findall("\n".join(scenario_section_lines(text, title))))
@@ -402,6 +443,7 @@ def parse_function(path: Path) -> tuple[str, list[Facet], list[str]]:
     io_kind, errors = classify_function(lines, path)
     criticality = criticality_of(text, path, errors)
     oe_headings = [heading for heading in headings if heading.level == 3 and oe_id(heading.title)]
+    defined_ac = acceptance_definitions(lines, headings)
     present = [oe_id(heading.title) for heading in oe_headings]
     internal_markers = sum(INTERNAL_ONLY in line for line in lines)
 
@@ -450,9 +492,22 @@ def parse_function(path: Path) -> tuple[str, list[Facet], list[str]]:
             )
 
         status = values.get("Статус", "")
+        acceptance_resolved = True
         if status == "APPLICABLE":
-            if not re.search(r"\bAC-[A-Za-z0-9-]+\b", values.get("Проверка", "")):
+            verification = values.get("Проверка", "")
+            ac_refs = set(AC_REF.findall(verification))
+            acceptance_resolved = bool(ac_refs) and ac_refs <= defined_ac
+            for owner, ac in re.findall(rf"\b(fn-[a-z0-9-]+)/({AC_ID})(?![\w-])", verification):
+                if owner != slug:
+                    acceptance_resolved = False
+                    errors.append(f"{path}: {oe} AC {owner}/{ac} belongs to another function")
+            if not ac_refs:
                 errors.append(f"{path}: {oe} APPLICABLE has no AC in Проверка")
+            for ac in sorted(ac_refs - defined_ac):
+                errors.append(
+                    f"{path}: {oe} unresolved AC {ac} in Проверка; "
+                    f"define it in this function's Критерии приёмки section"
+                )
             normalized = "APPLICABLE"
         elif re.match(r"^N/A\s*[—-]\s*\S", status):
             if not re.match(r"^N/A\b", values.get("Проверка", "")):
@@ -464,7 +519,7 @@ def parse_function(path: Path) -> tuple[str, list[Facet], list[str]]:
         else:
             errors.append(f"{path}: {oe} invalid status {status!r}")
             normalized = "INVALID"
-        facets.append(Facet(slug, oe, normalized, criticality, path))
+        facets.append(Facet(slug, oe, normalized, criticality, path, acceptance_resolved))
 
     return io_kind, facets, errors
 
@@ -541,6 +596,17 @@ def validate_step_contract(text: str, path: Path) -> list[str]:
     return errors
 
 
+def describes_failure(description: str) -> bool:
+    """Exclude explicit absence phrases, not every sentence containing a negation."""
+    description = re.sub(
+        r"\b(?:(?:без|нет|отсутствие)\s+(?:ошиб\w*|отказ\w*|сбо(?:я|ев))"
+        r"|не\s+превращается\s+в\s+отказ\w*"
+        r"|(?:no|without)\s+(?:errors?|failures?))\b",
+        "", description, flags=re.I,
+    )
+    return bool(re.search(r"\b(?:ошиб\w*|отказ\w*|сбо(?:й|я|и|ев|ем|ям|ями|ях)|errors?|failures?)\b", description, re.I))
+
+
 def parse_test_cases(paths: list[Path]) -> tuple[list[TestCase], list[str]]:
     result: list[TestCase] = []
     errors: list[str] = []
@@ -563,10 +629,12 @@ def parse_test_cases(paths: list[Path]) -> tuple[list[TestCase], list[str]]:
         errors.extend(validate_step_contract(text, path))
 
         visible = "\n".join(markdown_lines(text))
-        error_case = bool(
-            re.search(r"(?im)^#.*(?:ошиб|отказ|сбо|error|failure)", visible)
-            or re.search(r"(?im)^\s*-\s*Путь:.*(?:ошиб|отказ|сбо|error|failure)", visible)
-            or any(fault != "FLT-000" for _, fault in result[-1].fault_refs)
+        descriptions = [heading.title for heading in headings_in(visible.splitlines())]
+        descriptions.extend(
+            parsed[1] for line in visible.splitlines() if (parsed := field_start(line, ("Путь",)))
+        )
+        error_case = any(describes_failure(value) for value in descriptions) or any(
+            fault != "FLT-000" for _, fault in result[-1].fault_refs
         )
         if error_case:
             if not re.search(r"->\s*fn-[a-z0-9-]+/OE-EVIDENCE\b", visible):
@@ -1013,7 +1081,7 @@ def validate_fault_catalogs(
 
 
 def coverage(expected: set[tuple[str, str]], covered: set[tuple[str, str]], facets: dict[tuple[str, str], Facet]) -> tuple[int, int, int, int]:
-    covered_expected = expected & covered
+    covered_expected = {ref for ref in expected & covered if facets[ref].acceptance_resolved}
     total_weight = sum(facets[ref].weight for ref in expected)
     covered_weight = sum(facets[ref].weight for ref in covered_expected)
     return len(covered_expected), len(expected), covered_weight, total_weight
@@ -1060,12 +1128,14 @@ def run(root: Path, scope: str) -> int:
     opened = {facet.ref for facet in facets if facet.status == "OPEN"}
 
     facets_by_ref = {facet.ref: facet for facet in facets}
+    resolved_acceptance = {facet.ref for facet in facets if facet.acceptance_resolved}
     tc_acc_paths = paths_of_type(
         root, "01-requirements/08-test-cases", "test-acceptance"
     )
     tc_acc, tc_errors = parse_test_cases(tc_acc_paths)
     errors.extend(tc_errors)
     tc_refs = set().union(*(test.oe_refs for test in tc_acc)) if tc_acc else set()
+    tc_refs &= resolved_acceptance
     for test in tc_acc:
         for function in sorted(test.function_refs):
             function_criticality = function_criticalities.get(function)
@@ -1131,6 +1201,7 @@ def run(root: Path, scope: str) -> int:
         tested_oe = set().union(
             *(refs_by_scenario.get(scenario, set()) for scenario in tc_int_scenarios)
         ) if tc_int_scenarios else set()
+        tested_oe &= resolved_acceptance
         uncovered_by_tc_int = applicable - tested_oe
         for ref in sorted(uncovered_by_tc_int):
             errors.append(f"uncovered by tc-int via scn: {ref[0]}/{ref[1]}")

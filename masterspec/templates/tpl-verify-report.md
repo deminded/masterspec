@@ -22,9 +22,14 @@ finished_at: YYYY-MM-DDThh:mm:ssZ
 
 ## Возраст сверки
 - last_verified: YYYY-MM-DD
-- verification_age_days: <целое число на дату отчёта>
+- verification_age_days: <целое число на календарную дату finished_at в его зоне>
 - oldest_element_last_verified: YYYY-MM-DD
-- oldest_element_age_days: <целое число>
+- oldest_element_age_days: <целое число на ту же дату>
+
+<!-- Новые отчёты используют UTC (Z). У started_at/finished_at обязательна зона:
+     Z или явный UTC-offset. last_verified и oldest_element_last_verified —
+     календарные даты в зоне finished_at. Возраст фиксируется на finished_at,
+     не пересчитывается на дату машины при повторном чтении отчёта. -->
 - stale_after_days: <порог>
 - stale_elements: <N>
 

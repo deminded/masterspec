@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import io
+import shutil
 import sys
 import tempfile
 import unittest
@@ -18,6 +19,175 @@ SPEC.loader.exec_module(CHECKER)
 
 
 class OperationalEnvelopeCheckerTest(unittest.TestCase):
+    EXAMPLE = SCRIPT.parents[1] / "examples" / "operational-envelope-factory"
+    FUNCTION = Path("01-requirements/02-functions/fn-send-notification.md")
+
+    def test_removed_acceptance_definition_blocks_and_reduces_coverage(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "factory"
+            shutil.copytree(self.EXAMPLE, root)
+            before = io.StringIO()
+            with redirect_stdout(before):
+                self.assertEqual(CHECKER.run(root, "spec"), 0)
+            path = root / self.FUNCTION
+            text = path.read_text(encoding="utf-8")
+            path.write_text(
+                "\n".join(line for line in text.splitlines() if not line.startswith("- AC-04:")) + "\n",
+                encoding="utf-8",
+            )
+            after = io.StringIO()
+            with redirect_stdout(after):
+                self.assertEqual(CHECKER.run(root, "spec"), 1)
+            report = after.getvalue()
+            self.assertIn("OE-RESILIENCE unresolved AC AC-04", report)
+            self.assertIn("tc_acc_coverage=6/7(85.71%)", report)
+            self.assertIn("tc_acc_weighted=18/21(85.71%)", report)
+            self.assertIn("tc_int_coverage=6/7(85.71%)", report)
+            self.assertIn("uncovered_by_tc=1", report)
+            self.assertIn("uncovered_by_tc_int=1", report)
+
+    def test_acceptance_references_must_all_resolve(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "fn-send-notification.md"
+            text = (self.EXAMPLE / self.FUNCTION).read_text(encoding="utf-8")
+            path.write_text(text.replace("Проверка:** AC-01", "Проверка:** AC-01, AC-99", 1), encoding="utf-8")
+            _, facets, errors = CHECKER.parse_function(path)
+            self.assertTrue(any("OE-LOAD unresolved AC AC-99" in error for error in errors), errors)
+            load = next(facet for facet in facets if facet.oe == "OE-LOAD")
+            self.assertEqual(load.status, "APPLICABLE")
+            self.assertFalse(load.acceptance_resolved)
+
+    def test_incidental_mentions_are_not_acceptance_definitions(self) -> None:
+        text = (self.EXAMPLE / self.FUNCTION).read_text(encoding="utf-8")
+        actual = "- AC-04: повтор не создаёт дубль, временный отказ соблюдает backoff."
+        mentions = (
+            "<!-- AC-04: скрытый текст. -->",
+            "```text\nAC-04: пример, не критерий.\n```",
+            "~~~text\nAC-04: пример, не критерий.\n~~~",
+            "- См. AC-04: ссылка на отсутствующий критерий.",
+            "- Проверка: AC-04",
+            "- -> fn-other/AC-04: чужой критерий.",
+            "## Связи\n- AC-04: текст вне раздела приёмки.",
+            "> AC-04: цитата не определяет критерий функции.",
+            "- AC-04: TODO",
+            "### AC-04\n\n## Связи\n- Контракт функции.",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "fn-send-notification.md"
+            for mention in mentions:
+                with self.subTest(mention=mention):
+                    path.write_text(text.replace(actual, mention), encoding="utf-8")
+                    _, _, errors = CHECKER.parse_function(path)
+                    self.assertTrue(any("unresolved AC AC-04" in error for error in errors), errors)
+
+    def test_acceptance_definition_in_another_function_does_not_resolve(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "factory"
+            shutil.copytree(self.EXAMPLE, root)
+            path = root / self.FUNCTION
+            text = path.read_text(encoding="utf-8")
+            path.write_text(text.replace("- AC-04:", "- AC-40:"), encoding="utf-8")
+            other = root / "01-requirements/02-functions/fn-calculate-checksum.md"
+            other.write_text(other.read_text(encoding="utf-8").replace("AC-01", "AC-04"), encoding="utf-8")
+            report = io.StringIO()
+            with redirect_stdout(report):
+                self.assertEqual(CHECKER.run(root, "req"), 1)
+            self.assertIn("OE-RESILIENCE unresolved AC AC-04", report.getvalue())
+
+    def test_alternate_acceptance_ids_and_headings_remain_valid(self) -> None:
+        text = (self.EXAMPLE / self.FUNCTION).read_text(encoding="utf-8")
+        variants = (
+            ("## Критерии приёмки", "- AC-01: проверяемый результат."),
+            ("## Критерии приемки", "* **AC-01**: проверяемый результат."),
+            ("## **Критерии приёмки**", "+ `AC-01`: проверяемый результат."),
+            ("## 6. Критерии приёмки", "1. AC-01. Проверяемый результат."),
+            ("## Критерии приёмки (AC)", "- AC-01:\n  проверяемый результат."),
+            ("## Acceptance criteria", "### AC-01\nПроверяемый результат."),
+            ("## Критерии приёмки", "### AC-01 — Проверяемый результат"),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "fn-send-notification.md"
+            for criterion in ("AC-01", "A6", "AC-sprint-integration"):
+                for title, definition in variants:
+                    with self.subTest(criterion=criterion, title=title, definition=definition):
+                        candidate = text.replace("## Критерии приёмки", title)
+                        candidate = candidate.replace(
+                            "- AC-01: peak/backlog и оба класса входа обработаны без потери.", definition
+                        ).replace("AC-01", criterion)
+                        path.write_text(candidate, encoding="utf-8")
+                        _, _, errors = CHECKER.parse_function(path)
+                        self.assertEqual(errors, [])
+
+    def test_criterion_prefix_does_not_resolve_missing_id(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "fn-send-notification.md"
+            text = (self.EXAMPLE / self.FUNCTION).read_text(encoding="utf-8")
+            path.write_text(text.replace("- AC-04:", "- AC-04-extra:"), encoding="utf-8")
+            _, _, errors = CHECKER.parse_function(path)
+            self.assertTrue(any("unresolved AC AC-04" in error for error in errors), errors)
+
+    def test_qualified_acceptance_reference_must_use_owning_function(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "fn-send-notification.md"
+            text = (self.EXAMPLE / self.FUNCTION).read_text(encoding="utf-8")
+            for owner, resolved in (("fn-other", False), ("fn-send-notification", True)):
+                with self.subTest(owner=owner):
+                    path.write_text(
+                        text.replace("Проверка:** AC-01", f"Проверка:** -> {owner}/AC-01", 1),
+                        encoding="utf-8",
+                    )
+                    _, facets, errors = CHECKER.parse_function(path)
+                    load = next(facet for facet in facets if facet.oe == "OE-LOAD")
+                    self.assertEqual(load.acceptance_resolved, resolved)
+                    self.assertEqual(any("belongs to another function" in error for error in errors), not resolved)
+
+    def _test_case_errors(self, directory: str, title: str, extra: str = "") -> list[str]:
+        path = Path(directory) / "tc-acc-demo.md"
+        path.write_text(
+            "---\ntype: test-acceptance\ncriticality: low\n---\n"
+            f"# Приёмочный тест: {title}\n{extra}\n"
+            "## Шаги выполнения\n"
+            "1. **Действие:** Подайте заявку.\n"
+            "   **Тестовые данные:** одна заявка.\n"
+            "   **Ожидаемый результат:** показан заданный статус.\n",
+            encoding="utf-8",
+        )
+        return CHECKER.parse_test_cases([path])[1]
+
+    def test_explicit_absence_of_failure_does_not_require_error_oracles(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            for title in (
+                "Длинное сообщение получает ноту длины без отказа",
+                "Предупреждение не превращается в отказ",
+                "Приём сообщения без ошибок",
+                "Submission without failure", "No errors on submission", "Сбор данных",
+            ):
+                with self.subTest(title=title):
+                    self.assertEqual(self._test_case_errors(directory, title), [])
+
+    def test_actual_failure_still_requires_evidence_and_log_oracles(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            for title in (
+                "Отказ без потери данных", "Обработка сбоя", "Ошибка валидации",
+                "Failure without data loss", "Submission error",
+                "Без ошибок на входе, но отказ канала", "Отказ канала без ошибок в журнале",
+            ):
+                with self.subTest(title=title):
+                    errors = self._test_case_errors(directory, title)
+                    self.assertTrue(any("no OE-EVIDENCE reference" in error for error in errors), errors)
+                    self.assertTrue(any("no separate log-check step" in error for error in errors), errors)
+
+    def test_positive_title_cannot_hide_fault_reference_or_failure_path(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            for extra in (
+                "- Каталог: -> tc-flt-demo/FLT-001",
+                "- Путь: отказ канала", "* **Путь:** ошибка валидации",
+            ):
+                with self.subTest(extra=extra):
+                    errors = self._test_case_errors(directory, "Сообщение без отказа", extra)
+                    self.assertTrue(any("no OE-EVIDENCE reference" in error for error in errors), errors)
+                    self.assertTrue(any("no separate log-check step" in error for error in errors), errors)
+
     def test_refs_ignore_html_comments_and_fenced_code(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "refs.md"

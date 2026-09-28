@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import re
 import sys
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 
@@ -76,12 +76,20 @@ def number(value: str) -> float | None:
         return None
 
 
-def validate(path: Path, today: date | None = None) -> tuple[dict[str, str], list[str]]:
+def validate(
+    path: Path, today: date | None = None, *, now: datetime | None = None
+) -> tuple[dict[str, str], list[str]]:
+    """Check ages at report completion, using the explicit finished_at timezone.
+
+    Date-only fields share that calendar; they are not UTC instants. ``today``
+    remains an explicit age-reference override. ``now`` is an aware instant used
+    only to reject timestamps in the future, never to age a saved report.
+    """
     text = path.read_text(encoding="utf-8")
     fm = frontmatter(text)
     data = metrics(text)
     errors: list[str] = []
-    today = today or date.today()
+    now = now or datetime.now(timezone.utc)
 
     for name in REQUIRED_FRONTMATTER:
         value = fm.get(name, "")
@@ -102,11 +110,21 @@ def validate(path: Path, today: date | None = None) -> tuple[dict[str, str], lis
     timestamps: dict[str, datetime] = {}
     for name in ("started_at", "finished_at"):
         try:
-            timestamps[name] = datetime.fromisoformat(fm.get(name, "").replace("Z", "+00:00"))
+            timestamp = datetime.fromisoformat(fm.get(name, "").replace("Z", "+00:00"))
         except ValueError:
             errors.append(f"{name} must be an ISO-8601 timestamp")
+            continue
+        if timestamp.tzinfo is None or timestamp.utcoffset() is None:
+            errors.append(f"{name} must include an explicit timezone (Z or UTC offset)")
+            continue
+        timestamps[name] = timestamp
+        if timestamp > now:
+            errors.append(f"{name} is in the future")
     if len(timestamps) == 2 and timestamps["finished_at"] < timestamps["started_at"]:
         errors.append("finished_at precedes started_at")
+    reference_date = today
+    if reference_date is None and "finished_at" in timestamps:
+        reference_date = timestamps["finished_at"].date()
 
     for name in REQUIRED_METRICS:
         value = data.get(name, "")
@@ -164,9 +182,9 @@ def validate(path: Path, today: date | None = None) -> tuple[dict[str, str], lis
     if percent is not None and not 0 <= percent <= 100:
         errors.append("machine_axes_percent must be in range 0..100")
 
-    if verified_date is not None:
+    if verified_date is not None and reference_date is not None:
         age = integer(data.get("verification_age_days", ""))
-        expected_age = (today - verified_date).days
+        expected_age = (reference_date - verified_date).days
         if expected_age < 0:
             errors.append("last_verified is in the future")
         elif age is not None and age != expected_age:
@@ -174,13 +192,14 @@ def validate(path: Path, today: date | None = None) -> tuple[dict[str, str], lis
     try:
         oldest = date.fromisoformat(data.get("oldest_element_last_verified", ""))
         oldest_age = integer(data.get("oldest_element_age_days", ""))
-        expected_oldest_age = (today - oldest).days
-        if expected_oldest_age < 0:
-            errors.append("oldest_element_last_verified is in the future")
-        elif oldest_age is not None and oldest_age != expected_oldest_age:
-            errors.append(
-                f"oldest_element_age_days is {oldest_age}, expected {expected_oldest_age}"
-            )
+        if reference_date is not None:
+            expected_oldest_age = (reference_date - oldest).days
+            if expected_oldest_age < 0:
+                errors.append("oldest_element_last_verified is in the future")
+            elif oldest_age is not None and oldest_age != expected_oldest_age:
+                errors.append(
+                    f"oldest_element_age_days is {oldest_age}, expected {expected_oldest_age}"
+                )
     except ValueError:
         if data.get("oldest_element_last_verified"):
             errors.append("oldest_element_last_verified must be YYYY-MM-DD")
