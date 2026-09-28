@@ -61,7 +61,8 @@ class Diagnostics:
     def __init__(self):
         self.items = []
         self.checks = dict.fromkeys(("paths", "factory", "inventory", "source-snapshot",
-                                   "mapping", "operation-coverage", "target-snapshots", "scope"), "skipped")
+                                   "mapping", "operation-coverage", "target-snapshots", "scope",
+                                   "readiness"), "skipped")
 
     def test(self, condition, message, stage, *, kind="structural", operation_id=None):
         if self.checks[stage] == "skipped":
@@ -146,10 +147,11 @@ def diagnose(change: Path, factory: Path, source: Path, specs: Path) -> dict:
                  f"{operation}: missing reason", "mapping", operation_id=operation)
             test(disposition in ("change", "already-satisfied", "blocked"),
                  f"{operation}: invalid disposition", "mapping", operation_id=operation)
+            if disposition in ("change", "already-satisfied", "blocked"):
+                test(disposition != "blocked", f"{operation}: unresolved mapping: {reason}",
+                     "readiness", kind="semantic", operation_id=operation)
             if disposition == "blocked":
                 blocked += 1
-                test(False, f"{operation}: unresolved mapping: {reason}", "mapping",
-                     kind="semantic", operation_id=operation)
             changed += disposition == "change"
             targets = binding.get("targets")
             if not test(isinstance(targets, list) and (bool(targets) or disposition == "blocked"),
@@ -205,7 +207,7 @@ def diagnose(change: Path, factory: Path, source: Path, specs: Path) -> dict:
         with guard("scope"):
             lines = SCOPE.markdown_lines(change_file.read_text(encoding="utf-8-sig"))
             test(not any(re.search(r"\*\*Статус\*\*:\s*Заблокировано", line) for line in lines),
-                 "change.md status is Заблокировано", "scope", kind="semantic")
+                 "change.md status is Заблокировано", "readiness", kind="semantic")
         declared = set()
         if lines is not None:
             for number in ("2.1", "2.2", "2.3"):

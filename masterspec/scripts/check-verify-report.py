@@ -136,14 +136,19 @@ def validate(
     for name in (
         "verification_age_days",
         "oldest_element_age_days",
-        "stale_after_days",
-        "stale_elements",
         "agent_calls",
         "axis_runs_total",
         "axis_runs_machine",
     ):
         if data.get(name) and integer(data[name]) is None:
             errors.append(f"{name} must be a non-negative integer")
+
+    for name in ("stale_after_days", "stale_elements"):
+        value = data.get(name, "")
+        if value and integer(value) is None and not N_A.match(value):
+            errors.append(f"{name} must be a non-negative integer or 'N/A — reason'")
+    if N_A.match(data.get("stale_after_days", "")) and integer(data.get("stale_elements", "")) is not None:
+        errors.append("stale_elements must be 'N/A — reason' when stale_after_days is N/A")
 
     if data.get("wall_time_seconds") and number(data["wall_time_seconds"]) is None:
         errors.append("wall_time_seconds must be numeric")

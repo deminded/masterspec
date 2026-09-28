@@ -17,7 +17,7 @@ finished_at: YYYY-MM-DDThh:mm:ssZ
 - holes: {O1,O2,O3,O4a,O4b,O5[,O0,O6,O7,O_T1..O_T6]} = <total>
 - by_severity: blocker=<N>; major=<N>; minor=<N>
 - spec_ready / codegen_ready / cascade_ready: <yes | no | N/A — не этот scope>
-- OE: <дословная строка `OE metrics:` валидатора>
+- OE: <дословная строка `OE metrics:` валидатора | N/A — метрики не выданы, см. exit code и диагностику>
 - top_holes: <ось; элемент; дефект; severity>
 
 ## Возраст сверки
@@ -30,12 +30,17 @@ finished_at: YYYY-MM-DDThh:mm:ssZ
      Z или явный UTC-offset. last_verified и oldest_element_last_verified —
      календарные даты в зоне finished_at. Возраст фиксируется на finished_at,
      не пересчитывается на дату машины при повторном чтении отчёта. -->
-- stale_after_days: <порог>
-- stale_elements: <N>
+<!-- Порог берётся из явной политики фабрики или входа задачи, не назначается ради
+     прохождения проверки. Если порог не задан, оба stale-поля — `N/A — причина`;
+     ноль допустим только как явно заданный порог или измеренное число элементов.
+     При известном пороге, но недоступном измерении stale_elements тоже N/A с причиной.
+     Без порога не присваивай элементам fresh/stale. -->
+- stale_after_days: <целое >= 0 | N/A — политика не задаёт порог>
+- stale_elements: <N | N/A — причина отсутствия оценки>
 
 | Элемент | Criticality | Last verified | Age days | Статус |
 |---|---|---|---|---|
-| <slug> | high / medium / low | YYYY-MM-DD | <N> | fresh / stale / not-verified |
+| <slug> | high / medium / low | YYYY-MM-DD | <N> | fresh / stale / not-verified / N/A — порог не задан |
 
 ## Стоимость прогона
 <!-- Стоимостные счётчики (input_tokens/output_tokens/estimated_cost) НЕ могут быть нулём:

@@ -122,6 +122,22 @@ class ImportGateTests(unittest.TestCase):
         self.assertEqual(report["checks"]["target-snapshots"], "passed")
         self.assertEqual([item["kind"] for item in report["diagnostics"]], ["semantic"])
 
+    def test_semantic_blockers_do_not_report_structural_scope_failure(self):
+        self.mapping["bindings"][0].update(disposition="blocked", reason="Owner must choose.")
+        self.save("import-map.json", self.mapping)
+        change_file = self.change / "change.md"
+        self.put(change_file, "> **Статус**: Заблокировано\n" + change_file.read_text(encoding="utf-8"))
+        before = {p: p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
+        for _ in range(2):
+            report = gate.diagnose(self.change, self.factory, self.source, self.specs)
+            self.assertEqual(report["result"], "blocked")
+            self.assertEqual(report["checks"]["readiness"], "failed")
+            self.assertTrue(all(value == "passed" for key, value in report["checks"].items()
+                                if key != "readiness"))
+            self.assertEqual({item["check"] for item in report["diagnostics"]}, {"readiness"})
+            self.assertEqual({item["kind"] for item in report["diagnostics"]}, {"semantic"})
+        self.assertEqual(before, {p: p.read_bytes() for p in self.root.rglob("*") if p.is_file()})
+
     def test_all_blockers_and_independent_failures_are_reported_without_mutation(self):
         delta = SOURCE + SOURCE.partition("\n")[2].replace("Requirement: Price", "Requirement: Tax")
         delta += SOURCE.partition("\n")[2].replace("Requirement: Price", "Requirement: Discount")

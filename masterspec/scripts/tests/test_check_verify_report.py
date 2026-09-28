@@ -61,6 +61,41 @@ class VerifyReportCheckerTest(unittest.TestCase):
         _, errors = self.check(report())
         self.assertEqual(errors, [])
 
+    def test_accepts_unknown_staleness_policy_without_invented_measurement(self) -> None:
+        content = report().replace("stale_after_days: 14", "stale_after_days: N/A — factory defines no threshold")
+        content = content.replace("stale_elements: 0", "stale_elements: N/A — no threshold to classify elements")
+        data, errors = self.check(content)
+        self.assertEqual(errors, [])
+        self.assertEqual(data["stale_after_days"], "N/A — factory defines no threshold")
+        self.assertEqual(data["stale_elements"], "N/A — no threshold to classify elements")
+
+    def test_rejects_numeric_stale_count_without_threshold_including_zero(self) -> None:
+        for count in (0, 2):
+            with self.subTest(count=count):
+                content = report().replace("stale_after_days: 14", "stale_after_days: N/A — no policy")
+                content = content.replace("stale_elements: 0", f"stale_elements: {count}")
+                _, errors = self.check(content)
+                self.assertIn("stale_elements must be 'N/A — reason' when stale_after_days is N/A", errors)
+
+    def test_accepts_unmeasured_stale_count_with_known_threshold_and_reason(self) -> None:
+        content = report().replace("stale_elements: 0", "stale_elements: N/A — element inventory is incomplete")
+        _, errors = self.check(content)
+        self.assertEqual(errors, [])
+
+    def test_accepts_explicit_zero_staleness_threshold(self) -> None:
+        content = report().replace("stale_after_days: 14", "stale_after_days: 0")
+        content = content.replace("stale_elements: 0", "stale_elements: 1")
+        _, errors = self.check(content)
+        self.assertEqual(errors, [])
+
+    def test_requires_staleness_na_reasons_and_nonnegative_integer_counts(self) -> None:
+        for field, original in (("stale_after_days", "14"), ("stale_elements", "0")):
+            for value in ("N/A", "N/A —", "N/A -", "-1", "1.5"):
+                with self.subTest(field=field, value=value):
+                    content = report().replace(f"{field}: {original}", f"{field}: {value}")
+                    _, errors = self.check(content)
+                    self.assertIn(f"{field} must be a non-negative integer or 'N/A — reason'", errors)
+
     def test_rejects_incorrect_machine_axis_percentage(self) -> None:
         _, errors = self.check(report(percent="80.00"))
         self.assertIn("machine_axes_percent does not equal machine/total × 100", errors)
