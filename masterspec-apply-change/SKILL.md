@@ -7,12 +7,12 @@ description: >
   Целевой артефакт — не одна спека, а дерево
   артефактов по slug'ам (fn-*, cmp-*, scn-*, adr-* и др.). Используй когда change-request
   согласован (статус `Согласовано` или `В реализации`), merge PR состоялся, реализация в
-  коде (если нужна) завершена, и пользователь говорит "apply change", "влей change",
+  коде (если она входит в этот change) завершена, и пользователь говорит "apply change", "влей change",
   "смержи в фабрику", "обнови артефакты".
 when_to_use: >
   влить change в фабрику, apply change, обновить артефакты по change,
   merge change в spec, зафиксировать изменения в фабрике
-argument-hint: "[имя change] [context=lean|full]"
+argument-hint: "[имя change] [context=lean|full] [certify=all|req-spec]"
 license: MIT
 compatibility: >
   Использует раскладку фабрики по layout-modes.md (classic masterspec/ или openspec),
@@ -32,6 +32,15 @@ allowed-tools:
 Мультиартефактный мерж: diff-блоки из `change.md §4` применяются к существующим файлам фабрики, файлы из `new/` копируются в целевые директории по `type:` фронтматтера, `00-masterspec-index.md` обновляется.
 
 **Input**: Опционально — имя change. Если не указано — автовыбор/выбор через AskUserQuestion.
+
+`certify=all` (по умолчанию) проверяет все применимые слои. `certify=req-spec`
+ограничивает сертификацию требованиями и спецификациями; подходит для spec-only
+импорта. Код и codemap не читаются. При наличии кодового слоя полный сертификат
+и статус `Реализовано` этим режимом не выдаются (см. §13).
+
+У spec-only change реализация не входит в состав операции: согласованное изменение
+норм можно применить до разработки. Незакрытые OpenSpec coding tasks не блокируют
+этот мерж и не подтверждают реализацию; расхождение с кодом остаётся отдельной работой.
 
 Определи корни фабрики по `../masterspec/references/layout-modes.md §2` (положение `00-masterspec-index.md` → specs-root, changes-root).
 
@@ -219,6 +228,16 @@ git status --porcelain <specs-root>/ | grep -v "^.. <changes-root>/"
 ### 13. Сертификация версии мета-модели
 
 По `merge-workflow.md § 11`. Единственный шаг, ставящий штамп `meta_model_version` фабрики; версия = выход-сертификат (`../masterspec/references/meta-model-version.md`).
+
+**При `certify=req-spec`:** выполняй детекторы только `req` и, при наличии, `spec`.
+Не читай `03-codemap/`, код или `recover/_reconciliation.yaml`; проверка расхождений
+и code остаётся `not-assessed`. Если существует кодовый слой или reconciliation,
+максимальный штамп — scope-квалифицированный (`3.0-spec` / `3.0-req` по результатам),
+статус change — `Применено, не сертифицировано`. Предыдущий полный штамп не служит
+доказательством после изменения: замени его квалифицированным при зелёном scope;
+если ни один scope не прошёл — убери не подтверждённый этим прогоном штамп.
+Запиши остаток в apply-report; полный цикл `certify=all` выполняется отдельно.
+Правила ниже о полном штампе применимы только при проверке всех применимых scope.
 
 - Прогони детекторы инвариантов текущей версии на применимых scope: `check-operational-envelope.py <specs-root> --layer req` (например `check-operational-envelope.py masterspec --layer req` в classic-подпапке; + `spec`, если есть `02-specifications/`; + `code`, если есть `03-codemap/`) и `check-verify-report.py <report>`, если verify-report есть. Собери все BLOCKER-строки = остаточная дельта.
 - **Гейт расхождений.** Если в фабрике есть `recover/_reconciliation.yaml` (восстановление из двух источников) — неразрешённые `spec-drift` / `declared-not-implemented` / `ambiguous_matches[]` считаются BLOCKER-строками наравне с выводом детекторов. Фабрика, у которой документы и код говорят разное, сертификат версии не получает: штамп удостоверяет соответствие инвариантам, а не наличие двух правд.

@@ -1,0 +1,2 @@
+# Import fixtures contain SHA256 snapshots; keep identical bytes on Windows/POSIX.
+masterspec-apply-from-openspec/examples/code-factory/** text eol=lf
