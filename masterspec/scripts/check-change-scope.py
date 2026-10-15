@@ -149,7 +149,7 @@ def frontmatter(path: Path) -> dict[str, str]:
     for line in lines[1:lines[1:].index("---") + 1]:
         if not line.strip() or line.lstrip().startswith("#") or line[0].isspace():
             continue
-        match = re.fullmatch(r"([a-z][a-z0-9_]*):(?:\s+(.*))?", line)
+        match = re.fullmatch(r"([a-z][a-z0-9_-]*):(?:\s+(.*))?", line)
         require(match is not None, f"{path}: unsupported frontmatter key declaration: {line!r}")
         key, value = match[1], (match[2] or "").strip()
         if key not in FIELDS:
