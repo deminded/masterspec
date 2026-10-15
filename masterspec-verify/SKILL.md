@@ -50,6 +50,10 @@ Read-only по отношению к артефактам: я нахожу ды�
    событие→данные → оракул GWT с репрезентативностью. Для req сверить 8×external-I/O fn плюс
    однострочные internal-only, статусы и
    APPLICABLE→AC/tc-acc; для spec — APPLICABLE→scn, OE-LOAD→lp, внешний OE-DELIVERY→context/api.
+   Для OpenAPI/AsyncAPI сайдкаров обязателен schema-gate из
+   `../masterspec/references/patterns/sidecar-formats.md §Валидация OpenAPI/AsyncAPI`:
+   F2 с адресом выдаётся при ошибке схемы/ссылки или недоступности валидатора.
+   Ручной OE set-diff эту проверку не заменяет; без неё `codegen_ready: no`.
    preset=full — все оси на слое + критичных элементах.
    В openspec-режиме при наличии CLI для `layer=change` проверь выбранный change:
    `openspec validate <name> --strict` из разрешённого planning-root (с выбранным store).
