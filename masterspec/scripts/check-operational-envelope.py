@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import re
 import sys
@@ -13,6 +14,14 @@ from pathlib import Path, PureWindowsPath
 from xml.parsers.expat import ExpatError
 
 import yaml
+
+
+_CONTRACT_SPEC = importlib.util.spec_from_file_location(
+    "masterspec_contract_validation", Path(__file__).with_name("contract_validation.py")
+)
+assert _CONTRACT_SPEC is not None and _CONTRACT_SPEC.loader is not None
+_CONTRACT_VALIDATION = importlib.util.module_from_spec(_CONTRACT_SPEC)
+_CONTRACT_SPEC.loader.exec_module(_CONTRACT_VALIDATION)
 
 
 EXPECTED = (
@@ -713,29 +722,24 @@ def resolve_sidecar(companion: Path, declared: str) -> tuple[Path | None, list[s
     return real, []
 
 
-# Семантический минимум по формату: корневые ключи, без которых документ не является тем, чем объявлен.
-# Полная валидация схемы — вне детектора; задача здесь — не пропустить пустышку («foo: bar» как OpenAPI).
+# JSON Schema sidecars retain a format marker check. API contracts use bundled
+# official versioned schemas and offline reference resolution in contract_validation.
 SIDECAR_REQUIRED_KEYS: dict[str, tuple[str, ...]] = {
-    "openapi": ("openapi", "paths"),
-    "asyncapi": ("asyncapi", "channels"),
     "json-schema": ("$schema", "type", "properties", "$defs", "definitions"),  # достаточно ОДНОГО из
 }
 
 
 def semantic_minimum(sidecar: Path, doc: object, fmt: str) -> list[str]:
-    """Объявленный формат обязывает: документ обязан нести признаки этого формата, а не быть любым YAML/JSON."""
+    """Validate API contracts against official schemas; check other format markers."""
+    if fmt.startswith(("openapi", "asyncapi")):
+        return _CONTRACT_VALIDATION.validate_contract(sidecar, doc, fmt)
     for prefix, keys in SIDECAR_REQUIRED_KEYS.items():
         if not fmt.startswith(prefix):
             continue
         if not isinstance(doc, dict):
             return [f"{sidecar}: declared {fmt} but document is not a mapping (F2)"]
-        if prefix == "json-schema":
-            if not any(key in doc for key in keys):
-                return [f"{sidecar}: declared {fmt} but has none of {list(keys)} — not a schema (F2)"]
-        else:
-            missing = [key for key in keys if key not in doc]
-            if missing:
-                return [f"{sidecar}: declared {fmt} but missing root keys {missing} — not a valid {prefix} document (F2)"]
+        if not any(key in doc for key in keys):
+            return [f"{sidecar}: declared {fmt} but has none of {list(keys)} — not a schema (F2)"]
     return []
 
 
@@ -757,7 +761,7 @@ def check_contract_origin(path: Path, text: str) -> list[str]:
 
 
 def parse_sidecar(sidecar: Path, raw: str, sidecar_format: str) -> list[str]:
-    """Парсимость СТРОГО по объявленному sidecar_format + семантический минимум формата."""
+    """Parse declared formats; validate OpenAPI/AsyncAPI schemas and offline refs (F2)."""
     fmt = sidecar_format.strip().lower()
     ext = sidecar.suffix.lower()
     try:
@@ -780,7 +784,7 @@ def parse_sidecar(sidecar: Path, raw: str, sidecar_format: str) -> list[str]:
 
 
 def check_sidecar(sidecar: Path, sidecar_format: str) -> list[str]:
-    """F2/F3 по РАЗРЕШЁННОМУ пути: непустота, отсутствие markdown-огородок, TODO, парсимость по формату."""
+    """F2/F3: content checks, parsing, and versioned API schema/reference validation."""
     try:
         raw = sidecar.read_text(encoding="utf-8")
     except (UnicodeDecodeError, OSError) as exc:
@@ -812,7 +816,7 @@ SPEC_FORM_DIRS = (
 
 
 def validate_forms(root: Path) -> list[str]:
-    """F1 membership + F2 парность/локальность/владение/парсимость сайдкара + F3 открытые MIGRATE-TODO."""
+    """F1 membership; F2 sidecar ownership/parsing/API schema/refs; F3 MIGRATE-TODO."""
     errors: list[str] = []
     notations = load_notations()
     owner: dict[Path, Path] = {}  # resolved sidecar → компаньон (запрет двойного владения)

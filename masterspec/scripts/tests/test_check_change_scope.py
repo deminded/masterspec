@@ -197,6 +197,44 @@ class ScopeTests(unittest.TestCase):
         self.document(added=[("fn", "fn-send", "01-requirements/02-functions/notifications/fn-send.md")])
         CHECKER.check(self.change)
 
+    def test_new_decisions_from_templates_preserve_hyphenated_ids(self):
+        self.artifact()
+        templates = SCRIPT.parents[1] / "templates"
+        adr_slug = "adr-007-channel-adapter-selection"
+        dr_slug = "dr-fn-send-storage-engine"
+        adr = (templates / "tpl-adr.md").read_text(encoding="utf-8")
+        dr = (templates / "tpl-dr.md").read_text(encoding="utf-8")
+        adr = adr.replace("adr-NNN-<slug>", adr_slug).replace("ADR-NNN", "ADR-007")
+        dr = (dr.replace("dr-<артефакт-slug>-<тема>", dr_slug)
+              .replace("<slug артефакта, к которому относится решение>", "fn-send")
+              .replace("<тема: privacy | storage | algorithm | contract | ...>", "storage-engine"))
+        for slug, content in ((adr_slug, adr), (dr_slug, dr)):
+            content = (content.replace("<factory-slug>", "notifications")
+                       .replace("<team or person>", "platform").replace("YYYY-MM-DD", "2026-10-15"))
+            self.write(f"changes/send/new/{slug}.md", content)
+        self.document(added=[
+            ("adr", adr_slug, f"04-decisions/{adr_slug}.md"),
+            ("dr", dr_slug, f"01-requirements/02-functions/{dr_slug}.md"),
+        ])
+
+        CHECKER.check(self.change)
+        for slug in (adr_slug, dr_slug):
+            self.assertEqual(CHECKER.frontmatter(self.change / "new" / f"{slug}.md")["slug"], slug)
+        result = subprocess.run([sys.executable, str(SCRIPT), str(self.change)],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_malformed_decision_ids_still_fail_slug_validation(self):
+        for kind, slug in [("adr", "adr-007-channel--selection"),
+                           ("adr", "adr-007-channel-selection-"),
+                           ("dr", "dr-fn-send_storage"),
+                           ("dr", "dr-fn-Send-storage"),
+                           ("dr", "dr-fn-send-storage.v2")]:
+            with self.subTest(slug=slug):
+                self.document(added=[(kind, slug, f"04-decisions/{slug}.md")])
+                with self.assertRaisesRegex(ValueError, "invalid slug"):
+                    CHECKER.check(self.change)
+
     def test_each_diff_block_requires_exactly_one_target(self):
         self.artifact()
         document = self.document(modified=[("function", "fn-send", FN)])

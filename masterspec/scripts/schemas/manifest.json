@@ -1,0 +1,97 @@
+{
+  "openapi-3.0.json": {
+    "url": "https://spec.openapis.org/oas/3.0/schema/2024-10-18",
+    "sha256": "2385f5bbb8c37878daae73baeabe7f34b2f022a4a8c049329ee61f71796f039c",
+    "license": "Apache-2.0"
+  },
+  "openapi-3.1-schema.json": {
+    "url": "https://spec.openapis.org/oas/3.1/schema/2026-08-03",
+    "sha256": "59f106413cb48c31299f96f024c938d3628aed6cd02cd14bcfb2fcaae7a130b6",
+    "license": "Apache-2.0"
+  },
+  "openapi-3.1-schema-base.json": {
+    "url": "https://spec.openapis.org/oas/3.1/schema-base/2026-08-03",
+    "sha256": "ffdd07e28417bfa89de635d23a7476f7625497b8edd279f18c1424e613966d9a",
+    "license": "Apache-2.0"
+  },
+  "openapi-3.1-dialect.json": {
+    "url": "https://spec.openapis.org/oas/3.1/dialect/2024-11-10",
+    "sha256": "647f32dfff64949d5020a28ecd1af4ffeffb1e9c695f861a52255a8004e07460",
+    "license": "Apache-2.0"
+  },
+  "openapi-3.1-meta.json": {
+    "url": "https://spec.openapis.org/oas/3.1/meta/2024-11-10",
+    "sha256": "80706a9a404affedbf84ac4dc1328c9ce0d2a00804cdfc4d95c0ddd0053121dd",
+    "license": "Apache-2.0"
+  },
+  "openapi-3.2-schema.json": {
+    "url": "https://spec.openapis.org/oas/3.2/schema/2026-08-30",
+    "sha256": "ec53db6e114b768ff2d273b232bda210f51b70c5e57d57ac8daf7e8496a6e073",
+    "license": "Apache-2.0"
+  },
+  "openapi-3.2-schema-base.json": {
+    "url": "https://spec.openapis.org/oas/3.2/schema-base/2026-08-30",
+    "sha256": "9df52b98a92075a917125364d23a5f70825d6c292c7aeb15c31b822e95f031e9",
+    "license": "Apache-2.0"
+  },
+  "openapi-3.2-dialect.json": {
+    "url": "https://spec.openapis.org/oas/3.2/dialect/2026-02-26",
+    "sha256": "9375b7042aa0b01848403f0a9ebf12a3425e01a9e24337ce12624f10fea73833",
+    "license": "Apache-2.0"
+  },
+  "openapi-3.2-meta.json": {
+    "url": "https://spec.openapis.org/oas/3.2/meta/2026-02-26",
+    "sha256": "f444d02ef7d36f30293983fad8118c823a3c70a49a8e5aa6f1afe21215e35417",
+    "license": "Apache-2.0"
+  },
+  "asyncapi-2.0.0.json": {
+    "url": "https://raw.githubusercontent.com/asyncapi/spec-json-schemas/00af290521d7fb5738d8af739c1dca59a14a88e0/schemas/2.0.0.json",
+    "sha256": "24dd25de05ba59a7cf2c2da42bc56d2568c77cd9bf7ce51dc8cfada8d478c1bb",
+    "license": "Apache-2.0"
+  },
+  "asyncapi-2.1.0.json": {
+    "url": "https://raw.githubusercontent.com/asyncapi/spec-json-schemas/00af290521d7fb5738d8af739c1dca59a14a88e0/schemas/2.1.0.json",
+    "sha256": "9f1920d076715a40b249cca0bf5b32261c856d8235a5d686920c06e1a708c89a",
+    "license": "Apache-2.0"
+  },
+  "asyncapi-2.2.0.json": {
+    "url": "https://raw.githubusercontent.com/asyncapi/spec-json-schemas/00af290521d7fb5738d8af739c1dca59a14a88e0/schemas/2.2.0.json",
+    "sha256": "dd4d6f63841db89c091b8f2a1c0aa06efa2781424c6509f6df86c66115c20c94",
+    "license": "Apache-2.0"
+  },
+  "asyncapi-2.3.0.json": {
+    "url": "https://raw.githubusercontent.com/asyncapi/spec-json-schemas/00af290521d7fb5738d8af739c1dca59a14a88e0/schemas/2.3.0.json",
+    "sha256": "6388a3955fb1e28ba511c170dbb8707abf00bf4a32a0cfebdd72c1b63ff02f10",
+    "license": "Apache-2.0"
+  },
+  "asyncapi-2.4.0.json": {
+    "url": "https://raw.githubusercontent.com/asyncapi/spec-json-schemas/00af290521d7fb5738d8af739c1dca59a14a88e0/schemas/2.4.0.json",
+    "sha256": "63561016e0269788b87ae52e5a53b50a7a0bfc1e422ac01ffc1bec36b4295455",
+    "license": "Apache-2.0"
+  },
+  "asyncapi-2.5.0.json": {
+    "url": "https://raw.githubusercontent.com/asyncapi/spec-json-schemas/00af290521d7fb5738d8af739c1dca59a14a88e0/schemas/2.5.0.json",
+    "sha256": "f95977fa61a1c8cf7c88bb336bdc7182602df0f1380c3bbd6bee47fc575c01fd",
+    "license": "Apache-2.0"
+  },
+  "asyncapi-2.6.0.json": {
+    "url": "https://raw.githubusercontent.com/asyncapi/spec-json-schemas/00af290521d7fb5738d8af739c1dca59a14a88e0/schemas/2.6.0.json",
+    "sha256": "4b0bfe579e3c98a1da14db72bbd22a446ae23d5ae347ec7873a4cb488e446583",
+    "license": "Apache-2.0"
+  },
+  "asyncapi-3.0.0.json": {
+    "url": "https://raw.githubusercontent.com/asyncapi/spec-json-schemas/00af290521d7fb5738d8af739c1dca59a14a88e0/schemas/3.0.0.json",
+    "sha256": "1786a007ac00344a8f529e5a6fc5db786b0be6757e0b94a8b95a8a6a52b7fe9a",
+    "license": "Apache-2.0"
+  },
+  "LICENSE-OpenAPI.txt": {
+    "url": "https://raw.githubusercontent.com/OAI/OpenAPI-Specification/8273770d983c99bb07b389d1706a9f8312ced503/LICENSE",
+    "sha256": "4948367c65e1ce06690e2cadc6e86fce1a6a6db55ef874ce4b78c0f472ce5f13",
+    "license": "Apache-2.0"
+  },
+  "LICENSE-AsyncAPI.txt": {
+    "url": "https://raw.githubusercontent.com/asyncapi/spec-json-schemas/00af290521d7fb5738d8af739c1dca59a14a88e0/LICENSE",
+    "sha256": "43070e2d4e532684de521b885f385d0841030efa2b1a20bafb76133a5e1379c1",
+    "license": "Apache-2.0"
+  }
+}
