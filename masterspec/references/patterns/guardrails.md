@@ -28,6 +28,7 @@ guardrail_packs:
 Перед операцией скилл собирает активный набор: фильтр `applies_to` по контексту (operation, layer, element_type, input_type, boundary, tags; И-логика внутри правила). `boundary` (`../boundary-registry.md`) резолвит security-правила по уровню границы `api` — так профиль безопасности per-boundary приходит нормой-пакетом, не зашит в kernel. Применение:
 - генерация: conformance-пункты активных правил входят в приёмочные критерии элемента (`patterns/generation-loop.md`);
 - verify: чек-листы активных правил = дополнительные оси (пометка происхождения: `guardrail:<pack>/<rule-id>`);
+- testgen: только правила с `operation: testgen` (нормы к самим автотестам): `[machine]` — в детерминированный гейт, `[llm]` — в чек-лист слепого верификатора; нормы к артефактам спеки testgen не применяет (`../../../masterspec-testgen/SKILL.md`);
 - intake: чек-листы достаточности входящих (`patterns/intake-gate.md`).
 
 ## Аудит-след (обязательный)

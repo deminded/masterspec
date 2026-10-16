@@ -81,7 +81,7 @@
 | `migrate` | `artifact=<путь к .md>` \| `factory=<путь к папке фабрики>` `[dry-run]` — один артефакт или вся фабрика; `dry-run` печатает план, ничего не записывая |
 | `expose` | `lib=<factory-slug>` `[target=uc-<slug>]` `[context=]` — `target` сужает проекцию до одного usage-контракта |
 | `pack` | `from=<путь к документу>` `source=universal\|corporate\|domain\|factory` `[out=<каталог пакета>]` `[factory=<корень фабрики>]` `[owner=]` — `source` = уровень правил: общеотраслевые \| корпоративные \| доменные \| правила одной фабрики |
-| `testgen` | `spec=<репо со спекой и tc->` `tests=<репо автотестов, ВЫХОД>` `[framework=<стек, дефолт junit-kotlin>]` `[rounds=N]` — `rounds` ограничивает петлю «кодер → слепой верификатор» |
+| `testgen` | `spec=<репо со спекой и tc->` `tests=<репо автотестов, ВЫХОД>` `[framework=<стек, дефолт junit-kotlin>]` `[rounds=N]` `[guardrails=auto\|off\|<пути>]` — `rounds` ограничивает петлю «кодер → слепой верификатор»; `guardrails` — внешние нормы к автотестам (только правила с `operation: testgen`) |
 | `impl-plan` | `[имя change]` |
 | `implement` | `[имя change]` |
 
