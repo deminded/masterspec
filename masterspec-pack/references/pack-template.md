@@ -65,6 +65,28 @@ rules:
     applies_to: {operation: [derive, gen, evolve], layer: [spec], element_type: [api]}
 ```
 
+## Пример нормы к автотестам (`operation: testgen`)
+Для `testgen` объект checklist — runnable-код автотеста. `[machine]` называет проверяемые файлы,
+команду либо однозначный алгоритм и условие PASS; не выполнено — `not-checked`, не PASS.
+```markdown
+# test-case-key-annotation: каждый автотест связан со своим tc-
+**Statement.** Каждый тестовый метод несёт аннотацию @TestCaseKey со ссылкой на свой tc-.
+**Conformance checklist**
+(blocking — нет → стоп):
+- [ ] У каждой функции с @Test есть @TestCaseKey("tc-…") [machine: файлы src/test/**/*.kt; алгоритм — для каждой функции с @Test среди аннотаций той же функции есть @TestCaseKey со строкой, начинающейся с "tc-"; PASS — нарушений 0]
+- [ ] Ключ указывает на тот tc- спеки, по которому тест построен [llm]
+(non-blocking — дозапросить, но не стоп):
+- [ ] Имя теста отражает проверяемое поведение, а не номер шага [llm]
+**Rationale.** Без ключа падение теста не сопоставить с требованием — трасса tc → тест рвётся.
+**Anti-patterns.** Один ключ на весь класс; ключ-заглушка «TODO».
+**Criticality.** major
+```
+Строка в manifest:
+```yaml
+  - id: test-case-key-annotation
+    applies_to: {operation: [testgen], tags: [junit-kotlin]}
+```
+
 Мораль примера: нарратив («живёт не менее двух циклов») сам по себе не норма артефакта —
 он становится проверяемым пунктом ЛИБО отдельной карточкой (`api-breaking-change-policy`),
 ЛИБО уходит в PACK-REPORT как политика, если проверить на артефакте её нельзя.

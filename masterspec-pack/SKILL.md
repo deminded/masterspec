@@ -85,15 +85,19 @@ allowed-tools:
 
 ## Селекторы applies_to (словарь)
 И-логика внутри правила (все ключи должны совпасть). Значения — из мета-модели kernel:
-- `operation`: `intake | derive | gen | evolve | verify`
+- `operation`: `intake | derive | gen | evolve | verify | testgen`
 - `layer`: `req | spec | code`
 - `element_type`: `fn | nfr | cdm` (req) · `cmp | scn | api | data | alg` (spec) ·
-  `cmap | trace | dmap` (code) — актуальный список в `../masterspec/meta_model.md`
+  `cmap | trace | dmap` (code) — актуальный список в `../masterspec/meta_model.md`;
+  для `testgen` — тип исходного tc: `test-acceptance|tc-acc`, `test-integration|tc-int`, `test-fault-catalog|tc-flt`
 - `input_type`: `ticket | business-requirement | arch-sketch | …` (для `intake`)
 - `boundary`: `intra-factory | inter-factory | perimeter` (для `element_type: api` — уровень границы/security, `../masterspec/references/boundary-registry.md`)
 - `tags`: свободные метки проекта
 Правило БЕЗ ограничения по ключу = применимо ко всем его значениям. Указывай минимально
 достаточный набор — лишний селектор сужает применимость молча.
+Исключение — `testgen`: к автотестам правило применяется только при ЯВНОМ `testgen` в `operation`.
+Такие правила — нормы к исполняемым автотестам (объект checklist — runnable-код); требований к
+поведению системы они не добавляют. Ключи `layer`/`input_type`/`boundary` testgen не сопоставляет.
 
 ## Честность (не выдумывать)
 - Норму, которую нельзя сделать проверяемой без уточнения, НЕ превращай в карточку с
