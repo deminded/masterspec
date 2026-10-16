@@ -93,6 +93,12 @@ codegen_ready этот риск должен быть закрыт production-li
 
 Канонический pre-gate:
 `python3 <masterspec-kernel-skill-dir>/scripts/check-operational-envelope.py <factory-root> --layer req|spec|code`.
+В `01-requirements/02-functions/` (включая вложенные блоки) гейт распознаёт функцию по
+`type: function|fn` или префиксу `fn-` у slug/имени файла; неизвестный артефакт — BLOCKER.
+Локальный `decision-record`/`dr` распознаётся по `type:` или префиксу `dr-` у slug/имени
+файла согласно `artifact-routing.md`. Общий обход `.md` на всех проверяемых слоях исключает
+его из проверок владельца и из покрытия ссылками, печатая
+`INFO: <путь>: пропущен: decision-record рядом с владельцем` при каждом обходе каталога.
 Если Python недоступен, выполняются те же множества вручную:
 
 - req/O1: для external-I/O `fn-` ожидаются восемь ID и четыре поля на грань; для internal-only —
