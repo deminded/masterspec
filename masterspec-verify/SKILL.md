@@ -50,6 +50,10 @@ Read-only по отношению к артефактам: я нахожу ды�
    событие→данные → оракул GWT с репрезентативностью. Для req сверить 8×external-I/O fn плюс
    однострочные internal-only, статусы и
    APPLICABLE→AC/tc-acc; для spec — APPLICABLE→scn, OE-LOAD→lp, внешний OE-DELIVERY→context/api.
+   OE pre-gate распознаёт функцию по `type: function|fn` или `fn-` у slug/имени файла;
+   неизвестный `.md` в `02-functions/` — BLOCKER. Локальные `decision-record`/`dr`
+   (тип или `dr-` у slug/имени) пропускаются общим обходом с явной строкой
+   «пропущен: decision-record рядом с владельцем»; их ссылки не засчитываются в OE-покрытие.
    Для OpenAPI/AsyncAPI сайдкаров обязателен schema-gate из
    `../masterspec/references/patterns/sidecar-formats.md §Валидация OpenAPI/AsyncAPI`:
    F2 с адресом выдаётся при ошибке схемы/ссылки или недоступности валидатора.

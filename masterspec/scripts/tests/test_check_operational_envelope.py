@@ -22,6 +22,160 @@ class OperationalEnvelopeCheckerTest(unittest.TestCase):
     EXAMPLE = SCRIPT.parents[1] / "examples" / "operational-envelope-factory"
     FUNCTION = Path("01-requirements/02-functions/fn-send-notification.md")
 
+    def test_decision_record_beside_function_is_reported_and_skipped(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "factory"
+            shutil.copytree(self.EXAMPLE, root)
+            path = root / self.FUNCTION.parent / "dr-channel-ownership.md"
+            path.write_text("---\ntype: decision-record\n---\n# Решение\n", encoding="utf-8")
+            output = io.StringIO()
+            with redirect_stdout(output):
+                result = CHECKER.run(root, "req")
+            self.assertEqual(result, 0, output.getvalue())
+            self.assertNotIn("BLOCKER:", output.getvalue())
+            self.assertIn(
+                f"{path}: пропущен: decision-record рядом с владельцем", output.getvalue()
+            )
+            self.assertIn("functions=2 external_io=1 internal_only=1", output.getvalue())
+
+    def test_unknown_file_in_functions_is_blocker(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "factory"
+            shutil.copytree(self.EXAMPLE, root)
+            path = root / self.FUNCTION.parent / "notes.md"
+            # Даже тело корректной internal-only функции не легализует неизвестный артефакт.
+            path.write_text(
+                "# Заметки\n- **Внешний инициатор/канал:** N/A — internal-only\n"
+                "criticality: low\nOE: N/A — internal-only\n", encoding="utf-8",
+            )
+            output = io.StringIO()
+            with redirect_stdout(output):
+                result = CHECKER.run(root, "req")
+            self.assertEqual(result, 1, output.getvalue())
+            self.assertTrue(
+                any(str(path) in line and line.startswith("BLOCKER:")
+                    for line in output.getvalue().splitlines()), output.getvalue(),
+            )
+
+    def test_real_function_without_oe_still_blocks(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "factory"
+            shutil.copytree(self.EXAMPLE, root)
+            path = root / self.FUNCTION.parent / "fn-empty.md"
+            path.write_text(
+                "---\ntype: function\ncriticality: low\n---\n"
+                "- **Внешний инициатор/канал:** внешний клиент\n", encoding="utf-8",
+            )
+            output = io.StringIO()
+            with redirect_stdout(output):
+                result = CHECKER.run(root, "req")
+            self.assertEqual(result, 1, output.getvalue())
+            blockers = [line for line in output.getvalue().splitlines()
+                        if line.startswith("BLOCKER:") and str(path) in line]
+            for facet in CHECKER.EXPECTED:
+                self.assertTrue(any(facet in line for line in blockers), blockers)
+
+    def test_function_identity_by_type_alias_slug_or_filename(self) -> None:
+        identities = (
+            ("function", "notes", "notes"), ("fn", "notes", "notes"),
+            ('"function"', "notes", "notes"),
+            ("", "fn-extra", "notes"), ("", "", "fn-extra"),
+        )
+        for kind, slug, filename in identities:
+            with self.subTest(kind=kind, slug=slug, filename=filename):
+                with tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    path = root / self.FUNCTION.parent / f"block/{filename}.md"
+                    path.parent.mkdir(parents=True)
+                    path.write_text(
+                        f"---\ntype: {kind}\nslug: {slug}\ncriticality: low\n---\n"
+                        "- **Внешний инициатор/канал:** N/A — internal-only\n"
+                        "OE: N/A — internal-only\n", encoding="utf-8",
+                    )
+                    output = io.StringIO()
+                    with redirect_stdout(output):
+                        result = CHECKER.run(root, "req")
+                    self.assertEqual(result, 0, output.getvalue())
+                    self.assertIn("functions=1", output.getvalue())
+
+    def test_decision_record_identity_is_shared_by_all_markdown_walks(self) -> None:
+        identities = (
+            ("decision-record", "notes", "notes"), ("dr", "notes", "notes"),
+            ('"dr"', "notes", "notes"),
+            ("", "dr-choice", "notes"), ("", "", "dr-choice"),
+        )
+        relatives = (
+            "01-requirements/02-functions/block", "01-requirements/05-landscape",
+            "01-requirements/08-test-cases", "02-specifications/01-components",
+            *CHECKER.SPEC_FORM_DIRS, "02-specifications/07-load-profiles",
+            "02-specifications/08-test-cases", "03-codemap/02-scenario-traces",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for relative in relatives:
+                for kind, slug, filename in identities:
+                    with self.subTest(relative=relative, kind=kind, slug=slug, filename=filename):
+                        path = root / relative / f"{filename}.md"
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                        path.write_text(
+                            f"---\ntype: {kind}\nslug: {slug}\n---\n# Решение\n",
+                            encoding="utf-8",
+                        )
+                        output = io.StringIO()
+                        with redirect_stdout(output):
+                            paths = CHECKER.markdown_files(root, relative)
+                        self.assertEqual(paths, [])
+                        self.assertIn("пропущен: decision-record рядом с владельцем", output.getvalue())
+                        path.unlink()
+
+    def test_decision_record_beside_scenario_does_not_trigger_fault_or_oe_checks(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "factory"
+            shutil.copytree(self.EXAMPLE, root)
+            path = root / "02-specifications/02-scenarios/dr-channel.md"
+            path.write_text(
+                "---\ntype: decision-record\nnotation: yaml-graph\n---\n"
+                "## Последовательность шагов\n1. Обсуждался -> api-missing\n"
+                "## Реализация контракта живой эксплуатации\n-> fn-other/OE-LOAD\n",
+                encoding="utf-8",
+            )
+            output = io.StringIO()
+            with redirect_stdout(output):
+                result = CHECKER.run(root, "spec")
+            self.assertEqual(result, 0, output.getvalue())
+            self.assertIn("пропущен: decision-record рядом с владельцем", output.getvalue())
+
+    def test_decision_record_references_cannot_supply_coverage(self) -> None:
+        relatives = (
+            "02-specifications/02-scenarios", "02-specifications/07-load-profiles",
+            "02-specifications/04-apis/external", "01-requirements/05-landscape",
+            "03-codemap/02-scenario-traces",
+        )
+        for relative in relatives:
+            with self.subTest(relative=relative):
+                with tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory) / "factory"
+                    shutil.copytree(self.EXAMPLE, root)
+                    # Ссылки бывшего владельца остались только в решении: покрытие утрачено.
+                    owner = next((root / relative).glob("*.md"))
+                    text = owner.read_text(encoding="utf-8")
+                    owner.unlink()
+                    (owner.parent / "dr-choice.md").write_text(
+                        "---\ntype: dr\n---\n" + text.split("---\n", 2)[-1], encoding="utf-8",
+                    )
+                    output = io.StringIO()
+                    with redirect_stdout(output):
+                        result = CHECKER.run(root, "code")
+                    self.assertEqual(result, 1, output.getvalue())
+                    expected = {
+                        "02-scenarios": "unrealized in scn:",
+                        "07-load-profiles": "OE-LOAD has no lp:",
+                        "external": "OE-DELIVERY has no external api:",
+                        "05-landscape": "OE-DELIVERY has no context path:",
+                        "02-scenario-traces": "untraced in code:",
+                    }[Path(relative).name]
+                    self.assertIn(expected, output.getvalue())
+
     def test_removed_acceptance_definition_blocks_and_reduces_coverage(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "factory"

@@ -264,6 +264,19 @@ def artifact_type(text: str) -> str:
     return frontmatter_value(text, "type")
 
 
+def matches_artifact(path: Path, text: str, kind: str) -> bool:
+    """Identity from artifact-routing.md: canonical type/alias or slug/file prefix."""
+    aliases, prefix = {
+        "function": (("function", "fn"), "fn-"),
+        "decision-record": (("decision-record", "dr"), "dr-"),
+    }[kind]
+    return (
+        fm(text, "type") in aliases
+        or fm(text, "slug").startswith(prefix)
+        or path.stem.startswith(prefix)
+    )
+
+
 def criticality_of(text: str, path: Path, errors: list[str]) -> str:
     value = frontmatter_value(text, "criticality")
     if value not in CRITICALITY_WEIGHTS:
@@ -545,8 +558,16 @@ def refs_in(paths: list[Path], pattern: re.Pattern[str] = OE_REF) -> set:
 
 
 def markdown_files(root: Path, relative: str) -> list[Path]:
+    """Scan owner artifacts, excluding local decisions from checks AND reference coverage."""
     directory = root / relative
-    return sorted(directory.rglob("*.md")) if directory.exists() else []
+    result: list[Path] = []
+    for path in sorted(directory.rglob("*.md")) if directory.exists() else []:
+        if matches_artifact(path, path.read_text(encoding="utf-8"), "decision-record"):
+            # Как в проверке api/data: локальный dr рядом с владельцем — не сам владелец.
+            print(f"INFO: {path}: пропущен: decision-record рядом с владельцем")
+            continue
+        result.append(path)
+    return result
 
 
 def paths_of_type(root: Path, relative: str, kind: str) -> list[Path]:
@@ -1109,13 +1130,23 @@ def scenario_oe_coverage(root: Path) -> tuple[set[tuple[str, str]], dict[str, se
 
 
 def run(root: Path, scope: str) -> int:
-    fn_files = markdown_files(root, "01-requirements/02-functions")
+    errors: list[str] = []
+    fn_files: list[Path] = []
+    for path in markdown_files(root, "01-requirements/02-functions"):
+        if matches_artifact(path, path.read_text(encoding="utf-8"), "function"):
+            fn_files.append(path)
+        else:
+            errors.append(
+                f"{path}: unrecognized artifact in 02-functions — "
+                "expected type function/fn or fn- slug/filename"
+            )
     if not fn_files:
+        for error in errors:
+            print(f"BLOCKER: {error}")
         print(f"BLOCKER: no fn files under {root}/01-requirements/02-functions")
         return 2
 
     facets: list[Facet] = []
-    errors: list[str] = []
     external_count = 0
     internal_count = 0
     function_criticalities: dict[str, str] = {}
