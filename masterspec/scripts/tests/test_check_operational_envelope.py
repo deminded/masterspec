@@ -38,6 +38,29 @@ class OperationalEnvelopeCheckerTest(unittest.TestCase):
             )
             self.assertIn("functions=2 external_io=1 internal_only=1", output.getvalue())
 
+    def test_local_decision_is_announced_once_per_file_per_run(self) -> None:
+        # Каталоги спецификаций обходятся несколько раз за прогон: до правки было 3 и 4 строки.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "factory"
+            shutil.copytree(self.EXAMPLE, root)
+            paths = []
+            for relative in ("02-specifications/02-scenarios", "02-specifications/04-apis/external"):
+                path = root / relative / "dr-announced-once.md"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("---\ntype: decision-record\n---\n# Решение\n", encoding="utf-8")
+                paths.append(path)
+            for _ in range(2):
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    result = CHECKER.run(root, "spec")
+                self.assertEqual(result, 0, output.getvalue())
+                for path in paths:
+                    self.assertEqual(
+                        output.getvalue().count(f"{path}: пропущен: decision-record рядом с владельцем"),
+                        1,
+                        output.getvalue(),
+                    )
+
     def test_unknown_file_in_functions_is_blocker(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "factory"

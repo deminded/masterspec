@@ -647,6 +647,12 @@ def refs_in(paths: list[Path], pattern: re.Pattern[str] = OE_REF) -> set:
     return refs
 
 
+# Каталоги спецификаций обходятся за прогон по нескольку раз (02-scenarios — 3, 04-apis/external — 4):
+# о пропущенном локальном dr сообщаем один раз на файл за прогон, иначе строка тонет в повторах.
+# Память живёт только внутри run(); вне прогона (прямой вызов) — сообщаем на каждый обход, как раньше.
+_ANNOUNCED_LOCAL_DECISIONS: set[Path] | None = None
+
+
 def markdown_files(root: Path, relative: str) -> list[Path]:
     """Scan owner artifacts, excluding local decisions from checks AND reference coverage."""
     directory = root / relative
@@ -654,7 +660,10 @@ def markdown_files(root: Path, relative: str) -> list[Path]:
     for path in sorted(directory.rglob("*.md")) if directory.exists() else []:
         if matches_artifact(path, path.read_text(encoding="utf-8"), "decision-record"):
             # Как в проверке api/data: локальный dr рядом с владельцем — не сам владелец.
-            print(f"INFO: {path}: пропущен: decision-record рядом с владельцем")
+            if _ANNOUNCED_LOCAL_DECISIONS is None or path not in _ANNOUNCED_LOCAL_DECISIONS:
+                if _ANNOUNCED_LOCAL_DECISIONS is not None:
+                    _ANNOUNCED_LOCAL_DECISIONS.add(path)
+                print(f"INFO: {path}: пропущен: decision-record рядом с владельцем")
             continue
         result.append(path)
     return result
@@ -1231,6 +1240,15 @@ def scenario_oe_coverage(root: Path) -> tuple[set[tuple[str, str]], dict[str, se
 
 
 def run(root: Path, scope: str) -> int:
+    global _ANNOUNCED_LOCAL_DECISIONS
+    _ANNOUNCED_LOCAL_DECISIONS = set()
+    try:
+        return _run(root, scope)
+    finally:
+        _ANNOUNCED_LOCAL_DECISIONS = None
+
+
+def _run(root: Path, scope: str) -> int:
     if error := dependency_error(scope):
         print(f"BLOCKER: {error}")
         return 2
