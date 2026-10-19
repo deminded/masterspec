@@ -110,7 +110,9 @@ Route-скилл: бизнес-запрос/требования → слой а
 6. **Вычитка.** `verify layer=<layer>` (preset по `verify=`). До LLM-осей выполнить OE set-diff
    командой `python3 <masterspec-kernel-skill-dir>/scripts/check-operational-envelope.py <factory-root> --layer req|spec`
    (без Python — вручную по `operational-envelope.md §Hard gates`): восемь граней на каждый external-I/O fn либо одна строка internal-only; APPLICABLE→AC/tc-acc; для spec
-   APPLICABLE→union scn, OE-LOAD→lp, внешний OE-DELIVERY→external api/context, каталоги отказов
+   APPLICABLE→union scn, OE-LOAD→lp, OE-DELIVERY→context и external api при владельце factory
+   (по умолчанию); delivery_owner: external требует принятого локального delivery_decision
+   по operational-envelope.md и сохраняет покрытие AC/scn/tc. Каталоги отказов
    по O_T1–O_T6. Негатив-ось (O5) —
    отдельным проверяющим. Критерий: layer=req → spec_ready; layer=spec → codegen_ready
    (`patterns/verification-axes.md`).

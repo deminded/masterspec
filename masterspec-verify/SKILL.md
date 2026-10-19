@@ -42,6 +42,12 @@ Read-only по отношению к артефактам: я нахожу ды�
 сохранения доказательств вместо default `.work`/чистки. В OpenSpec import границы
 заданы `masterspec-apply-from-openspec/references/workspace.md`.
 
+Перед детерминированными Python-проверками установи зависимости через
+`python -m pip install -r <masterspec-kernel-skill-dir>/scripts/requirements.txt`.
+OE pre-gate проверяет PyYAML до чтения артефактов; для `spec|code` также проверяет
+jsonschema и его зависимости. Отсутствующая зависимость даёт один BLOCKER с командой
+установки и ненулевой exit code; это сбой окружения, а не F2 каждого сайдкара.
+
 1. preset=core (дефолт) — дешёвое ядро на каждом элементе: структполнота (+ раскладка: `python3 ../masterspec/scripts/check-layout.py <factory-root> --check` — каждый артефакт ↔ канонический подкаталог по `type:` из `artifact-routing.md`; вал в корень слоя = блокер структуры) → обязательный OE set-diff
    (`python3 <masterspec-kernel-skill-dir>/scripts/check-operational-envelope.py <factory-root> --layer req|spec`;
    путь резолвить относительно соседнего kernel-скилла; если Python недоступен — ручная сверка по
@@ -49,7 +55,14 @@ Read-only по отношению к артефактам: я нахожу ды�
    глоссарий → матрица состояний → трасса
    событие→данные → оракул GWT с репрезентативностью. Для req сверить 8×external-I/O fn плюс
    однострочные internal-only, статусы и
-   APPLICABLE→AC/tc-acc; для spec — APPLICABLE→scn, OE-LOAD→lp, внешний OE-DELIVERY→context/api.
+   APPLICABLE→AC/tc-acc; для spec — APPLICABLE→scn, OE-LOAD→lp, OE-DELIVERY→context.
+   Внешний api обязателен при delivery_owner: factory (по умолчанию); delivery_owner: external
+   требует delivery_decision на принятое локальное dr- по operational-envelope.md, сохраняя
+   AC/scn/tc/trace и вес покрытия.
+   OE pre-gate распознаёт функцию по `type: function|fn` или `fn-` у slug/имени файла;
+   неизвестный `.md` в `02-functions/` — BLOCKER. Локальные `decision-record`/`dr`
+   (тип или `dr-` у slug/имени) пропускаются общим обходом с явной строкой
+   «пропущен: decision-record рядом с владельцем»; их ссылки не засчитываются в OE-покрытие.
    Для OpenAPI/AsyncAPI сайдкаров обязателен schema-gate из
    `../masterspec/references/patterns/sidecar-formats.md §Валидация OpenAPI/AsyncAPI`:
    F2 с адресом выдаётся при ошибке схемы/ссылки или недоступности валидатора.

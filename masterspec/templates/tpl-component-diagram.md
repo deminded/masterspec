@@ -5,6 +5,9 @@ factory: <factory-slug>
 status: draft            # draft / actual / deprecated
 owner: <team or person>
 updated: YYYY-MM-DD
+# При машинном представлении раскомментировать оба поля; файл рядом с тем же slug.
+# sidecar_format: mermaid
+# sidecar: cd-<factory-slug>.mmd
 ---
 # Компонентная диаграмма: <название фабрики>
 
@@ -19,9 +22,13 @@ updated: YYYY-MM-DD
 
 ## Связи между компонентами
 <!-- Кто с кем взаимодействует и по какому поводу. Только логические связи. -->
+<!-- При сайдкаре структура связей только в .mmd; здесь — назначение/ограничения и ссылка на него. -->
 
 ## Диаграмма
 <!-- Текстовое описание, Mermaid, PlantUML или ссылка на изображение. -->
+<!-- При машинном представлении: sidecar_format: mermaid + sidecar: cd-<factory-slug>.mmd.
+     В .mmd — C4Component либо flowchart без markdown-ограждений; здесь — ссылка на файл,
+     без дублирования графа. Правила: ../references/patterns/sidecar-formats.md. -->
 
 ## Связи
 - Компоненты: -> cmp-...

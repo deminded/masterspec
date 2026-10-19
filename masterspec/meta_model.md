@@ -174,7 +174,7 @@
 - В `04-decisions/` лежат ADR.
 - Функции АС/ФП при большом количестве группируются по функциональным блокам в подпапках.
 - API разделены на `internal/` и `external/`.
-- Артефакт API и схемы данных ВСЕГДА имеет компаньон `.md` (он несёт masterspec-фронтматтер, семантику, связи; индексация/verify/мерж идут по нему). Структуру контракта несёт машинный сайдкар — он ОБЯЗАТЕЛЕН для `api`/`data` и нормативен по структуре (`references/patterns/sidecar-formats.md §Нормативное владение`); лежит рядом с `.md`-компаньоном, формат и имя объявлены полями `sidecar_format`/`sidecar` (api/data: OpenAPI/AsyncAPI/JSON Schema — `.yaml`/`.json`; `scn`/`alg` по нотации: `.bpmn`/`.dmn`/`.mmd`/… — `references/scenario-notation-registry.md`). Индексация, verify и мерж читают поле `sidecar:`, а не гадают по расширению; машинный файл доступен внешним процессам напрямую. Standalone сайдкар без компаньона не используется.
+- Артефакт API и схемы данных ВСЕГДА имеет компаньон `.md` (он несёт masterspec-фронтматтер, семантику, связи; индексация/verify/мерж идут по нему). Структуру контракта несёт машинный сайдкар — он ОБЯЗАТЕЛЕН для `api`/`data` и нормативен по структуре (`references/patterns/sidecar-formats.md §Нормативное владение`); лежит рядом с `.md`-компаньоном, формат и имя объявлены полями `sidecar_format`/`sidecar` (api/data: OpenAPI/AsyncAPI/JSON Schema — `.yaml`/`.json`; `scn`/`alg` по нотации: `.bpmn`/`.dmn`/`.mmd`/… — `references/scenario-notation-registry.md`; `cd` — Mermaid/C4 `.mmd`). Индексация, verify и мерж читают поле `sidecar:`, а не гадают по расширению; машинный файл доступен внешним процессам напрямую. Standalone сайдкар без компаньона не используется.
 - Тест-кейсы: приёмочные — в слое требований (`tc-acc-`), интеграционные и каталоги отказов —
   в слое спецификаций (`tc-int-`, `tc-flt-`). Юнит-тесты не выделяются в артефакты.
 - Изменения (AS-IS / TO-BE / diff) отслеживаются средствами git.
@@ -200,7 +200,7 @@ updated: YYYY-MM-DD
 
 Артефакты слоя кодовой базы дополнительно содержат `generated: true`.
 
-Опциональные служебные поля фронтматтера: `provenance: docs:<…> | code:<path>[:line]` — источник восстановления, проставляется `recover` (для повторяемости и отличия восстановленного от знания «из головы»); `block:` — функциональный блок для `function`; `scope: internal | external` (размещение) — для `api`; `boundary:` — уровень границы вызова / security-профиль `api` (`references/boundary-registry.md`, ортогонален `scope`); `about:`/`decision-scope:` — для `dr-`; `notation:` — форма поведения `scn`, ОБЯЗАТЕЛЬНО для `scn` (`references/scenario-notation-registry.md`, дефолт выбора `yaml-graph`); `form:` — форма `alg`, ОБЯЗАТЕЛЬНО для `alg` (`procedural` дефолт выбора | `decision-table`); `sidecar_format:` + `sidecar:` — машинная проекция-пара для `api`/`data` и для `scn`/`alg`, когда нотация несёт машинный файл (`references/patterns/sidecar-formats.md`); `produced_by:` — какой скилл породил/переразложил артефакт (`migrate` / `recover` / `gen`), для аудита происхождения; `contract_origin: authored | imported` + `contract_source: <откуда втянут>` — для `api`/`data`: КТО ВЛАДЕЕТ контрактом (`authored` — фабрика, `gen`/`evolve` правят сайдкар свободно; `imported` — внешний владелец, фабрика лишь отражает: `gen`/`evolve`/`migrate` сайдкар НЕ правят, изменение идёт через `evolve entry=ext` + ре-импорт; переход `imported → authored` — акт присвоения человеком, фиксируется `dr-`; `references/patterns/sidecar-formats.md §Происхождение контракта`).
+Опциональные служебные поля фронтматтера: `provenance: docs:<…> | code:<path>[:line]` — источник восстановления, проставляется `recover` (для повторяемости и отличия восстановленного от знания «из головы»); `block:` — функциональный блок для `function`; `scope: internal | external` (размещение) — для `api`; `boundary:` — уровень границы вызова / security-профиль `api` (`references/boundary-registry.md`, ортогонален `scope`); `about:`/`decision-scope:` — для `dr-`; `notation:` — форма поведения `scn`, ОБЯЗАТЕЛЬНО для `scn` (`references/scenario-notation-registry.md`, дефолт выбора `yaml-graph`); `form:` — форма `alg`, ОБЯЗАТЕЛЬНО для `alg` (`procedural` дефолт выбора | `decision-table`); `sidecar_format:` + `sidecar:` — машинная проекция-пара для `api`/`data`, опционально для `cd` и для `scn`/`alg`, когда нотация несёт машинный файл (`references/patterns/sidecar-formats.md`); `produced_by:` — какой скилл породил/переразложил артефакт (`migrate` / `recover` / `gen`), для аудита происхождения; `contract_origin: authored | imported` + `contract_source: <откуда втянут>` — для `api`/`data`: КТО ВЛАДЕЕТ контрактом (`authored` — фабрика, `gen`/`evolve` правят сайдкар свободно; `imported` — внешний владелец, фабрика лишь отражает: `gen`/`evolve`/`migrate` сайдкар НЕ правят, изменение идёт через `evolve entry=ext` + ре-импорт; переход `imported → authored` — акт присвоения человеком, фиксируется `dr-`; `references/patterns/sidecar-formats.md §Происхождение контракта`).
 
 `notation` (у `scn`) и `form` (у `alg`) — ОБЯЗАТЕЛЬНЫЕ ЯВНЫЕ поля: их отсутствие в артефакте —
 блокер верификации (F1, `references/patterns/verification-axes.md §O1`). `yaml-graph`/`procedural` —
@@ -487,6 +487,9 @@ path/to/file.kt:method()        # метод/функция
 - **Имя файла:** `02-specifications/06-diagrams/cd-<factory-slug>.md`
 - **Шаблон:** [`templates/tpl-component-diagram.md`](templates/tpl-component-diagram.md)
 - **Содержание:** связи между компонентами на уровне логических потоков.
+- **Машинная пара (опционально):** Mermaid/C4 — `sidecar_format: mermaid`,
+  `sidecar: <slug>.mmd`. Сайдкар лежит рядом с `.md`; правила владения и проверки —
+  `references/patterns/sidecar-formats.md`.
 
 #### 6.3.6a. Карта навигации (nav)
 
@@ -588,7 +591,7 @@ path/to/file.kt:method()        # метод/функция
 7. Если знание неполное — «Открытые вопросы» или `status: draft`.
 8. Диаграмма без текстового файла — недостаточный артефакт.
 9. Описание пригодно и для человека, и для агента.
-10. Машинный сайдкар (api/data — `.yaml`/`.json`; scn/alg по нотации — `.bpmn`/`.dmn`/`.mmd`/…) существует при обязательном `.md`-компаньоне и объявляется полем `sidecar:`; в индексе отражается компаньон `.md` с пометкой наличия сайдкара (`+<ext>`), а не отдельная строка для машинного файла.
+10. Машинный сайдкар (api/data — `.yaml`/`.json`; scn/alg по нотации — `.bpmn`/`.dmn`/`.mmd`/…; cd — Mermaid/C4 `.mmd`) существует при обязательном `.md`-компаньоне и объявляется полем `sidecar:`; в индексе отражается компаньон `.md` с пометкой наличия сайдкара (`+<ext>`), а не отдельная строка для машинного файла.
 11. Изменения отслеживаются через git.
 12. Codemap генерируется агентом, не правится вручную.
 13. **Минимальный объём.** Не дублируй содержимое между артефактами — ставь ссылку.

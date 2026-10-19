@@ -13,15 +13,43 @@ from dataclasses import dataclass
 from pathlib import Path, PureWindowsPath
 from xml.parsers.expat import ExpatError
 
-import yaml
+try:
+    import yaml
+except ImportError as exc:
+    yaml = None
+    _YAML_IMPORT_ERROR = str(exc)
+else:
+    _YAML_IMPORT_ERROR = None
 
 
-_CONTRACT_SPEC = importlib.util.spec_from_file_location(
-    "masterspec_contract_validation", Path(__file__).with_name("contract_validation.py")
-)
-assert _CONTRACT_SPEC is not None and _CONTRACT_SPEC.loader is not None
-_CONTRACT_VALIDATION = importlib.util.module_from_spec(_CONTRACT_SPEC)
-_CONTRACT_SPEC.loader.exec_module(_CONTRACT_VALIDATION)
+_CONTRACT_VALIDATION = None
+if yaml is not None:
+    _CONTRACT_SPEC = importlib.util.spec_from_file_location(
+        "masterspec_contract_validation", Path(__file__).with_name("contract_validation.py")
+    )
+    assert _CONTRACT_SPEC is not None and _CONTRACT_SPEC.loader is not None
+    _CONTRACT_VALIDATION = importlib.util.module_from_spec(_CONTRACT_SPEC)
+    _CONTRACT_SPEC.loader.exec_module(_CONTRACT_VALIDATION)
+
+
+def dependency_error(scope: str) -> str | None:
+    """Check the selected layer's runtime before reading factory artifacts."""
+    error = _YAML_IMPORT_ERROR
+    if error is None and scope in ("spec", "code"):
+        try:
+            from jsonschema import validators
+            from jsonschema_specifications import REGISTRY
+            from referencing import Registry, Resource
+            from referencing.jsonschema import DRAFT4, DRAFT7, DRAFT202012
+        except ImportError as exc:
+            error = str(exc)
+    if error is None:
+        return None
+    requirements = Path(__file__).resolve().with_name("requirements.txt")
+    return (
+        f"Python verification dependencies unavailable ({error}); "
+        f'run: python -m pip install -r "{requirements}"'
+    )
 
 
 EXPECTED = (
@@ -39,6 +67,7 @@ CRITICALITY_RANK = {"low": 1, "medium": 2, "high": 3}
 CATALOG_COVERAGE_RANK = {"single-fault": 1, "dependent-pairs": 2, "pairwise": 3}
 CRITICALITY_MIN_COVERAGE = {"low": 1, "medium": 2, "high": 3}
 FIELD_NAMES = ("Статус", "Контракт", "Основание", "Проверка")
+DELIVERY_FIELDS = ("delivery_owner", "delivery_decision")
 # Дисциплина слоёв: требования code-free. Ловим код-артефакты в полях OE-граней —
 # имена файлов (.py), leading-underscore идентификаторы (_RE/_unwrap), SCREAMING_SNAKE-константы.
 CODE_ARTIFACT = re.compile(r"\.py\b|\b_[A-Za-z]\w*[A-Za-z0-9]\b|\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b")
@@ -95,6 +124,7 @@ class Facet:
     criticality: str
     path: Path
     acceptance_resolved: bool = True
+    delivery_owner: str = "factory"
 
     @property
     def ref(self) -> tuple[str, str]:
@@ -208,7 +238,10 @@ def fields_in(lines: list[str], allowed: tuple[str, ...]) -> dict[str, str]:
         if current is not None and heading_of(line, 0) is None:
             body = bullet_body(line)
             values[current].append(body if body is not None else line.strip())
-    return {name: clean(" ".join(parts)) for name, parts in values.items()}
+    return {
+        name: " ".join(" ".join(parts).split()) if name in DELIVERY_FIELDS else clean(" ".join(parts))
+        for name, parts in values.items()
+    }
 
 
 def clean(value: str) -> str:
@@ -262,6 +295,19 @@ def fm(text: str, name: str) -> str:
 
 def artifact_type(text: str) -> str:
     return frontmatter_value(text, "type")
+
+
+def matches_artifact(path: Path, text: str, kind: str) -> bool:
+    """Identity from artifact-routing.md: canonical type/alias or slug/file prefix."""
+    aliases, prefix = {
+        "function": (("function", "fn"), "fn-"),
+        "decision-record": (("decision-record", "dr"), "dr-"),
+    }[kind]
+    return (
+        fm(text, "type") in aliases
+        or fm(text, "slug").startswith(prefix)
+        or path.stem.startswith(prefix)
+    )
 
 
 def criticality_of(text: str, path: Path, errors: list[str]) -> str:
@@ -444,6 +490,61 @@ def classify_function(lines: list[str], path: Path) -> tuple[str, list[str]]:
     return "external", errors
 
 
+def delivery_ownership(
+    values: dict[str, str], oe: str, status: str, slug: str, path: Path
+) -> tuple[str, list[str]]:
+    """Only an accepted local decision can replace the factory-owned API obligation."""
+    errors: list[str] = []
+    if not any(name in values for name in DELIVERY_FIELDS):
+        return "factory", errors
+    prefix = f"{path}: {oe}"
+    if oe != "OE-DELIVERY" or status != "APPLICABLE":
+        return "factory", [f"{prefix} delivery ownership fields require APPLICABLE OE-DELIVERY"]
+    owner = values.get("delivery_owner", "")
+    if owner not in ("factory", "external"):
+        return "factory", [f"{prefix} delivery_owner must be factory or external, got {owner!r}"]
+    if owner == "factory":
+        if "delivery_decision" in values:
+            errors.append(f"{prefix} delivery_decision requires delivery_owner: external")
+        return "factory", errors
+    decision = values.get("delivery_decision", "")
+    match = re.fullmatch(r"->\s*(dr-[a-z0-9]+(?:-[a-z0-9]+)*)", decision)
+    if not match:
+        return "factory", [f"{prefix} external delivery requires delivery_decision: -> dr-<slug>"]
+    decision_slug = match.group(1)
+    candidates: list[tuple[Path, str]] = []
+    for candidate in sorted(path.parent.glob("*.md")):
+        if candidate.resolve().parent != path.parent.resolve():
+            continue
+        text = candidate.read_text(encoding="utf-8")
+        if matches_artifact(candidate, text, "decision-record"):
+            if (fm(text, "slug") or candidate.stem) == decision_slug:
+                candidates.append((candidate, text))
+    if len(candidates) != 1:
+        return "factory", [
+            f"{prefix} delivery_decision {decision_slug} must resolve to exactly one local "
+            f"decision-record beside its owner (found {len(candidates)})"
+        ]
+    decision_path, text = candidates[0]
+    metadata, metadata_error = frontmatter_parsed(text)
+    if metadata_error:
+        errors.append(f"{prefix} delivery_decision {decision_path}: {metadata_error}")
+    if metadata.get("status") != "accepted":
+        errors.append(f"{prefix} delivery_decision {decision_path} must have status: accepted")
+    if metadata.get("about") != slug:
+        errors.append(f"{prefix} delivery_decision {decision_path} must have about: {slug}")
+    lines = markdown_lines(text)
+    headings = headings_in(lines)
+    choices = [
+        " ".join(line for line in section_lines(lines, heading, headings) if heading_of(line, 0) is None)
+        for heading in headings
+        if heading.title.replace("**", "").replace("__", "").strip(" `") == "Выбор"
+    ]
+    if len(choices) != 1 or not clean(choices[0]) or PLACEHOLDER.search(choices[0]):
+        errors.append(f"{prefix} delivery_decision {decision_path} needs one non-template Выбор section")
+    return ("factory" if errors else "external"), errors
+
+
 def parse_function(path: Path) -> tuple[str, list[Facet], list[str]]:
     text = path.read_text(encoding="utf-8")
     lines = markdown_lines(text)
@@ -480,7 +581,7 @@ def parse_function(path: Path) -> tuple[str, list[Facet], list[str]]:
         oe = oe_id(heading.title)
         if oe not in EXPECTED:
             continue
-        values = fields_in(section_lines(lines, heading, headings), FIELD_NAMES)
+        values = fields_in(section_lines(lines, heading, headings), FIELD_NAMES + DELIVERY_FIELDS)
         for name in FIELD_NAMES:
             if not values.get(name):
                 errors.append(f"{path}: {oe} has empty/template field {name}")
@@ -528,7 +629,9 @@ def parse_function(path: Path) -> tuple[str, list[Facet], list[str]]:
         else:
             errors.append(f"{path}: {oe} invalid status {status!r}")
             normalized = "INVALID"
-        facets.append(Facet(slug, oe, normalized, criticality, path, acceptance_resolved))
+        delivery_owner, delivery_errors = delivery_ownership(values, oe, normalized, slug, path)
+        errors.extend(delivery_errors)
+        facets.append(Facet(slug, oe, normalized, criticality, path, acceptance_resolved, delivery_owner))
 
     return io_kind, facets, errors
 
@@ -545,8 +648,16 @@ def refs_in(paths: list[Path], pattern: re.Pattern[str] = OE_REF) -> set:
 
 
 def markdown_files(root: Path, relative: str) -> list[Path]:
+    """Scan owner artifacts, excluding local decisions from checks AND reference coverage."""
     directory = root / relative
-    return sorted(directory.rglob("*.md")) if directory.exists() else []
+    result: list[Path] = []
+    for path in sorted(directory.rglob("*.md")) if directory.exists() else []:
+        if matches_artifact(path, path.read_text(encoding="utf-8"), "decision-record"):
+            # Как в проверке api/data: локальный dr рядом с владельцем — не сам владелец.
+            print(f"INFO: {path}: пропущен: decision-record рядом с владельцем")
+            continue
+        result.append(path)
+    return result
 
 
 def paths_of_type(root: Path, relative: str, kind: str) -> list[Path]:
@@ -812,6 +923,7 @@ SPEC_FORM_DIRS = (
     "02-specifications/03-algorithms",
     "02-specifications/04-apis",
     "02-specifications/05-data",
+    "02-specifications/06-diagrams",
 )
 
 
@@ -922,6 +1034,16 @@ def validate_forms(root: Path) -> list[str]:
                     f"а не повод описать контракт прозой"
                 )
             errors.extend(check_contract_origin(path, text))
+
+    # Диаграмма может оставаться в .md. При объявлении машинного представления действуют
+    # те же правила пары, локальности и структурной формы, что и для остальных сайдкаров.
+    for path in markdown_files(root, "02-specifications/06-diagrams"):
+        text = path.read_text(encoding="utf-8")
+        _, fm_err = frontmatter_parsed(text)
+        if fm_err:
+            errors.append(f"{path}: unreadable frontmatter — {fm_err} (F1)")
+            continue
+        sidecar_common(path, text)
 
     # Обратная сторона: любой не-.md рядом в слое спеки, не объявленный ни одним компаньоном — сирота.
     # Сравнение по РАЗРЕШЁННОМУ пути (declared хранит resolved), иначе symlink/относительность разойдутся.
@@ -1109,13 +1231,26 @@ def scenario_oe_coverage(root: Path) -> tuple[set[tuple[str, str]], dict[str, se
 
 
 def run(root: Path, scope: str) -> int:
-    fn_files = markdown_files(root, "01-requirements/02-functions")
+    if error := dependency_error(scope):
+        print(f"BLOCKER: {error}")
+        return 2
+    errors: list[str] = []
+    fn_files: list[Path] = []
+    for path in markdown_files(root, "01-requirements/02-functions"):
+        if matches_artifact(path, path.read_text(encoding="utf-8"), "function"):
+            fn_files.append(path)
+        else:
+            errors.append(
+                f"{path}: unrecognized artifact in 02-functions — "
+                "expected type function/fn or fn- slug/filename"
+            )
     if not fn_files:
+        for error in errors:
+            print(f"BLOCKER: {error}")
         print(f"BLOCKER: no fn files under {root}/01-requirements/02-functions")
         return 2
 
     facets: list[Facet] = []
-    errors: list[str] = []
     external_count = 0
     internal_count = 0
     function_criticalities: dict[str, str] = {}
@@ -1176,9 +1311,12 @@ def run(root: Path, scope: str) -> int:
             errors.append(f"OE-LOAD has no lp: {ref[0]}/{ref[1]}")
 
         delivery_expected = {ref for ref in applicable if ref[1] == "OE-DELIVERY"}
+        delivery_api_expected = {
+            ref for ref in delivery_expected if facets_by_ref[ref].delivery_owner != "external"
+        }
         api_refs = refs_in(markdown_files(root, "02-specifications/04-apis/external"))
         context_refs = refs_in(markdown_files(root, "01-requirements/05-landscape"))
-        for ref in sorted(delivery_expected - api_refs):
+        for ref in sorted(delivery_api_expected - api_refs):
             errors.append(f"OE-DELIVERY has no external api: {ref[0]}/{ref[1]}")
         for ref in sorted(delivery_expected - context_refs):
             errors.append(f"OE-DELIVERY has no context path: {ref[0]}/{ref[1]}")

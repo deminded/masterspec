@@ -22,6 +22,160 @@ class OperationalEnvelopeCheckerTest(unittest.TestCase):
     EXAMPLE = SCRIPT.parents[1] / "examples" / "operational-envelope-factory"
     FUNCTION = Path("01-requirements/02-functions/fn-send-notification.md")
 
+    def test_decision_record_beside_function_is_reported_and_skipped(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "factory"
+            shutil.copytree(self.EXAMPLE, root)
+            path = root / self.FUNCTION.parent / "dr-channel-ownership.md"
+            path.write_text("---\ntype: decision-record\n---\n# Решение\n", encoding="utf-8")
+            output = io.StringIO()
+            with redirect_stdout(output):
+                result = CHECKER.run(root, "req")
+            self.assertEqual(result, 0, output.getvalue())
+            self.assertNotIn("BLOCKER:", output.getvalue())
+            self.assertIn(
+                f"{path}: пропущен: decision-record рядом с владельцем", output.getvalue()
+            )
+            self.assertIn("functions=2 external_io=1 internal_only=1", output.getvalue())
+
+    def test_unknown_file_in_functions_is_blocker(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "factory"
+            shutil.copytree(self.EXAMPLE, root)
+            path = root / self.FUNCTION.parent / "notes.md"
+            # Даже тело корректной internal-only функции не легализует неизвестный артефакт.
+            path.write_text(
+                "# Заметки\n- **Внешний инициатор/канал:** N/A — internal-only\n"
+                "criticality: low\nOE: N/A — internal-only\n", encoding="utf-8",
+            )
+            output = io.StringIO()
+            with redirect_stdout(output):
+                result = CHECKER.run(root, "req")
+            self.assertEqual(result, 1, output.getvalue())
+            self.assertTrue(
+                any(str(path) in line and line.startswith("BLOCKER:")
+                    for line in output.getvalue().splitlines()), output.getvalue(),
+            )
+
+    def test_real_function_without_oe_still_blocks(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "factory"
+            shutil.copytree(self.EXAMPLE, root)
+            path = root / self.FUNCTION.parent / "fn-empty.md"
+            path.write_text(
+                "---\ntype: function\ncriticality: low\n---\n"
+                "- **Внешний инициатор/канал:** внешний клиент\n", encoding="utf-8",
+            )
+            output = io.StringIO()
+            with redirect_stdout(output):
+                result = CHECKER.run(root, "req")
+            self.assertEqual(result, 1, output.getvalue())
+            blockers = [line for line in output.getvalue().splitlines()
+                        if line.startswith("BLOCKER:") and str(path) in line]
+            for facet in CHECKER.EXPECTED:
+                self.assertTrue(any(facet in line for line in blockers), blockers)
+
+    def test_function_identity_by_type_alias_slug_or_filename(self) -> None:
+        identities = (
+            ("function", "notes", "notes"), ("fn", "notes", "notes"),
+            ('"function"', "notes", "notes"),
+            ("", "fn-extra", "notes"), ("", "", "fn-extra"),
+        )
+        for kind, slug, filename in identities:
+            with self.subTest(kind=kind, slug=slug, filename=filename):
+                with tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    path = root / self.FUNCTION.parent / f"block/{filename}.md"
+                    path.parent.mkdir(parents=True)
+                    path.write_text(
+                        f"---\ntype: {kind}\nslug: {slug}\ncriticality: low\n---\n"
+                        "- **Внешний инициатор/канал:** N/A — internal-only\n"
+                        "OE: N/A — internal-only\n", encoding="utf-8",
+                    )
+                    output = io.StringIO()
+                    with redirect_stdout(output):
+                        result = CHECKER.run(root, "req")
+                    self.assertEqual(result, 0, output.getvalue())
+                    self.assertIn("functions=1", output.getvalue())
+
+    def test_decision_record_identity_is_shared_by_all_markdown_walks(self) -> None:
+        identities = (
+            ("decision-record", "notes", "notes"), ("dr", "notes", "notes"),
+            ('"dr"', "notes", "notes"),
+            ("", "dr-choice", "notes"), ("", "", "dr-choice"),
+        )
+        relatives = (
+            "01-requirements/02-functions/block", "01-requirements/05-landscape",
+            "01-requirements/08-test-cases", "02-specifications/01-components",
+            *CHECKER.SPEC_FORM_DIRS, "02-specifications/07-load-profiles",
+            "02-specifications/08-test-cases", "03-codemap/02-scenario-traces",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for relative in relatives:
+                for kind, slug, filename in identities:
+                    with self.subTest(relative=relative, kind=kind, slug=slug, filename=filename):
+                        path = root / relative / f"{filename}.md"
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                        path.write_text(
+                            f"---\ntype: {kind}\nslug: {slug}\n---\n# Решение\n",
+                            encoding="utf-8",
+                        )
+                        output = io.StringIO()
+                        with redirect_stdout(output):
+                            paths = CHECKER.markdown_files(root, relative)
+                        self.assertEqual(paths, [])
+                        self.assertIn("пропущен: decision-record рядом с владельцем", output.getvalue())
+                        path.unlink()
+
+    def test_decision_record_beside_scenario_does_not_trigger_fault_or_oe_checks(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "factory"
+            shutil.copytree(self.EXAMPLE, root)
+            path = root / "02-specifications/02-scenarios/dr-channel.md"
+            path.write_text(
+                "---\ntype: decision-record\nnotation: yaml-graph\n---\n"
+                "## Последовательность шагов\n1. Обсуждался -> api-missing\n"
+                "## Реализация контракта живой эксплуатации\n-> fn-other/OE-LOAD\n",
+                encoding="utf-8",
+            )
+            output = io.StringIO()
+            with redirect_stdout(output):
+                result = CHECKER.run(root, "spec")
+            self.assertEqual(result, 0, output.getvalue())
+            self.assertIn("пропущен: decision-record рядом с владельцем", output.getvalue())
+
+    def test_decision_record_references_cannot_supply_coverage(self) -> None:
+        relatives = (
+            "02-specifications/02-scenarios", "02-specifications/07-load-profiles",
+            "02-specifications/04-apis/external", "01-requirements/05-landscape",
+            "03-codemap/02-scenario-traces",
+        )
+        for relative in relatives:
+            with self.subTest(relative=relative):
+                with tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory) / "factory"
+                    shutil.copytree(self.EXAMPLE, root)
+                    # Ссылки бывшего владельца остались только в решении: покрытие утрачено.
+                    owner = next((root / relative).glob("*.md"))
+                    text = owner.read_text(encoding="utf-8")
+                    owner.unlink()
+                    (owner.parent / "dr-choice.md").write_text(
+                        "---\ntype: dr\n---\n" + text.split("---\n", 2)[-1], encoding="utf-8",
+                    )
+                    output = io.StringIO()
+                    with redirect_stdout(output):
+                        result = CHECKER.run(root, "code")
+                    self.assertEqual(result, 1, output.getvalue())
+                    expected = {
+                        "02-scenarios": "unrealized in scn:",
+                        "07-load-profiles": "OE-LOAD has no lp:",
+                        "external": "OE-DELIVERY has no external api:",
+                        "05-landscape": "OE-DELIVERY has no context path:",
+                        "02-scenario-traces": "untraced in code:",
+                    }[Path(relative).name]
+                    self.assertIn(expected, output.getvalue())
+
     def test_removed_acceptance_definition_blocks_and_reduces_coverage(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "factory"
@@ -286,6 +440,85 @@ class OperationalEnvelopeCheckerTest(unittest.TestCase):
         self.assertEqual(CHECKER.percentage(0, 0), "n/a")
         self.assertEqual(CHECKER.percentage(21, 21), "100.00%")
         self.assertEqual(CHECKER.percentage(1, 4), "25.00%")
+
+
+class DiagramFormDetectorTest(unittest.TestCase):
+    def diagram(self, directory: str, fields: str = "", kind: str = "component-diagram") -> Path:
+        root = Path(directory)
+        companion = root / "02-specifications" / "06-diagrams" / "cd-x.md"
+        companion.parent.mkdir(parents=True, exist_ok=True)
+        companion.write_text(f"---\ntype: {kind}\nslug: cd-x\n{fields}---\n# Diagram\n", encoding="utf-8")
+        return companion
+
+    def test_diagram_pair_accepts_mermaid_and_type_alias(self) -> None:
+        for kind in ("component-diagram", "cd"):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as directory:
+                companion = self.diagram(directory, "sidecar: cd-x.mmd\nsidecar_format: mermaid\n", kind)
+                companion.with_suffix(".mmd").write_text(
+                    'C4Component\nComponent(sender, "Sender")\n', encoding="utf-8")
+                self.assertEqual(CHECKER.validate_forms(Path(directory)), [])
+
+    def test_inline_diagram_does_not_require_sidecar(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            companion = self.diagram(directory)
+            with companion.open("a", encoding="utf-8") as stream:
+                stream.write("\n```mermaid\nflowchart LR\n  A --> B\n```\n")
+            self.assertEqual(CHECKER.validate_forms(Path(directory)), [])
+
+    def test_declared_diagram_sidecar_missing_is_blocker(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            self.diagram(directory, "sidecar: cd-x.mmd\nsidecar_format: mermaid\n")
+            errors = CHECKER.validate_forms(Path(directory))
+            self.assertTrue(any("missing or not a regular file (F2)" in error for error in errors), errors)
+
+    def test_diagram_sidecar_fields_must_be_declared_together(self) -> None:
+        for fields in ("sidecar: cd-x.mmd\n", "sidecar_format: mermaid\n"):
+            with self.subTest(fields=fields), tempfile.TemporaryDirectory() as directory:
+                companion = self.diagram(directory, fields)
+                companion.with_suffix(".mmd").write_text("C4Component\n", encoding="utf-8")
+                errors = CHECKER.validate_forms(Path(directory))
+                self.assertTrue(any("declared together" in error and "F1" in error for error in errors), errors)
+
+    def test_structurally_invalid_diagram_sidecars_are_blockers(self) -> None:
+        cases = (
+            ("\n  \n", "empty (F2)"),
+            ("```mermaid\nC4Component\n```\n", "markdown fences"),
+            ("C4Component\n%% MIGRATE-TODO: add components\n", "open MIGRATE-TODO in sidecar"),
+        )
+        for content, expected in cases:
+            with self.subTest(expected=expected), tempfile.TemporaryDirectory() as directory:
+                companion = self.diagram(directory, "sidecar: cd-x.mmd\nsidecar_format: mermaid\n")
+                companion.with_suffix(".mmd").write_text(content, encoding="utf-8")
+                errors = CHECKER.validate_forms(Path(directory))
+                self.assertTrue(any(expected in error for error in errors), errors)
+
+    def test_orphan_diagram_sidecar_is_blocker(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            companion = self.diagram(directory)
+            companion.with_suffix(".mmd").write_text("C4Component\n", encoding="utf-8")
+            errors = CHECKER.validate_forms(Path(directory))
+            self.assertTrue(any("without a companion declaring it (F2)" in error for error in errors), errors)
+
+    def test_diagram_sidecar_uses_declared_parser(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            companion = self.diagram(directory, "sidecar: cd-x.yaml\nsidecar_format: yaml\n")
+            companion.with_suffix(".yaml").write_text("nodes: [broken\n", encoding="utf-8")
+            errors = CHECKER.validate_forms(Path(directory))
+            self.assertTrue(any("does not parse as declared 'yaml'" in error for error in errors), errors)
+
+    def test_diagram_malformed_frontmatter_cannot_bypass_pair_checks(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            self.diagram(directory, "sidecar: [broken\n")
+            errors = CHECKER.validate_forms(Path(directory))
+            self.assertTrue(any("unreadable frontmatter" in error and "F1" in error for error in errors), errors)
+
+    def test_diagram_companion_open_migrate_todo_is_blocker(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            companion = self.diagram(directory)
+            with companion.open("a", encoding="utf-8") as stream:
+                stream.write("<!-- MIGRATE-TODO: finish diagram -->\n")
+            errors = CHECKER.validate_forms(Path(directory))
+            self.assertTrue(any("open MIGRATE-TODO in companion" in error for error in errors), errors)
 
 
 class FormDetectorTest(unittest.TestCase):
@@ -660,6 +893,230 @@ class FormDetectorTest(unittest.TestCase):
             p = Path(d) / "x.openapi.yaml"
             p.write_bytes(b"\xff\xfe\x00bad")
             self.assertTrue(any("unreadable" in e for e in CHECKER.check_sidecar(p, "openapi-3.1")))
+
+
+class ExternalDeliveryOwnershipTest(unittest.TestCase):
+    EXAMPLE = OperationalEnvelopeCheckerTest.EXAMPLE
+    FUNCTION = OperationalEnvelopeCheckerTest.FUNCTION
+    DECISION_SLUG = "dr-fn-send-notification-delivery"
+    DELIVERY_REF = "-> fn-send-notification/OE-DELIVERY"
+
+    def _decision(self, root: Path) -> Path:
+        path = root / self.FUNCTION.parent / f"{self.DECISION_SLUG}.md"
+        path.write_text(
+            f"---\ntype: decision-record\nslug: {self.DECISION_SLUG}\n"
+            "about: fn-send-notification\nstatus: accepted\n---\n"
+            "# Внешняя поставка интерфейса доставки\n\n## Выбор\n"
+            "Внешний цикл заказчика поставляет интерфейс и доставляет уведомление после "
+            "экспорта. Фабрика сохраняет историю принятия и наблюдаемый конечный статус; "
+            "заказчик подтверждает конечную доставку в согласованное окно.\n",
+            encoding="utf-8",
+        )
+        return path
+
+    def _ownership(self, root: Path, fields: str) -> None:
+        path = root / self.FUNCTION
+        text = path.read_text(encoding="utf-8")
+        text = text.replace(
+            "### OE-DELIVERY — сквозной путь результата\n",
+            "### OE-DELIVERY — сквозной путь результата\n" + fields,
+        )
+        path.write_text(text, encoding="utf-8")
+
+    def _external_factory(self, root: Path) -> Path:
+        shutil.copytree(self.EXAMPLE, root)
+        self._ownership(root, "- **delivery_owner:** external\n"
+                        f"- **delivery_decision:** -> {self.DECISION_SLUG}\n")
+        decision = self._decision(root)
+        # Интерфейс поставляет внешний цикл, поэтому сценарий не вызывает собственный API.
+        for path in (root / "02-specifications/04-apis/external").glob("api-notification-channel.*"):
+            path.unlink()
+        scenario = root / "02-specifications/02-scenarios/scn-send-notification.md"
+        scenario.write_text(
+            scenario.read_text(encoding="utf-8").replace("-> api-notification-channel", "внешний цикл заказчика"),
+            encoding="utf-8",
+        )
+        tests = root / "02-specifications/08-test-cases"
+        (tests / "tc-flt-send-notification.md").unlink()
+        integration = tests / "tc-int-send-notification.md"
+        text = integration.read_text(encoding="utf-8")
+        for fault in ("FLT-000", "FLT-001", "FLT-002"):
+            text = text.replace(f"-> tc-flt-send-notification/{fault}", "внешний цикл")
+        integration.write_text(text, encoding="utf-8")
+        return decision
+
+    def _run(self, root: Path, layer: str = "spec") -> tuple[int, str]:
+        output = io.StringIO()
+        with redirect_stdout(output):
+            result = CHECKER.run(root, layer)
+        return result, output.getvalue()
+
+    def test_external_delivery_without_own_api_keeps_full_weighted_coverage(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "factory"
+            self._external_factory(root)
+            for layer in ("req", "spec", "code"):
+                with self.subTest(layer=layer):
+                    result, output = self._run(root, layer)
+                    self.assertEqual(result, 0, output)
+                    self.assertIn("applicable=7", output)
+                    self.assertIn("tc_acc_weighted=21/21(100.00%)", output)
+                    if layer != "req":
+                        self.assertIn("tc_int_weighted=21/21(100.00%)", output)
+                    self.assertNotIn("OE-DELIVERY has no external api:", output)
+
+    def test_factory_delivery_still_requires_api_by_default_and_explicitly(self) -> None:
+        for fields in ("", "- **delivery_owner:** factory\n"):
+            with self.subTest(fields=fields), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory) / "factory"
+                shutil.copytree(self.EXAMPLE, root)
+                self._ownership(root, fields)
+                (root / "02-specifications/04-apis/external/api-notification-channel.md").unlink()
+                result, output = self._run(root)
+                self.assertEqual(result, 1, output)
+                self.assertIn("OE-DELIVERY has no external api:", output)
+
+    def test_external_decision_must_be_present_accepted_and_owned_by_function(self) -> None:
+        mutations = {
+            "missing": None,
+            "unaccepted": ("status: accepted", "status: draft"),
+            "superseded": ("status: accepted", "status: superseded"),
+            "wrong owner": ("about: fn-send-notification", "about: fn-calculate-checksum"),
+            "missing owner": ("about: fn-send-notification\n", ""),
+            "invalid yaml": ("status: accepted", "status: ["),
+            "empty choice": ("## Выбор\n", "## Обсуждение\n"),
+            "template choice": ("## Выбор\n", "## Выбор\nTODO\n"),
+        }
+        for name, mutation in mutations.items():
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory) / "factory"
+                decision = self._external_factory(root)
+                if mutation is None:
+                    decision.unlink()
+                else:
+                    decision.write_text(
+                        decision.read_text(encoding="utf-8").replace(*mutation), encoding="utf-8"
+                    )
+                result, output = self._run(root)
+                self.assertEqual(result, 1, output)
+                self.assertIn("delivery_decision", output)
+                self.assertIn("OE-DELIVERY has no external api:", output)
+
+    def test_delivery_decision_must_resolve_uniquely_beside_owning_function(self) -> None:
+        for mode in ("duplicate", "other directory"):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory) / "factory"
+                decision = self._external_factory(root)
+                target = decision.parent / "dr-duplicate.md" if mode == "duplicate" else root / decision.name
+                target.write_text(decision.read_text(encoding="utf-8"), encoding="utf-8")
+                if mode == "other directory":
+                    decision.unlink()
+                result, output = self._run(root)
+                self.assertEqual(result, 1, output)
+                self.assertIn("must resolve to exactly one local decision-record", output)
+
+    def test_delivery_fields_reject_unknown_owner_incomplete_and_unsafe_references(self) -> None:
+        fields = (
+            "- **delivery_owner:** unknown\n",
+            "- **delivery_owner:** external\n",
+            f"- **delivery_decision:** -> {self.DECISION_SLUG}\n",
+            "- **delivery_owner:** factory\n" + f"- **delivery_decision:** -> {self.DECISION_SLUG}\n",
+            "- **delivery_owner:** external\n- **delivery_decision:** -> ../dr-elsewhere\n",
+            "- **delivery_owner:** external\n" + f"- **delivery_decision:** -> {self.DECISION_SLUG}, -> dr-other\n",
+        )
+        for extra in fields:
+            with self.subTest(fields=extra), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory) / "factory"
+                shutil.copytree(self.EXAMPLE, root)
+                self._decision(root)
+                self._ownership(root, extra)
+                _, _, errors = CHECKER.parse_function(root / self.FUNCTION)
+                self.assertTrue(any("delivery_" in error for error in errors), errors)
+
+    def test_ownership_fields_are_limited_to_applicable_delivery_facet(self) -> None:
+        for target in ("OE-LOAD", "OE-CONTROL"):
+            with self.subTest(target=target), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory) / "factory"
+                self._external_factory(root)
+                path = root / self.FUNCTION
+                text = path.read_text(encoding="utf-8")
+                fields = "- **delivery_owner:** external\n" + f"- **delivery_decision:** -> {self.DECISION_SLUG}\n"
+                text = text.replace(fields, "")
+                marker = next(line for line in text.splitlines() if line.startswith(f"### {target}"))
+                path.write_text(text.replace(marker + "\n", marker + "\n" + fields), encoding="utf-8")
+                _, _, errors = CHECKER.parse_function(path)
+                self.assertTrue(any("fields require APPLICABLE OE-DELIVERY" in e for e in errors), errors)
+
+    def test_external_ownership_preserves_all_other_delivery_coverage_obligations(self) -> None:
+        cases = (
+            ("01-requirements/08-test-cases/tc-acc-send-notification.md", self.DELIVERY_REF,
+             "uncovered by tc-acc: fn-send-notification/OE-DELIVERY"),
+            ("01-requirements/05-landscape/context-oe-example.md", self.DELIVERY_REF,
+             "OE-DELIVERY has no context path: fn-send-notification/OE-DELIVERY"),
+            ("02-specifications/02-scenarios/scn-send-notification.md", self.DELIVERY_REF,
+             "unrealized in scn: fn-send-notification/OE-DELIVERY"),
+            ("02-specifications/08-test-cases/tc-int-send-notification.md", "-> scn-send-notification",
+             "uncovered by tc-int via scn: fn-send-notification/OE-DELIVERY"),
+            ("03-codemap/02-scenario-traces/trace-send-notification.md", self.DELIVERY_REF,
+             "untraced in code: fn-send-notification/OE-DELIVERY"),
+        )
+        for relative, reference, blocker in cases:
+            with self.subTest(relative=relative), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory) / "factory"
+                self._external_factory(root)
+                path = root / relative
+                path.write_text(path.read_text(encoding="utf-8").replace(reference, "внешний цикл"), encoding="utf-8")
+                # Принятое решение не может подменить context/scn/test/trace ссылками из своего тела.
+                decision = root / self.FUNCTION.parent / f"{self.DECISION_SLUG}.md"
+                decision.write_text(
+                    decision.read_text(encoding="utf-8") + f"\n## Связи\n{reference}\n", encoding="utf-8"
+                )
+                result, output = self._run(root, "code")
+                self.assertEqual(result, 1, output)
+                self.assertIn(blocker, output)
+
+    def test_external_ownership_does_not_waive_acceptance_definitions(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "factory"
+            self._external_factory(root)
+            path = root / self.FUNCTION
+            text = path.read_text(encoding="utf-8")
+            path.write_text("\n".join(line for line in text.splitlines() if not line.startswith("- AC-02:")) + "\n", encoding="utf-8")
+            result, output = self._run(root)
+            self.assertEqual(result, 1, output)
+            self.assertIn("OE-DELIVERY unresolved AC AC-02", output)
+            self.assertIn("uncovered by tc-int via scn: fn-send-notification/OE-DELIVERY", output)
+
+    def test_external_ownership_keeps_fault_obligations_for_actual_api_calls(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "factory"
+            shutil.copytree(self.EXAMPLE, root)
+            self._ownership(root, "- **delivery_owner:** external\n"
+                            f"- **delivery_decision:** -> {self.DECISION_SLUG}\n")
+            self._decision(root)
+            result, output = self._run(root)
+            self.assertEqual(result, 0, output)
+            catalog = root / "02-specifications/08-test-cases/tc-flt-send-notification.md"
+            text = catalog.read_text(encoding="utf-8")
+            catalog.write_text(
+                "\n".join(line for line in text.splitlines() if not line.startswith("| FLT-001 |")) + "\n",
+                encoding="utf-8",
+            )
+            result, output = self._run(root)
+            self.assertEqual(result, 1, output)
+            self.assertIn("has no mandatory mode unavailable (O_T1)", output)
+
+    def test_external_decision_choice_cannot_be_only_comment_code_or_heading(self) -> None:
+        choices = ("<!-- external supplier -->", "```text\nexternal supplier\n```", "### Внешний поставщик")
+        for choice in choices:
+            with self.subTest(choice=choice), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory) / "factory"
+                decision = self._external_factory(root)
+                metadata = decision.read_text(encoding="utf-8").split("## Выбор\n", 1)[0]
+                decision.write_text(metadata + "## Выбор\n" + choice + "\n", encoding="utf-8")
+                result, output = self._run(root)
+                self.assertEqual(result, 1, output)
+                self.assertIn("needs one non-template Выбор section", output)
 
 
 if __name__ == "__main__":
