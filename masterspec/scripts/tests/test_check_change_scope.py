@@ -104,6 +104,45 @@ class ScopeTests(unittest.TestCase):
                       removed=[("function", "fn-send", FN)])
         CHECKER.check(self.change)
 
+    def test_new_component_diagram_pairs_accept_canonical_type_and_alias(self):
+        rows = []
+        for kind, slug in (("component-diagram", "cd-send"), ("cd", "cd-receive")):
+            # Generate from the actual template so its optional pair declaration stays usable.
+            template = SCRIPT.parents[1] / "templates" / "tpl-component-diagram.md"
+            text = template.read_text(encoding="utf-8").replace("<factory-slug>", slug.removeprefix("cd-"))
+            text = text.replace("# sidecar_format: mermaid", "sidecar_format: mermaid")
+            text = text.replace("# sidecar: ", "sidecar: ")
+            text = text.replace("type: component-diagram", f"type: {kind}")
+            self.write(f"changes/send/new/{slug}.md", text)
+            self.write(f"changes/send/new/{slug}.mmd", "C4Component\nComponent(sender, \"Sender\")\n")
+            rows.append((kind, slug, f"02-specifications/06-diagrams/{slug}.md"))
+        self.document(added=rows)
+        CHECKER.check(self.change)
+
+    def test_existing_component_diagram_sidecar_replacement(self):
+        target = "02-specifications/06-diagrams/cd-send.mmd"
+        self.artifact("02-specifications/06-diagrams/cd-send.md", "component-diagram", "cd-send",
+                      "sidecar: cd-send.mmd\nsidecar_format: mermaid\n")
+        self.write(target, "flowchart LR\n  A --> B\n")
+        self.write("changes/send/new/cd-send.mmd", "flowchart LR\n  A --> C\n")
+        self.document(modified=[("cd", "cd-send", target)])
+        CHECKER.check(self.change)
+
+    def test_new_component_diagram_pair_requires_format_and_machine_file(self):
+        companion = self.artifact("changes/send/new/cd-send.md", "cd", "cd-send",
+                                  "sidecar: cd-send.mmd\n")
+        machine = self.write("changes/send/new/cd-send.mmd", "C4Component\n")
+        rows = [("cd", "cd-send", "02-specifications/06-diagrams/cd-send.md")]
+        self.document(added=rows)
+        with self.assertRaisesRegex(ValueError, "missing sidecar_format"):
+            CHECKER.check(self.change)
+        companion.write_text(companion.read_text(encoding="utf-8").replace(
+            "sidecar: cd-send.mmd\n", "sidecar: cd-send.mmd\nsidecar_format: mermaid\n"), encoding="utf-8")
+        machine.unlink()
+        self.document(added=rows)
+        with self.assertRaisesRegex(ValueError, "must list every declared new/ file"):
+            CHECKER.check(self.change)
+
     def test_forbidden_targets_in_every_operation(self):
         forbidden = ["03-codemap/cmap-send.md", "src/send.py", "design.md", "tasks.md",
                      "02-specifications/design.md", "00-masterspec-index.md"]

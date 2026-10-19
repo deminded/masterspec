@@ -17,7 +17,8 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 
 LAYERS = {"01-requirements", "02-specifications", "04-decisions"}
 CODE_TYPES = {"repo-map", "component-map", "cmap", "scenario-trace", "trace", "data-map", "dmap"}
-SIDECAR_TYPES = {"api", "data-schema", "data", "scenario", "scn", "algorithm", "alg"}
+SIDECAR_TYPES = {"api", "data-schema", "data", "scenario", "scn", "algorithm", "alg",
+                 "component-diagram", "cd"}
 FIELDS = {"type", "slug", "sidecar", "sidecar_format", "block", "scope"}
 
 
