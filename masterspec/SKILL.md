@@ -51,6 +51,7 @@ allowed-tools:
 | Gate телеметрии verify-report | `scripts/check-verify-report.py` | После сборки каждого `verify-report.md` |
 | Граница change от evolve | `scripts/check-change-scope.py` | До verify и до применения spec-only change |
 | Маршрутизация тип→шаблон→путь→slug | `references/artifact-routing.md` | При создании/размещении артефакта |
+| Переносимые имена и UTC timestamp `YYYYMMDDTHHMMZ` | `references/file-naming.md` | Перед созданием файла/каталога, включая служебные; при переименовании старых отчётов |
 | Раскладки: два корня (specs-root/changes-root), резолвинг, режим openspec | `references/layout-modes.md` | При старте любой операции — шаг «найди фабрику» |
 | Канонический формат индекса | `references/index-canonical.md` | При работе с `00-masterspec-index.md` |
 | Соглашения change-workflow | `references/change-conventions.md` | При работе с `changes/` |

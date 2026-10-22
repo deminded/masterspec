@@ -1,5 +1,6 @@
 """Bounded draft projection: real fixture, conflicts and protected input trees."""
 import json
+from datetime import datetime, timezone
 import os
 from pathlib import Path
 import shutil
@@ -119,6 +120,18 @@ class PrepareWorkspaceTests(unittest.TestCase):
         shutil.copytree(self.source, other_source)
         with self.assertRaisesRegex(ValueError, "different provenance"):
             helper.init_workspace(self.change, self.factory, other_source, self.specs, "third")
+
+    def test_generated_run_uses_portable_utc_minutes_and_unique_suffix(self):
+        with patch.object(helper, "datetime") as clock:
+            clock.now.return_value = datetime(2026, 8, 28, 17, 0, 59, tzinfo=timezone.utc)
+            first = self.init(None)
+            second = self.init(None)
+        clock.now.assert_called_with(timezone.utc)
+        for result in (first, second):
+            run = Path(result["workspace"]).parent.name
+            self.assertRegex(run, r"^run-20260828T1700Z-[a-f0-9]{8}$")
+            self.assertTrue(Path(result["workspace"]).is_file())
+        self.assertNotEqual(first["workspace"], second["workspace"])
 
     def test_matching_workspace_allows_new_logs_after_source_change_but_projection_stays_stale(self):
         self.init("first")

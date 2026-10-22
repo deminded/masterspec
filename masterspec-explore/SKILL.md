@@ -82,6 +82,8 @@ Conversational-режим **не поддерживается** — для ра�
 **Входной гейт:** комбинация `source=docs` + `target=factory-change` НЕ поддерживается (docs-роли картируют фабрику целиком; `anchor` в документах не определён). Запрошена — откажись и предложи `source=code target=factory-change`.
 
 **Куда пишется research** (важно, иначе прогоны затирают друг друга): `<research-dir>/.research/<source>/` — то есть `.research/code/` и `.research/docs/` РАЗДЕЛЬНО. `recover source=both` делает оба прогона, и смешивать их нельзя: находки разной природы (`declared: true` против `code:<path>`).
+Создаваемые `<name>`, `<role>`, `<batch-id>` и `run_id` проверяй по
+`../masterspec/references/file-naming.md`; время в имени — UTC `YYYYMMDDTHHMMZ`.
 - **anchor** (только для `target=factory-change`): пути/символы/slug'и, попадающие в скоуп изменения. Без них не запускайся.
 - **thoroughness** (опционально): `quick` (default) / `medium`.
 

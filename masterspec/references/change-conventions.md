@@ -29,6 +29,9 @@ masterspec/
 ```
 
 `<change-name>` — kebab-case, описывает суть изменения: `add-retry-logic`, `fix-ac-timeout`, `split-cmp-delivery-router`.
+Имена change, research, рабочих каталогов и отчётов должны удовлетворять
+[file-naming.md](file-naming.md): timestamp в имени — `YYYYMMDDTHHMMZ` (UTC),
+например `route-run-20260828T1700Z.md`; запрещённые символы не подставляются в компоненты пути.
 
 ---
 
