@@ -116,7 +116,7 @@ Route-скилл: бизнес-запрос/требования → слой а
    по O_T1–O_T6. Негатив-ось (O5) —
    отдельным проверяющим. Критерий: layer=req → spec_ready; layer=spec → codegen_ready
    (`patterns/verification-axes.md`).
-7. **route-run.** `route-run-<ts>.md` (шаблон `../masterspec/templates/tpl-route-run.md`; в корне фабрики при генерации с нуля): вход · pass · по элементам (дозапросы/оси/итерации) · метрики, включая OE expected/applicable/N/A/open/uncovered · открытые вопросы · кто принял.
+7. **route-run.** `route-run-<ts>.md` (`<ts>` = `YYYYMMDDTHHMMZ`, без двоеточий; шаблон `../masterspec/templates/tpl-route-run.md`; в корне фабрики при генерации с нуля): вход · pass · по элементам (дозапросы/оси/итерации) · метрики, включая OE expected/applicable/N/A/open/uncovered · открытые вопросы · кто принял.
 8. **Индекс.** После генерации слоя перестрой `00-masterspec-index.md` полной перегенерацией по `../masterspec/references/index-canonical.md` — чтобы он отражал созданные артефакты (§3–§6 по реальным файлам, §1/§7 сохраняются дословно).
 9. **Карантин и hard-gate** (`patterns/enforcement.md`). При генерации с нуля черновики пишутся прямо в `01-`/`02-` со `status: draft` (это и есть карантин — статус, не отдельная папка). Согласование: человек ревьюит (merge PR) и переводит `status: draft → actual`, затем перестраивает индекс (полная перегенерация подхватит `actual`-маркеры). Агент сам actual не ставит.
 
