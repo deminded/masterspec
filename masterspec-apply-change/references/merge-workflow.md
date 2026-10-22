@@ -336,7 +336,30 @@ Change помечает masterspec/.../fn-X.md как REMOVED, но файл у�
 # REMOVED компаньона с сайдкаром удаляет ПАРУ: висячий сайдкар индекс и smoke-check (ходят по .md) не заметят.
 target="<specs-root>/<путь>"
 if [ "${target##*.}" = "md" ] && [ -f "$target" ]; then
-  sidecar=$(python3 -c "import sys,yaml; print((yaml.safe_load(open(sys.argv[1]).read().split('---',2)[1]) or {}).get('sidecar','') or '')" "$target")
+  if ! sidecar=$(python3 - "$target" <<'PY'
+import sys
+from pathlib import Path
+import yaml
+
+try:
+    lines = Path(sys.argv[1]).read_text(encoding="utf-8-sig").splitlines()
+    metadata = {}
+    if lines and lines[0] == "---":
+        end = lines.index("---", 1)
+        parsed = yaml.safe_load("\n".join(lines[1:end]))
+        metadata = {} if parsed is None else parsed
+        if not isinstance(metadata, dict):
+            raise ValueError("frontmatter must be a mapping")
+    sidecar = metadata.get("sidecar", "")
+    if not isinstance(sidecar, str) or any(ord(c) < 32 for c in sidecar):
+        raise ValueError("sidecar must be a single-line string")
+    print(sidecar)
+except (OSError, UnicodeError, ValueError, yaml.YAMLError) as exc:
+    sys.exit(f"CONFLICT: cannot read REMOVED metadata: {exc}")
+PY
+  ); then
+    exit 1  # ошибка чтения/разбора блокирует оба rm
+  fi
   case "$sidecar" in
     "") : ;;  # сайдкара нет — удаляем только компаньон
     */*|*'\'*|*..*) echo "CONFLICT: невалидный sidecar '$sidecar' у $target — не удаляю"; exit 1 ;;  # до мутаций

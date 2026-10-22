@@ -104,6 +104,88 @@ class ScopeTests(unittest.TestCase):
                       removed=[("function", "fn-send", FN)])
         CHECKER.check(self.change)
 
+    def test_removed_legacy_type_with_frontmatter(self):
+        path = "02-specifications/legacy-note.md"
+        self.artifact(path, "retired-note", "legacy-send")
+        self.document(removed=[("retired-note", "legacy-send", path)])
+        CHECKER.check(self.change)
+        result = subprocess.run([sys.executable, str(SCRIPT), str(self.change)],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_removed_files_without_frontmatter_or_companion(self):
+        for kind, path, content in [
+            ("retired-note", "02-specifications/README.md", b"# Legacy notes\n"),
+            ("component-map", "02-specifications/old-map.md", b"# Obsolete map\n"),
+            ("legacy-data", "02-specifications/legacy.yaml", b"legacy: true\n"),
+            ("legacy-image", "02-specifications/old-logo.png", b"\x89PNG\r\n\x1a\n\xff\xfe"),
+        ]:
+            with self.subTest(kind=kind, path=path):
+                target = self.write(path, "")
+                target.write_bytes(content)
+                self.document(removed=[(kind, "legacy-send", path)])
+                CHECKER.check(self.change)
+
+    def test_removed_frontmatter_must_match_slug(self):
+        for path in ["02-specifications/legacy.md", "02-specifications/legacy.txt"]:
+            with self.subTest(path=path):
+                self.artifact(path, "retired-note", "legacy-other")
+                self.document(removed=[("retired-note", "legacy-send", path)])
+                with self.assertRaisesRegex(ValueError, "slug does not match"):
+                    CHECKER.check(self.change)
+
+    def test_removed_registered_type_still_matches_frontmatter(self):
+        self.artifact()
+        self.document(removed=[("fn", "fn-send", FN)])
+        CHECKER.check(self.change)
+        self.document(removed=[("component", "fn-send", FN)])
+        with self.assertRaisesRegex(ValueError, "type does not match"):
+            CHECKER.check(self.change)
+
+    def test_unknown_type_remains_forbidden_for_added_and_modified(self):
+        for operation in ("added", "modified"):
+            with self.subTest(operation=operation):
+                self.document(**{operation: [("retired-note", "legacy-send",
+                                              "02-specifications/legacy-send.md")]})
+                with self.assertRaisesRegex(ValueError, "unknown or non-specification artifact type"):
+                    CHECKER.check(self.change)
+
+    def test_removed_target_must_exist_and_be_a_file(self):
+        for path in ["02-specifications/legacy-send.md", "02-specifications/legacy.yaml"]:
+            with self.subTest(path=path):
+                self.document(removed=[("retired-note", "legacy-send", path)])
+                with self.assertRaisesRegex(ValueError, "missing REMOVED artifact"):
+                    CHECKER.check(self.change)
+        (self.factory / "02-specifications" / "legacy-dir").mkdir(parents=True)
+        self.document(removed=[("retired-note", "legacy-send", "02-specifications/legacy-dir")])
+        with self.assertRaisesRegex(ValueError, "missing REMOVED artifact"):
+            CHECKER.check(self.change)
+
+    def test_removed_legacy_sidecar_keeps_path_boundary(self):
+        path = "02-specifications/legacy-send.md"
+        self.artifact(path, "retired-note", "legacy-send", "sidecar: legacy-send.json\n")
+        self.write("02-specifications/legacy-send.json", "{}\n")
+        self.document(removed=[("retired-note", "legacy-send", path)])
+        CHECKER.check(self.change)
+        for machine in ["../legacy-send.json", "nested/legacy-send.json", "other.json"]:
+            with self.subTest(sidecar=machine):
+                self.artifact(path, "retired-note", "legacy-send", f"sidecar: {machine}\n")
+                self.assert_blocked()
+
+    def test_removed_registered_machine_sidecar_keeps_companion_binding(self):
+        target = "02-specifications/04-apis/external/api-send.openapi.yaml"
+        self.artifact(API, "api", "api-send", "sidecar: api-send.openapi.yaml\n")
+        self.write(target, "openapi: 3.1.0\n")
+        self.document(removed=[("api", "api-send", target)])
+        CHECKER.check(self.change)
+        self.document(removed=[("data", "api-send", target)])
+        with self.assertRaisesRegex(ValueError, "not the companion's declared sidecar"):
+            CHECKER.check(self.change)
+        self.document(removed=[("api", "api-send", target)])
+        self.artifact(API, "api", "api-send", "sidecar: api-send.other.yaml\n")
+        with self.assertRaisesRegex(ValueError, "not the companion's declared sidecar"):
+            CHECKER.check(self.change)
+
     def test_new_component_diagram_pairs_accept_canonical_type_and_alias(self):
         rows = []
         for kind, slug in (("component-diagram", "cd-send"), ("cd", "cd-receive")):
