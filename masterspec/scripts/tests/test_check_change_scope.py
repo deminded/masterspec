@@ -185,6 +185,21 @@ class ScopeTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "sidecar must be a local basename"):
                     CHECKER.check(self.change)
 
+    def test_removed_nul_in_body_does_not_hide_frontmatter(self):
+        self.write("02-specifications/tasks.md", "# unrelated\n")
+        self.write("02-specifications/legacy.json", "{}\n")
+        cases = [("02-specifications/legacy.md", b"sidecar: tasks.md", "sidecar must be a local basename"),
+                 ("02-specifications/legacy.txt", b"sidecar: legacy.json", "only for .md companions")]
+        for path, declared, message in cases:
+            for offset in (0, 4095, 4096):
+                with self.subTest(path=path, offset=offset):
+                    target = self.write(path, "")
+                    target.write_bytes(b"---\ntype: legacy\nslug: legacy\n" + declared + b"\n---\n" +
+                                       b"x" * offset + b"\x00\n")
+                    self.document(removed=[("legacy", "legacy", path)])
+                    with self.assertRaisesRegex(ValueError, message):
+                        CHECKER.check(self.change)
+
     def test_removed_binary_starting_like_frontmatter_is_not_text(self):
         path = "02-specifications/legacy.bin"
         target = self.write(path, "")

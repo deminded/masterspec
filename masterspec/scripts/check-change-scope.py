@@ -146,12 +146,12 @@ def frontmatter(path: Path, *, optional: bool = False) -> dict[str, str] | None:
     """
     if optional:
         # REMOVED may name plain text or binary files, without a companion.
-        # Decide "has frontmatter" with the same line semantics as the reader in
-        # merge-workflow.md (str.splitlines): a CR-only file must not pass here as
-        # plain text and still yield a sidecar at removal time.
+        # Decide "has frontmatter" exactly like the reader in merge-workflow.md:
+        # decode as UTF-8 and look at the first str.splitlines() line. No byte
+        # heuristics (NUL is valid UTF-8): any file the workflow reader can parse
+        # must be seen as frontmatter here too, or a CR-only or NUL-padded file
+        # would pass the gate as plain text and still yield a sidecar at removal.
         raw = path.read_bytes()
-        if b"\x00" in raw[:4096]:
-            return None
         try:
             text = raw.decode("utf-8-sig")
         except UnicodeDecodeError:
