@@ -146,11 +146,23 @@ def frontmatter(path: Path, *, optional: bool = False) -> dict[str, str] | None:
     """
     if optional:
         # REMOVED may name plain text or binary files, without a companion.
-        # Inspect only the delimiter before attempting any UTF-8 decoding.
-        with path.open("rb") as source:
-            if source.readline(8).removeprefix(b"\xef\xbb\xbf").rstrip(b"\r\n") != b"---":
-                return None
-    lines = path.read_text(encoding="utf-8-sig").splitlines()
+        # Decide "has frontmatter" with the same line semantics as the reader in
+        # merge-workflow.md (str.splitlines): a CR-only file must not pass here as
+        # plain text and still yield a sidecar at removal time.
+        raw = path.read_bytes()
+        if b"\x00" in raw[:4096]:
+            return None
+        try:
+            text = raw.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            require(not raw.removeprefix(b"\xef\xbb\xbf").startswith(b"---"),
+                    f"{path}: frontmatter is not valid UTF-8")
+            return None
+        lines = text.splitlines()
+        if not lines or lines[0] != "---":
+            return None
+    else:
+        lines = path.read_text(encoding="utf-8-sig").splitlines()
     require(bool(lines) and lines[0] == "---", f"{path}: missing frontmatter")
     require("---" in lines[1:], f"{path}: unterminated frontmatter")
     result = {}
@@ -271,6 +283,8 @@ def check(change_dir: Path, factory: Path | None = None) -> None:
                                     f"{source}: companion type does not match spec-only declaration")
                         machine = sidecar(metadata, slug, removing=True)
                         if machine:
+                            require(path.suffix == ".md",
+                                    f"{source}: sidecar pair removal is supported only for .md companions")
                             bounded_file(factory, target_path(str(path.parent / machine)), target=True)
                     continue
                 # A registered machine sidecar still has to match its companion.

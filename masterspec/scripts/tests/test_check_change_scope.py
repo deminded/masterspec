@@ -172,6 +172,42 @@ class ScopeTests(unittest.TestCase):
                 self.artifact(path, "retired-note", "legacy-send", f"sidecar: {machine}\n")
                 self.assert_blocked()
 
+    def test_removed_cr_line_endings_do_not_bypass_sidecar_check(self):
+        path = "02-specifications/legacy.md"
+        target = self.write(path, "")
+        self.write("02-specifications/tasks.md", "# unrelated\n")
+        self.document(removed=[("legacy", "legacy", path)])
+        for raw in (b"---\rtype: legacy\rslug: legacy\rsidecar: tasks.md\r---\r# note\r",
+                    b"---\ntype: legacy\nslug: legacy\nsidecar: tasks.md\n---\n# note\n",
+                    b"---\r\ntype: legacy\r\nslug: legacy\r\nsidecar: tasks.md\r\n---\r\n# note\r\n"):
+            with self.subTest(raw=raw):
+                target.write_bytes(raw)
+                with self.assertRaisesRegex(ValueError, "sidecar must be a local basename"):
+                    CHECKER.check(self.change)
+
+    def test_removed_binary_starting_like_frontmatter_is_not_text(self):
+        path = "02-specifications/legacy.bin"
+        target = self.write(path, "")
+        target.write_bytes(b"---\x00\x01\x02\n---\n")
+        self.document(removed=[("legacy-data", "legacy-send", path)])
+        CHECKER.check(self.change)
+
+    def test_removed_invalid_utf8_after_delimiter_is_blocked(self):
+        path = "02-specifications/legacy.md"
+        target = self.write(path, "")
+        target.write_bytes(b"---\ntype: legacy\xff\n---\n")
+        self.document(removed=[("legacy", "legacy", path)])
+        with self.assertRaisesRegex(ValueError, "not valid UTF-8"):
+            CHECKER.check(self.change)
+
+    def test_removed_sidecar_pair_requires_md_companion(self):
+        path = "02-specifications/legacy.txt"
+        self.artifact(path, "legacy", "legacy-send", "sidecar: legacy-send.json\n")
+        self.write("02-specifications/legacy-send.json", "{}\n")
+        self.document(removed=[("legacy", "legacy-send", path)])
+        with self.assertRaisesRegex(ValueError, "only for .md companions"):
+            CHECKER.check(self.change)
+
     def test_removed_registered_machine_sidecar_keeps_companion_binding(self):
         target = "02-specifications/04-apis/external/api-send.openapi.yaml"
         self.artifact(API, "api", "api-send", "sidecar: api-send.openapi.yaml\n")

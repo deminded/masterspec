@@ -335,6 +335,7 @@ Change помечает masterspec/.../fn-X.md как REMOVED, но файл у�
 ```bash
 # REMOVED компаньона с сайдкаром удаляет ПАРУ: висячий сайдкар индекс и smoke-check (ходят по .md) не заметят.
 target="<specs-root>/<путь>"
+# шлюз check-change-scope допускает объявленный sidecar только у компаньона .md — поэтому пара ищется только здесь
 if [ "${target##*.}" = "md" ] && [ -f "$target" ]; then
   if ! sidecar=$(python3 - "$target" <<'PY'
 import sys
