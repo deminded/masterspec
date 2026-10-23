@@ -82,3 +82,6 @@ updated: YYYY-MM-DD
 - `00-masterspec-index.md` — фиксированное имя в корне фабрики;
 - `00-glossary.md` — фиксированное имя в корне фабрики;
 - `00-repo-map.md` — фиксированное имя в `03-codemap/`.
+
+Компоненты всех создаваемых путей, включая служебные, проверяются по
+[file-naming.md](file-naming.md); timestamp в имени — `YYYYMMDDTHHMMZ` (UTC).

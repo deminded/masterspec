@@ -4,13 +4,16 @@ factory: <factory-slug>
 flow: generation | change        # генерация (derive) | изменение (evolve)
 layer_or_entry: <layer=req|spec ИЛИ entry=req|rule|ext>
 pass: linear | parallel
-ts: YYYY-MM-DDThh:mm
+ts: YYYYMMDDTHHMMZ
 ---
 # Route-run: <factory> / <layer|entry>
 
 Отчуждаемый аудит-след прогона derive/evolve. Метрики выносимы без содержания фабрики — для приёмки и сравнения прогонов.
 
 > **Расположение** (зависит от потока): генерация (`derive`) — `<specs-root>/route-run-<ts>.md` (в корне фабрики, change'а нет); изменение (`evolve`) — `<changes-root>/<name>/route-run-<ts>.md`.
+> `<ts>` — UTC в формате `YYYYMMDDTHHMMZ`, например `route-run-20260828T1700Z.md`;
+> совпадает с `ts` в шапке. При коллизии добавь суффикс, не перезаписывай отчёт.
+> Общие правила и переименование старых файлов — [file-naming.md](../references/file-naming.md).
 
 ## Вход
 <!-- бизнес-запрос / зона изменения / якоря скоупа -->

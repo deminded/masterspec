@@ -97,7 +97,7 @@ def init_workspace(change: Path, factory: Path, source: Path, specs: Path,
     identity = roots(change, factory, source, specs)
     change = Path(identity["change"])
     if run is None:
-        run = datetime.now(timezone.utc).strftime("run-%Y%m%dT%H%M%SZ-") + uuid.uuid4().hex[:8]
+        run = datetime.now(timezone.utc).strftime("run-%Y%m%dT%H%MZ-") + uuid.uuid4().hex[:8]
     require(re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}", run) is not None,
             "run must be one safe directory name (letters, digits, _ and -)")
     SCOPE.relative_path(run)

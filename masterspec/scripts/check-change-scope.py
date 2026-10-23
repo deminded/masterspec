@@ -127,7 +127,8 @@ def declarations(lines: list[str], number: str) -> list[tuple[str, str, PurePosi
             continue
         require(all(cells[:4]), f"section {number}: incomplete declaration")
         kind, slug = literal(cells[1]), literal(cells[2])
-        require(re.fullmatch(r"[a-z][a-z0-9-]*", kind) is not None and kind not in CODE_TYPES,
+        require(re.fullmatch(r"[a-z][a-z0-9-]*", kind) is not None and
+                (number == "2.3" or kind not in CODE_TYPES),
                 f"section {number}: invalid/spec-external type {kind!r}")
         require(re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", slug) is not None,
                 f"section {number}: invalid slug {slug!r}")
@@ -136,14 +137,32 @@ def declarations(lines: list[str], number: str) -> list[tuple[str, str, PurePosi
     return rows
 
 
-def frontmatter(path: Path) -> dict[str, str]:
+def frontmatter(path: Path, *, optional: bool = False) -> dict[str, str] | None:
     """Read only scope fields in the canonical flat-scalar YAML form.
 
     This deliberately rejects aliases, merges and complex/quoted keys instead of
     guessing their meaning without a YAML dependency. Other field values are not
     validated here; the normal artifact validators remain required.
     """
-    lines = path.read_text(encoding="utf-8-sig").splitlines()
+    if optional:
+        # REMOVED may name plain text or binary files, without a companion.
+        # Decide "has frontmatter" exactly like the reader in merge-workflow.md:
+        # decode as UTF-8 and look at the first str.splitlines() line. No byte
+        # heuristics (NUL is valid UTF-8): any file the workflow reader can parse
+        # must be seen as frontmatter here too, or a CR-only or NUL-padded file
+        # would pass the gate as plain text and still yield a sidecar at removal.
+        raw = path.read_bytes()
+        try:
+            text = raw.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            require(not raw.removeprefix(b"\xef\xbb\xbf").startswith(b"---"),
+                    f"{path}: frontmatter is not valid UTF-8")
+            return None
+        lines = text.splitlines()
+        if not lines or lines[0] != "---":
+            return None
+    else:
+        lines = path.read_text(encoding="utf-8-sig").splitlines()
     require(bool(lines) and lines[0] == "---", f"{path}: missing frontmatter")
     require("---" in lines[1:], f"{path}: unterminated frontmatter")
     result = {}
@@ -162,12 +181,13 @@ def frontmatter(path: Path) -> dict[str, str]:
     return result
 
 
-def sidecar(metadata: dict[str, str], slug: str) -> str | None:
+def sidecar(metadata: dict[str, str], slug: str, *, removing: bool = False) -> str | None:
     if "sidecar" not in metadata:
-        require("sidecar_format" not in metadata, f"{slug}: sidecar_format without sidecar")
+        require(removing or "sidecar_format" not in metadata, f"{slug}: sidecar_format without sidecar")
         return None
-    require(metadata.get("type") in SIDECAR_TYPES, f"{slug}: type cannot own a machine sidecar")
-    require(bool(metadata.get("sidecar_format")), f"{slug}: missing sidecar_format")
+    if not removing:
+        require(metadata.get("type") in SIDECAR_TYPES, f"{slug}: type cannot own a machine sidecar")
+        require(bool(metadata.get("sidecar_format")), f"{slug}: missing sidecar_format")
     path = relative_path(metadata["sidecar"])
     require(len(path.parts) == 1 and path.name.startswith(slug + ".") and path.suffix != ".md",
             f"{slug}: sidecar must be a local basename sharing the companion slug")
@@ -248,7 +268,26 @@ def check(change_dir: Path, factory: Path | None = None) -> None:
 
     for operation, rows in groups.items():
         for kind, slug, path in rows:
-            require(kind in aliases, f"unknown or non-specification artifact type: {kind}")
+            require(operation == "REMOVED" or kind in aliases,
+                    f"unknown or non-specification artifact type: {kind}")
+            if operation == "REMOVED":
+                source = bounded_file(factory, path, target=True)
+                require(source.is_file(), f"missing REMOVED artifact: {source}")
+                if path.suffix == ".md" or kind not in aliases:
+                    metadata = frontmatter(source, optional=True)
+                    if metadata is not None:
+                        require(metadata.get("slug") == slug,
+                                f"{source}: companion slug does not match spec-only declaration")
+                        if kind in aliases:
+                            require(aliases.get(metadata.get("type")) == aliases[kind],
+                                    f"{source}: companion type does not match spec-only declaration")
+                        machine = sidecar(metadata, slug, removing=True)
+                        if machine:
+                            require(path.suffix == ".md",
+                                    f"{source}: sidecar pair removal is supported only for .md companions")
+                            bounded_file(factory, target_path(str(path.parent / machine)), target=True)
+                    continue
+                # A registered machine sidecar still has to match its companion.
             if operation == "ADDED":
                 require(not bounded_file(factory, path, target=True).exists(),
                         f"ADDED target already exists: {path}")
@@ -294,7 +333,7 @@ def check(change_dir: Path, factory: Path | None = None) -> None:
                 metadata = frontmatter(companion)
                 require(metadata.get("slug") == slug and
                         aliases.get(metadata.get("type")) == aliases[kind] and
-                        sidecar(metadata, slug) == path.name,
+                        sidecar(metadata, slug, removing=operation == "REMOVED") == path.name,
                         f"{path}: target is not the companion's declared sidecar")
                 require(bounded_file(factory, path, target=True).is_file(), f"missing existing sidecar: {path}")
                 if operation == "MODIFIED":
