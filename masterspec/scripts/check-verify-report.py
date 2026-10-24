@@ -101,6 +101,31 @@ def validate(
         errors.append("scope must be req, spec, or change")
     if fm.get("preset") not in {"core", "full"}:
         errors.append("preset must be core or full")
+    mode = fm.get("mode", "full")  # Existing full reports predate the mode field.
+    if mode not in {"full", "patch"}:
+        errors.append("mode must be full or patch")
+    if mode == "patch":
+        if fm.get("scope") not in {"spec", "change"}:
+            errors.append("patch mode requires scope=spec or change")
+        if fm.get("scope") == "change":
+            value = fm.get("change", "")
+            if not value or PLACEHOLDER.search(value) or value.startswith("N/A"):
+                errors.append("change patch report requires change evidence path")
+        for name in ("baseline", "plan"):
+            value = fm.get(name, "")
+            if not value or PLACEHOLDER.search(value) or value.startswith("N/A"):
+                errors.append(f"patch report requires {name} evidence path")
+        if not re.fullmatch(r"[a-f0-9]{64}", fm.get("verified_inputs_digest", "")):
+            errors.append("patch report requires verified_inputs_digest SHA-256")
+        if data.get("patch_ready") not in {"yes", "no"}:
+            errors.append("patch_ready must be yes or no")
+        for name in ("spec_ready", "codegen_ready", "cascade_ready"):
+            if not N_A.match(data.get(name, "")):
+                errors.append(f"patch report {name} must be 'N/A — reason'")
+        if re.search(r"\b(?:spec_ready|codegen_ready|cascade_ready)\s*:\s*(?:yes|true)\b", text, re.I):
+            errors.append("patch report cannot certify readiness of the whole layer/change")
+    elif "patch_ready" in data:
+        errors.append("patch_ready requires mode=patch")
 
     verified_date: date | None = None
     try:

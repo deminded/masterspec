@@ -5,11 +5,11 @@ description: >
   из агрегата explore) в слой требований; layer=spec — из согласованных требований в слой спецификаций.
   При отсутствии фабрики инициализирует её (скелет каталога, глоссарий). Оркестратор слоя:
   разворачивает слой на элементы, на каждый зовёт gen (узел-исполнение) или узел-решение, гонит verify,
-  ставит human-gate.
+  ставит human-gate. mode=patch — точечная правка существующих draft-спецификаций с локальной вычиткой.
 when_to_use: >
   спроектировать слой требований или спецификаций, описать фабрику с нуля,
   derive <factory> layer=req, derive <factory> layer=spec, сгенерировать as/fn/nfr/rules/cdm или cmp/scn/api/data
-argument-hint: "<factory-slug> layer=req|spec [root=<путь>] [layout=classic|openspec] [pass=linear|parallel] [verify=core|full] [context=lean|full]"
+argument-hint: "<factory-slug> layer=req|spec [mode=full|patch] [target=<slugs>] [baseline=<path>] [root=<путь>] [layout=classic|openspec] [pass=linear|parallel] [verify=core|full] [context=lean|full]"
 allowed-tools:
   - Read
   - Write
@@ -35,6 +35,11 @@ Route-скилл: бизнес-запрос/требования → слой а
 - `layout=classic|openspec` — опционально, раскладка корней фабрики (`../masterspec/references/layout-modes.md`). `openspec` задаёт ОБА корня сразу: specs-root=`openspec/specs/`, changes-root=`openspec/changes/` — фабрика живёт внутри структуры OpenSpec, чтобы её инструменты видели дерево. Вместе с `root=` НЕ задаётся (оба управляют корнями) — такой вызов конфликтен: остановись и спроси человека, какой корень верен. Дефолт `classic` — поведение прежнее.
 - `layer=req` — вход: бизнес-запрос (из `00-source-data/` или текста пользователя). Если у фабрики есть код — дополнительно агрегат `explore`. Выход: `01-requirements/`.
 - `layer=spec` — вход: согласованный слой требований. Выход: `02-specifications/` (контракт и физмодель рождаются здесь).
+- `mode=full|patch` — дефолт `full` (обычный маршрут). `patch` допустим только с `layer=spec`:
+  `target=<slug[,slug…]>` задаёт существующие черновики, `baseline=<path>` — снимок ДО правки
+  (дефолт `.verification/design-baseline.json` в specs-root). Читай и выполняй
+  `../masterspec/references/patterns/design-patch.md` **вместо полного метода ниже**.
+  Выход — локальный `patch_ready`; перед согласованием серии нужна полная вычитка.
 - `pass=linear` (дефолт) — по одному элементу, человек контролирует каждый шаг. `pass=parallel` — независимые элементы разом субагентами, человек на финальной вычитке. parallel — явный выбор аналитика.
 - `verify=core` (дефолт) — дешёвое ядро осей; `verify=full` — все оси на слое и критичных элементах.
 - `context=full` / `context=lean` (дефолт) — изоляция контекста оркестратора (`patterns/context-isolation.md`). В `lean` оркестратор сам не читает мета-модель/research/артефакты, а делегирует planner-субагенту (раскладывает план и фокус-наборы в `<factory-root>/.work/<run-id>/`), `gen` и `verify`-субагентам; держит в контексте только план, пути и сводки. **Исключение:** OE-интервью с человеком всегда ведёт сам оркестратор и сразу пишет ответы в `<factory-root>/.work/<run-id>/oe-interview.md`; живое интервью нельзя делегировать субагенту. Для моделей с ограниченным контекстом: загружай текущий шаг и его зависимости, план растёт с фабрикой.

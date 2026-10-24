@@ -3,6 +3,7 @@ type: verify-report
 factory: <factory-slug>
 scope: <req | spec | change>
 preset: <core | full>
+mode: <full | patch>
 last_verified: YYYY-MM-DD
 verified_revision: <git-sha | N/A — вне git>
 started_at: YYYY-MM-DDThh:mm:ssZ
@@ -12,11 +13,20 @@ finished_at: YYYY-MM-DDThh:mm:ssZ
 
 <!-- Штатный отчёт verify. Все поля обязательны; неизвестное значение записывается как
      `N/A — причина`, не пустой строкой. last_verified меняет только verify, не derive/evolve. -->
+<!-- Для mode=patch: добавь во фронтматтер baseline и plan (пути к сохранённым JSON)
+     и verified_inputs_digest (current_digest plan, SHA-256); при scope=change также
+     change (путь к выбранному change-dir). В «Результат» добавь
+     `- patch_ready: yes|no`, а все три *_ready ниже запиши как
+     `N/A — локальная проверка`. Отчёт — verify-patch-<run-id>.md; полный verify-report.md
+     не перезаписывать. Укажи изменённые/проверенные артефакты, read-only контекст и
+     сохранённый долг вне области. mode=full — обычный полный отчёт, этих полей не требует. -->
 
 ## Результат
 - holes: {O1,O2,O3,O4a,O4b,O5[,O0,O6,O7,O_T1..O_T6]} = <total>
 - by_severity: blocker=<N>; major=<N>; minor=<N>
-- spec_ready / codegen_ready / cascade_ready: <yes | no | N/A — не этот scope>
+- spec_ready: <yes | no | N/A — не этот scope>
+- codegen_ready: <yes | no | N/A — не этот scope>
+- cascade_ready: <yes | no | N/A — не этот scope>
 - OE: <дословная строка `OE metrics:` валидатора | N/A — метрики не выданы, см. exit code и диагностику>
 - top_holes: <ось; элемент; дефект; severity>
 

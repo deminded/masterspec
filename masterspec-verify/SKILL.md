@@ -4,11 +4,12 @@ description: >
   Вычитка артефактов фабрики по осям O1–O5 (+O0/O6/O7 для spec). layer=req — слой требований (критерий spec_ready);
   layer=spec — слой спецификаций (+ O0 single-source, O6 контракт, O7 физмодель; критерий codegen_ready);
   layer=change — полнота каскада изменения. Оси — данные (../masterspec/references/patterns/verification-axes.md).
+  mode=patch — локальная вычитка draft-дизайна или существующего change по diff и зависимостям.
   Выдаёт дыры с severity + обязательную телеметрию verify-report, флагует человеку.
 when_to_use: >
   проверить слой требований/спецификаций, аудит покрытия, verify layer=req|spec|change,
   найти дыры до кода, оценить codegen_ready / spec_ready
-argument-hint: "layer=req|spec|change [preset=core|full] [context=lean|full]"
+argument-hint: "layer=req|spec|change [change=<name>] [mode=full|patch] [target=<slugs>] [baseline=<path>] [preset=core|full] [context=lean|full]"
 allowed-tools:
   - Read
   - Glob
@@ -28,6 +29,16 @@ Read-only по отношению к артефактам: я нахожу ды�
 Дубликаты норм, непроверяемые формулировки и догадки вместо `OPEN` — содержательные дефекты.
 
 ## Параметры
+- `mode=full|patch` — дефолт `full`, прежний обход. Для `layer=spec` режим `patch` —
+  повторная вычитка изменённых черновиков и обратных зависимостей. `baseline=<path>`
+  задаёт снимок ДО (дефолт `.verification/design-baseline.json` в specs-root),
+  `target=<slug[,slug…]>` добавляет якоря, не исключая другие изменения.
+  Читай `../masterspec/references/patterns/design-patch.md` и выполняй его маршрут verify
+  **вместо полного метода**. Полный отчёт не перезаписывается; выход — `patch_ready`,
+  а не `codegen_ready`. Для `layer=change mode=patch change=<name>` читай и выполняй
+  `../masterspec/references/patterns/change-patch.md` вместо полного метода: база ДО
+  лежит в выбранном change, проверяется его проекция, результат — `patch_ready`,
+  не `cascade_ready`. Для `req` локальный режим не применяется.
 - `layer=req` — оси O1–O5 над слоем требований. Критерий выхода: **spec_ready** (нет блокеров O1/O4b/O5 и OE hard gates → требования годны как вход для спецификаций). Код-генерабельность тут НЕ проверяется — она на слое спеки.
 - `layer=spec` — оси O1–O5 + **O0 single-source (hard-fail при двух редакциях контракта)** + O6 контракт + O7 физмодель + полнота воплощения applicable OE. Критерий: **codegen_ready**.
 
@@ -107,6 +118,19 @@ jsonschema и его зависимости. Отсутствующая зави
    `started_at`/`finished_at` содержат Z (новые отчёты) или явный UTC-offset.
    Date-only поля и age_days относятся к календарной дате `finished_at` в его зоне,
    а не к локальной дате машины, позже проверяющей сохранённый отчёт.
+7. После полного `layer=spec` при доступном Python сохрани снимок входов через
+   `design-patch.py snapshot <specs-root> --out <specs-root>/.verification/design-baseline.json`
+   (дополнительные активные правила — `--rules`; config-пакеты учитываются автоматически).
+   Это база следующей локальной правки, не отдельный сертификат. Ошибка снимка отключает
+   быстрый путь, не отменяет полный verify. При наличии
+   `.verification/design-pending.json` снимай его только после полного `preset=full`
+   с `codegen_ready: yes` на текущем дереве. Подробности — `patterns/design-patch.md` kernel.
+8. После полного `layer=change` у обычного spec-only change при доступном Python
+   сохрани снимок через `change-patch.py snapshot <specs-root> --change <change-dir>
+   --out <change-dir>/.verification/change-baseline.json` (extra rules — `--rules`).
+   Ошибка снимка/неподдерживаемый импорт отключает быстрый путь, не отменяя полный вердикт.
+   Pending `<change-dir>/.verification/change-pending.json` снимается только полным
+   `preset=full` с `cascade_ready: yes` на текущей редакции. База и pending не согласовывают change.
 
 ## Выход (отчуждаемо от содержания)
 ```

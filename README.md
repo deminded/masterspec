@@ -70,11 +70,11 @@
 | `masterspec` | `[что нужно: мета-модель \| шаблон \| дисциплина слоёв \| карта скиллов]` |
 | `explore` | `[source=code\|docs]` `[target=factory-spec\|factory-change]` `roots=<пути к коду>` \| `docs=<пути к материалам>` `[factory=<slug>]` `[name=<change>]` `[anchor=<paths\|slugs>]` — `source` выбирает массив: код режется по путям, сырьё — по материалам (сначала опись, потом извлечение). `target` выбирает охват: вся фабрика или зона изменения |
 | `recover` | `source=docs\|code\|both` `[roots=<пути кода>]` `[docs=<пути к материалам, дефолт 00-source-data>]` `[context=]` — `docs`: сырьё разбирает `explore source=docs`; `code`: обратное восстановление спеки + codemap (нужен `roots=`); `both`: оба источника + сверка (документы = как задумано, код = как сделано) |
-| `derive` | `<factory-slug>` `layer=req\|spec` `[root=<путь>]` `[pass=]` `[verify=core\|full]` `[context=]` — `root=` корень фабрики: дефолт — корень репозитория аналитики (дерево `01-`/`02-`/`03-` прямо в нём, без обёртки); задать для спеки-подпапки внутри кодовой репы (напр. `root=masterspec/`). `verify=` задаёт строгость встроенной вычитки: `core` — базовый набор (быстро), `full` — все оси (строже) |
+| `derive` | `<factory-slug>` `layer=req\|spec` `[mode=full\|patch]` `[target=<slugs>]` `[baseline=<path>]` `[root=<путь>]` `[pass=]` `[verify=core\|full]` `[context=]` — `root=` корень фабрики: дефолт — корень репозитория аналитики (дерево `01-`/`02-`/`03-` прямо в нём, без обёртки); задать для спеки-подпапки внутри кодовой репы (напр. `root=masterspec/`). `verify=` задаёт строгость вычитки; `mode=patch` — точечная правка draft-дизайна с локальной проверкой |
 | `gen` | `type=<fn\|cmp\|scn\|alg\|api\|data\|nfr\|rules\|cdm\|as\|tc-acc\|tc-int\|tc-flt\|…>` `[from=<фокус-набор>]` `[target_path=]` `[target_mode=file\|diff\|sidecar]` `[loop=on\|off]` `[guardrails=auto\|off]` |
-| `verify` | `layer=req\|spec\|change` `[preset=core\|full]` `[context=]` — `preset` здесь то же, что `verify=` внутри `derive`: базовый набор осей или полный |
+| `verify` | `layer=req\|spec\|change` `[mode=full\|patch]` `[target=<slugs>]` `[baseline=<path>]` `[preset=core\|full]` `[context=]` — `preset` задаёт набор осей, `mode` — охват; `patch` только для `layer=spec` |
 | `accept` | `layer=req\|spec` `[factory=<путь к фабрике>]` |
-| `evolve` | `entry=req\|rule\|ext` `--root=<slug узла \| new:<имя>>` `[pass=]` `[context=]` — `entry` = точка входа: правите требование/функцию (`req`), конкретное бизнес-правило (`rule`), внешний контракт смежника (`ext`). `--root` = откуда пойдёт impact: существующий узел (режим ПРАВКА) или `new:<имя>` (режим ДОБАВЛЕНИЕ, каскад вниз) |
+| `evolve` | `entry=req\|rule\|ext` `--root=<slug узла \| new:<имя>>` `[pass=]` `[context=]` — обычное изменение с каскадом; для доводки существующего change: `change=<name> mode=patch [target=<slugs>] [baseline=<path>]`, без повторного ввода entry/root |
 | `apply-change` | `[имя change]` `[context=]` `[certify=all\|req-spec]` |
 | `apply-from-openspec` | `source=<native change-dir>` `factory=<specs-root>` `[specs=<native main specs>]` `[name=]` `[mode=prepare\|apply]` `[context=]` |
 | `archive-change` | `[имя change]` |
@@ -103,6 +103,35 @@
 - **Восстановление:** `recover source=docs|code` → `verify` → доведение через `derive`/`evolve`.
 - **Где оседают тест-кейсы (следствие дисциплины слоёв):** `derive layer=req` кладёт приёмочные `tc-acc` в `01-requirements/08-test-cases/` (ссылаются на `fn-` и критерий приёмки, про API не знают); `derive layer=spec` кладёт интеграционные `tc-int` и каталоги отказов `tc-flt` в `02-specifications/08-test-cases/` (ссылаются на `scn-`). `testgen` берёт на вход оба каталога.
 - **Hard-gate (общий для обоих потоков):** согласование — всегда merge PR человеком, агент свой PR не мержит. `actual` наступает ТОЛЬКО после этого merge, но ставит его разный актор: в потоке ГЕНЕРАЦИИ — человек сменой статуса (apply-change не участвует); в потоке ИЗМЕНЕНИЯ — `apply-change` при вливании уже согласованного change. Агент сам, без предшествующего merge, `actual` не ставит никогда.
+
+## Точечные правки во время дизайна
+
+При доводке **существующего change**:
+
+```text
+masterspec-evolve change=<name> mode=patch target=api-orders
+Уточни пример ключа идемпотентности, сохранив существующий контракт.
+```
+
+Правки остаются в `change.md`/`new/`, принятая фабрика не меняется. Проверяются diff
+между двумя редакциями предложения и затронутые зависимости; отчёт выдаёт `patch_ready`.
+После серии фиксов — один полный `verify layer=change change=<name> mode=full preset=full`
+перед согласованием/`apply-change`. Новая цель, AC, состав каскада или изменившаяся база
+возвращают обычный evolve. [Допуск и правила](masterspec/references/patterns/change-patch.md).
+
+При доводке **первично генерируемого слоя**:
+
+```text
+masterspec-derive <factory> layer=spec mode=patch target=api-orders
+Уточни пример ключа идемпотентности, сохранив существующий контракт.
+```
+
+Система сравнивает снимок ДО/ПОСЛЕ, проверяет изменённые артефакты и их обратные зависимости,
+сохраняет `draft` и отдельный `verify-patch-*.md` с `patch_ready`. Дешёвые машинные гейты
+остаются глобальными. После серии фиксов — один полный `verify layer=spec mode=full preset=full`
+перед `accept`. Изменение принятой спеки идёт через `evolve`, требований/общих правил —
+обычным маршрутом. `verify=core` сам по себе область вычитки не сужает.
+[Допуск, снимки и эскалация](masterspec/references/patterns/design-patch.md).
 
 ## Импорт из OpenSpec
 

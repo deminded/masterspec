@@ -35,6 +35,12 @@ allowed-tools:
 
 **Гейт расхождений (перед всем остальным).** Если в фабрике есть `recover/_reconciliation.yaml` — неразрешённые `spec-drift` / `declared-not-implemented` / `ambiguous_matches[]` блокируют приём слоя. Принять слой, в котором документы и код говорят разное, а разница не разобрана, — значит узаконить обе правды сразу. Разрешение — решение владельца (какое значение верно), не accept.
 
+**После точечных фиксов дизайна.** При `layer=spec` и наличии в specs-root
+`.verification/design-pending.json` сначала вызови `verify layer=spec mode=full preset=full`
+по `../masterspec/references/patterns/design-patch.md`. Пока полный verify на текущем дереве
+не получил `codegen_ready: yes` и не снял маркер, промоушен запрещён. `patch_ready` и прежний
+`verify-report.md` не закрывают этот гейт; pending нельзя отложить в §7.
+
 1. **Гейт остатка (детерминированно, не на глаз).**
    - Прогнать form-detector: `../masterspec/scripts/check-operational-envelope.py <factory> --layer
      <layer>` → OPEN-грани, form-TODO (`MIGRATE-TODO`/`x-migrate-todo`), дыры O_T, непройденные оси.

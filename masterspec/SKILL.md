@@ -49,6 +49,8 @@ allowed-tools:
 | Промышленный tc-стандарт | `references/test-case-standard.md` | При генерации/проверке `tc-acc`, `tc-int`, `tc-flt` |
 | Детерминированный OE pre-gate | `scripts/check-operational-envelope.py` | Перед LLM-осями `verify layer=req|spec` |
 | Gate телеметрии verify-report | `scripts/check-verify-report.py` | После сборки каждого `verify-report.md` |
+| Область точечной правки дизайна | `scripts/design-patch.py` | Снимок входов и diff/обратные зависимости для `derive`/`verify mode=patch` |
+| Область точечной правки change | `scripts/change-patch.py` | Две проекции одного change; общий граф, неизменная фабрика и карантинные записи |
 | Граница change от evolve | `scripts/check-change-scope.py` | До verify и до применения spec-only change |
 | Маршрутизация тип→шаблон→путь→slug | `references/artifact-routing.md` | При создании/размещении артефакта |
 | Переносимые имена и UTC timestamp `YYYYMMDDTHHMMZ` | `references/file-naming.md` | Перед созданием файла/каталога, включая служебные; при переименовании старых отчётов |
@@ -141,6 +143,8 @@ kernel сам не запускается «в режиме» — выбери �
 - **`element-workflow.md`** — узел-ИСПОЛНЕНИЕ: планировщик → исполнитель(и) → ПРИЁМЩИК (сводит редакции в одну, single-source, на месте).
 - **`enforcement.md`** — гейты как мандаты, не советы: hard-gate блокирует переход; «Согласовано» ставит человек (merge PR), не агент. Жёсткость дозируется.
 - **`verification-axes.md`** — 5 осей вычитки (предмет verify): статика (элемент/слой/межслой) · динамика (прогон содержания + прогон годности для следующего слоя) · негатив (состязательный прогон), включая OE hard gates.
+- **`design-patch.md`** — быстрый путь `derive`/`verify mode=patch` для локальных правок draft-спецификаций: diff, затронутые связи, отдельный `patch_ready`, одна полная вычитка перед согласованием серии.
+- **`change-patch.md`** — быстрый путь `evolve`/`verify layer=change mode=patch` для доводки существующего change; фабрика не меняется, полный каскад проверяется перед согласованием/apply.
 - **`context-isolation.md`** — изоляция контекста (режим `context=lean`): скилл = диспетчер по файлам (держит план + пути + сводки, не содержимое); тяжёлое чтение делегируется субагентам через файлы. Параметр `context=lean` у `derive`/`evolve`/`verify`/`recover`/`apply-change` (`gen`/`explore` — нет: атомарен / уже lean). Для моделей с ограниченным контекстом.
 
 ---

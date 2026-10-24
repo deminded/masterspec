@@ -42,6 +42,13 @@ allowed-tools:
 норм можно применить до разработки. Незакрытые OpenSpec coding tasks не блокируют
 этот мерж и не подтверждают реализацию; расхождение с кодом остаётся отдельной работой.
 
+После локальных фиксов evolve проверь `<change-dir>/.verification/change-pending.json`
+до первой мутации фабрики. При наличии вызови `verify layer=change change=<name>
+mode=full preset=full` по `../masterspec/references/patterns/change-patch.md`.
+До `cascade_ready: yes` на текущей редакции и снятия pending применение запрещено.
+`patch_ready` и прежний полный отчёт этот гейт не закрывают. После него проверь обычное
+основание согласования именно текущей редакции; полный verify сам согласования не даёт.
+
 Определи корни фабрики по `../masterspec/references/layout-modes.md §2` (положение `00-masterspec-index.md` → specs-root, changes-root).
 
 > **`context=full` / `context=lean` (дефолт)** — для крупного change в `lean` шаги §3, §5–§11 делегируются (файловый контракт — `../masterspec/references/patterns/context-isolation.md §Lean в других скиллах`): оркестратор читает только шапку `change.md` + §2-таблицы → dry-run-план `apply/_dryrun.md`; на каждую строку §2 — субагент применяет И верифицирует СВОЮ строку → `apply/<slug>.md` (`op`/`target`/`result`/`verification`; на конфликте оркестратор спрашивает человека, при пропуске — `skipped_by_user`); reindex субагентом (обновляет индекс); затем smoke-субагент (§9.1, по УЖЕ обновлённому индексу) → `apply/_smoke.md` как gate (провал → откат, к §9.3 не переходим); оркестратор собирает §9.3-вердикт из этих отчётов, целевые файлы сам НЕ читает; `apply-report.md` — вне `.work/`. В `context=full` шаги ниже выполняются самим скиллом (читает сам). Для ограниченного контекста.
