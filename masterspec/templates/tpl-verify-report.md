@@ -20,6 +20,13 @@ finished_at: YYYY-MM-DDThh:mm:ssZ
      `N/A — локальная проверка`. Отчёт — verify-patch-<run-id>.md; полный verify-report.md
      не перезаписывать. Укажи изменённые/проверенные артефакты, read-only контекст и
      сохранённый долг вне области. mode=full — обычный полный отчёт, этих полей не требует. -->
+<!-- Для полного verify после patch до начала вычитки зафиксируй inputs через
+     check-pending.py capture. Во фронтматтер добавь inputs (путь к неизменяемому JSON)
+     и verified_inputs_digest; для scope=change также change. Check-verify-report
+     сверит digest с текущим деревом. Pending снимается только check-pending.py clear,
+     не вручную и не по одному readiness=yes. Старые полные отчёты без inputs
+     остаются читаемыми, но pending не закрывают. Все пути доказательств разрешаются
+     относительно каталога отчёта, либо задаются абсолютными. -->
 
 ## Результат
 - holes: {O1,O2,O3,O4a,O4b,O5[,O0,O6,O7,O_T1..O_T6]} = <total>

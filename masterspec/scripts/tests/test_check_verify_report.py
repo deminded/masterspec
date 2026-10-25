@@ -53,13 +53,20 @@ class VerifyReportCheckerTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "verify-report.md"
             path.write_text(content, encoding="utf-8")
-            return CHECKER.validate(
+            return CHECKER._validate_form(
                 path, today=today, now=now or datetime(2026, 7, 14, tzinfo=timezone.utc)
             )
 
     def test_accepts_complete_telemetry_and_reasoned_na(self) -> None:
         _, errors = self.check(report())
         self.assertEqual(errors, [])
+
+    def test_public_validator_keeps_legacy_full_reports_without_proof_compatible(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "verify-report.md"
+            path.write_text(report(), encoding="utf-8")
+            _, errors = CHECKER.validate(path, now=datetime(2026, 7, 14, tzinfo=timezone.utc))
+            self.assertEqual(errors, [])
 
     def patch_report(self) -> str:
         return report().replace("preset: full\n", "preset: full\nmode: patch\n"

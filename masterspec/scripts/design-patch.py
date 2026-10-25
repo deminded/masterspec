@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import re
 import sys
@@ -18,7 +19,14 @@ import yaml
 LAYERS = ("01-requirements", "02-specifications", "04-decisions")
 GLOBALS = ("00-glossary.md", "masterspec-config.yaml", "recover/_reconciliation.yaml")
 KERNEL = Path(__file__).resolve().parents[1]
-SCHEMA = 1
+SCHEMA = 2
+
+_projection_spec = importlib.util.spec_from_file_location(
+    "design_patch_projection", Path(__file__).with_name("change_projection.py")
+)
+assert _projection_spec and _projection_spec.loader
+_projection = importlib.util.module_from_spec(_projection_spec)
+_projection_spec.loader.exec_module(_projection)
 
 
 def require(condition: bool, message: str) -> None:
@@ -80,6 +88,10 @@ def rules_snapshot(root: Path, extra: list[str]) -> dict:
             file.relative_to(base).as_posix(): digest(file.read_bytes())
             for file in walk_files(base, path)
             if file.suffix != ".pyc"
+            and not (path == KERNEL and (
+                file.relative_to(base).parts[0] == "examples"
+                or file.relative_to(base).parts[:2] == ("scripts", "tests")
+                or any(part in {".verification", ".work"} for part in file.relative_to(base).parts)))
         }
     return rules
 
@@ -107,6 +119,18 @@ def input_contents(root: Path) -> dict[str, bytes]:
     return result
 
 
+def code_reference_prefixes() -> tuple[str, ...]:
+    """Codemap is outside this workflow; classify its references without reading it."""
+    prefixes = set()
+    registry = KERNEL / "references/artifact-routing.md"
+    for line in registry.read_text(encoding="utf-8").splitlines():
+        cells = line.strip().strip("|").split("|")
+        if len(cells) == 4 and "`03-codemap/" in cells[2]:
+            prefixes.update(re.findall(r"`([a-z][a-z0-9-]*-)`", cells[3]))
+    require(bool(prefixes), "codemap reference prefixes unavailable in routing registry")
+    return tuple(sorted(prefixes))
+
+
 def snapshot(root: Path, extra_rules: list[str] | None = None, *,
              contents: dict[str, bytes] | None = None) -> dict:
     root = root.resolve()
@@ -131,11 +155,13 @@ def snapshot(root: Path, extra_rules: list[str] | None = None, *,
                 f"missing/invalid artifact slug: {key}")
         require(slug not in slugs, f"duplicate artifact slug: {slug}")
         slugs[slug] = key
-        texts[key] = text
+        # Examples and template comments are not edges, including known-slug mentions.
+        texts[key] = "\n".join(_projection.visible_lines(text)[1])
         entry["meta"] = {field: meta.get(field) for field in (
             "slug", "type", "status", "sidecar", "sidecar_format", "contract_origin"
         )}
-    unresolved = []
+    unresolved, deferred = [], []
+    code_prefixes = code_reference_prefixes()
     mentions = re.compile(r"(?<![\w-])(?:" + "|".join(
         re.escape(slug) for slug in sorted(slugs, key=len, reverse=True)
     ) + r")(?![\w-])") if slugs else None
@@ -144,7 +170,9 @@ def snapshot(root: Path, extra_rules: list[str] | None = None, *,
         deps = {slugs[match[0]] for match in mentions.finditer(text)} if mentions else set()
         deps.discard(key)
         for target in re.findall(r"->\s*([a-z][a-z0-9]*(?:-[a-z0-9]+)+)", text):
-            if target not in slugs:
+            if target.startswith(code_prefixes):
+                deferred.append(f"{key}: {target} — deferred-to-implementation")
+            elif target not in slugs:
                 unresolved.append(f"{key}: unknown slug {target}")
         sidecar = entry["meta"]["sidecar"]
         if sidecar:
@@ -182,11 +210,12 @@ def snapshot(root: Path, extra_rules: list[str] | None = None, *,
         "rules": rules_snapshot(root, extra_rules or []),
         "files": files,
         "unresolved": sorted(set(unresolved)),
+        "deferred_references": sorted(set(deferred)),
     }
 
 
 def state_digest(state: dict) -> str:
-    keys = ("files", "rules", "unresolved", "workflow", "change_root", "factory_digest",
+    keys = ("files", "rules", "unresolved", "deferred_references", "workflow", "change_root", "factory_digest",
             "change_inputs", "change_contract", "change_status")
     return digest(json.dumps({name: state[name] for name in keys if name in state},
                              sort_keys=True, ensure_ascii=False).encode("utf-8"))
@@ -210,7 +239,8 @@ def plan_states(root: Path, baseline: dict, current: dict, targets: list[str] | 
     require(isinstance(baseline.get("extra_rules"), list)
             and all(isinstance(path, str) for path in baseline["extra_rules"]), "invalid baseline rules paths")
     require(isinstance(baseline.get("rules"), dict)
-            and isinstance(baseline.get("unresolved"), list), "invalid baseline rules/references")
+            and isinstance(baseline.get("unresolved"), list)
+            and all(isinstance(item, str) for item in baseline["unresolved"]), "invalid baseline rules/references")
     require(current.get("factory_root") == str(root), "current inputs belong to another factory")
     old, new = baseline["files"], current["files"]
     require(isinstance(old, dict), "invalid baseline inventory")
@@ -255,8 +285,6 @@ def plan_states(root: Path, baseline: dict, current: dict, targets: list[str] | 
         reasons.append("file inventory changed (add/delete/rename)")
     if baseline["rules"] != current["rules"]:
         reasons.append("verification rules or guardrail packs changed")
-    if baseline["unresolved"] or current["unresolved"]:
-        reasons.append("dependency graph has unresolved references")
     for key in sorted(changed):
         allowed = ("01-requirements/", "02-specifications/") if workflow == "evolve" else ("02-specifications/",)
         if not key.startswith(allowed):
@@ -273,15 +301,28 @@ def plan_states(root: Path, baseline: dict, current: dict, targets: list[str] | 
                 reasons.append(f"imported sidecar is immutable: {key}")
     impacted = closure(changed | anchors, reverse)
     artifacts = {key for key in impacted if "meta" in new.get(key, old.get(key, {}))}
-    context = closure(impacted, graph) - impacted
+    context = set().union(*(graph.get(key, set()) for key in impacted)) - impacted
+    unresolved = set(baseline["unresolved"]) | set(current["unresolved"])
+    relevant_unresolved = {item for item in unresolved if item.split(": ", 1)[0] in impacted | context}
+    reasons.extend(f"dependency graph has unresolved references: {item}" for item in sorted(relevant_unresolved))
+    layers = ("02-specifications/",) if workflow == "derive" else ("01-requirements/", "02-specifications/")
+    eligible = {key for key, entry in new.items() if "meta" in entry and key.startswith(layers)}
+    covered = eligible & artifacts
+    if changed and eligible and eligible <= artifacts:
+        reasons.append("verification scope covers the whole layer; use full verification")
     route = "evolve" if evolve else "full" if reasons else "patch" if changed else "noop"
     return {
         "schema": SCHEMA, "factory_root": str(root), "route": route,
         "reasons": sorted(set(evolve + reasons)),
         "baseline_digest": state_digest(baseline), "current_digest": state_digest(current),
         "changed_files": sorted(changed), "write_artifacts": sorted(touched),
+        "targets": sorted(anchors),
         "verify_artifacts": sorted(artifacts), "verify_files": sorted(impacted),
         "read_only_context": sorted(context),
+        "coverage": {"scope": "spec" if workflow == "derive" else "req-spec",
+                     "verified": len(covered), "total": len(eligible)},
+        "unresolved_outside_scope": sorted(unresolved - relevant_unresolved),
+        "deferred_references": current["deferred_references"],
         "semantic_review_required": True,
     }
 

@@ -59,6 +59,19 @@ OE pre-gate проверяет PyYAML до чтения артефактов; д
 jsonschema и его зависимости. Отсутствующая зависимость даёт один BLOCKER с командой
 установки и ненулевой exit code; это сбой окружения, а не F2 каждого сайдкара.
 
+0. **Зафиксируй входы полного прогона.** Для обычного `layer=spec` или spec-only
+   `layer=change` после записи `started_at`, до вычитки выполни
+   `check-pending.py capture <specs-root> --scope spec|change [--change <change-dir>]
+   --out <owner>/.verification/full/<run-id>/inputs.json` (extra rules — `--rules`).
+   Owner — specs-root для spec, change-dir для change. Во фронтматтер полного отчёта
+   запиши `mode: full`, `inputs`, выданный `verified_inputs_digest`; для change также
+   путь `change`. Снимок начала прогона не перезаписывается после проверок. Gate отчёта
+   сверит digest с текущими файлами/правилами; изменившиеся входы требуют новой проверки.
+   При отсутствии pending недоступность снимка оставляет прежний полный workflow без
+   быстрого пути. При pending без этого доказательства приёмка/apply блокируются.
+   Для import/чужого workflow соблюдай его write-roots и доказательства; не создавай
+   новые service-каталоги в обход разрешённого `work_root`.
+
 1. preset=core (дефолт) — дешёвое ядро на каждом элементе: структполнота (+ раскладка: `python3 ../masterspec/scripts/check-layout.py <factory-root> --check` — каждый артефакт ↔ канонический подкаталог по `type:` из `artifact-routing.md`; вал в корень слоя = блокер структуры) → обязательный OE set-diff
    (`python3 <masterspec-kernel-skill-dir>/scripts/check-operational-envelope.py <factory-root> --layer req|spec`;
    путь резолвить относительно соседнего kernel-скилла; если Python недоступен — ручная сверка по
@@ -123,14 +136,16 @@ jsonschema и его зависимости. Отсутствующая зави
    (дополнительные активные правила — `--rules`; config-пакеты учитываются автоматически).
    Это база следующей локальной правки, не отдельный сертификат. Ошибка снимка отключает
    быстрый путь, не отменяет полный verify. При наличии
-   `.verification/design-pending.json` снимай его только после полного `preset=full`
-   с `codegen_ready: yes` на текущем дереве. Подробности — `patterns/design-patch.md` kernel.
+   `.verification/design-pending.json` после полного `preset=full` с `codegen_ready: yes`
+   выполни `check-pending.py clear <specs-root> --scope spec --report <verify-report.md>`.
+   Ошибка запрещает снятие pending, вручную его не удаляй. Подробности — `patterns/design-patch.md` kernel.
 8. После полного `layer=change` у обычного spec-only change при доступном Python
    сохрани снимок через `change-patch.py snapshot <specs-root> --change <change-dir>
    --out <change-dir>/.verification/change-baseline.json` (extra rules — `--rules`).
    Ошибка снимка/неподдерживаемый импорт отключает быстрый путь, не отменяя полный вердикт.
-   Pending `<change-dir>/.verification/change-pending.json` снимается только полным
-   `preset=full` с `cascade_ready: yes` на текущей редакции. База и pending не согласовывают change.
+   После полного `preset=full` с `cascade_ready: yes` выполни
+   `check-pending.py clear <specs-root> --scope change --change <change-dir> --report <verify-report.md>`.
+   Гейт пересчитает текущие входы; ошибка запрещает снятие pending. База и pending не согласовывают change.
 
 ## Выход (отчуждаемо от содержания)
 ```

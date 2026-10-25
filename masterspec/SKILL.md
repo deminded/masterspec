@@ -51,6 +51,7 @@ allowed-tools:
 | Gate телеметрии verify-report | `scripts/check-verify-report.py` | После сборки каждого `verify-report.md` |
 | Область точечной правки дизайна | `scripts/design-patch.py` | Снимок входов и diff/обратные зависимости для `derive`/`verify mode=patch` |
 | Область точечной правки change | `scripts/change-patch.py` | Две проекции одного change; общий граф, неизменная фабрика и карантинные записи |
+| Машинный pending-gate | `scripts/check-pending.py` | Mark/capture перед проверкой; check/clear по полному отчёту и digest перед accept/apply |
 | Граница change от evolve | `scripts/check-change-scope.py` | До verify и до применения spec-only change |
 | Маршрутизация тип→шаблон→путь→slug | `references/artifact-routing.md` | При создании/размещении артефакта |
 | Переносимые имена и UTC timestamp `YYYYMMDDTHHMMZ` | `references/file-naming.md` | Перед созданием файла/каталога, включая служебные; при переименовании старых отчётов |

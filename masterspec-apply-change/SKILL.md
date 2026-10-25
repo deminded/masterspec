@@ -42,12 +42,14 @@ allowed-tools:
 норм можно применить до разработки. Незакрытые OpenSpec coding tasks не блокируют
 этот мерж и не подтверждают реализацию; расхождение с кодом остаётся отдельной работой.
 
-После локальных фиксов evolve проверь `<change-dir>/.verification/change-pending.json`
-до первой мутации фабрики. При наличии вызови `verify layer=change change=<name>
-mode=full preset=full` по `../masterspec/references/patterns/change-patch.md`.
-До `cascade_ready: yes` на текущей редакции и снятия pending применение запрещено.
-`patch_ready` и прежний полный отчёт этот гейт не закрывают. После него проверь обычное
-основание согласования именно текущей редакции; полный verify сам согласования не даёт.
+До первой мутации фабрики выполни машинный preflight:
+`python3 <kernel>/scripts/check-pending.py check <specs-root> --scope change --change <change-dir>`.
+Ненулевой exit code запрещает apply. При pending вызови полный `verify layer=change
+change=<name> mode=full preset=full` по `../masterspec/references/patterns/change-patch.md`
+и повтори preflight. Гейт требует `cascade_ready: yes`, полный отчёт и digest текущих
+входов; маркер снимается только через `check-pending.py clear`, не вручную.
+`patch_ready` и прежний отчёт этот гейт не закрывают. Затем проверь обычное основание
+согласования именно текущей редакции; полный verify сам согласования не даёт.
 
 Определи корни фабрики по `../masterspec/references/layout-modes.md §2` (положение `00-masterspec-index.md` → specs-root, changes-root).
 
@@ -90,6 +92,10 @@ mode=full preset=full` по `../masterspec/references/patterns/change-patch.md`.
 snapshots не сравниваются с после-состоянием и diff повторно не применяются.
 
 Гейт, поставленный после мутации, — не гейт. Поэтому ДО применения любых diff-блоков и копирования файлов:
+
+Первым запусти `check-pending.py check <specs-root> --scope change --change <change-dir>`
+из kernel по правилу выше. Его ошибка блокирует всю транзакцию; статус change и предразрешение
+apply не заменяют свежий полный verify после локальных фиксов.
 
 Если есть `import-map.json` или `source-inventory.json`, это импорт OpenSpec:
 нужны оба файла и повторный `../masterspec-apply-from-openspec/scripts/check_import.py`

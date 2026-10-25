@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import re
 import sys
 from datetime import date, datetime, timezone
@@ -76,7 +77,7 @@ def number(value: str) -> float | None:
         return None
 
 
-def validate(
+def _validate_form(
     path: Path, today: date | None = None, *, now: datetime | None = None
 ) -> tuple[dict[str, str], list[str]]:
     """Check ages at report completion, using the explicit finished_at timezone.
@@ -235,6 +236,30 @@ def validate(
             errors.append("oldest_element_last_verified must be YYYY-MM-DD")
 
     return {**fm, **data}, errors
+
+
+def validate(
+    path: Path, today: date | None = None, *, now: datetime | None = None
+) -> tuple[dict[str, str], list[str]]:
+    data, errors = _validate_form(path, today=today, now=now)
+    fm = frontmatter(path.read_text(encoding="utf-8"))
+    if fm.get("mode", "full") == "patch" or "inputs" in fm or "verified_inputs_digest" in fm:
+        try:
+            import yaml
+
+            spec = importlib.util.spec_from_file_location("report_verification_state", Path(__file__).with_name("verification_state.py"))
+            assert spec and spec.loader
+            evidence = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(evidence)
+            evidence.validate_evidence(path, fm)
+        except (OSError, ValueError, TypeError, KeyError, RecursionError) as error:
+            errors.append(f"verification evidence: {error}")
+        except ImportError as error:
+            errors.append(f"verification evidence dependencies unavailable: {error}")
+        except yaml.YAMLError as error:
+            errors.append(f"verification evidence: {error}")
+
+    return data, errors
 
 
 def run(path: Path) -> int:

@@ -72,7 +72,7 @@
 | `recover` | `source=docs\|code\|both` `[roots=<пути кода>]` `[docs=<пути к материалам, дефолт 00-source-data>]` `[context=]` — `docs`: сырьё разбирает `explore source=docs`; `code`: обратное восстановление спеки + codemap (нужен `roots=`); `both`: оба источника + сверка (документы = как задумано, код = как сделано) |
 | `derive` | `<factory-slug>` `layer=req\|spec` `[mode=full\|patch]` `[target=<slugs>]` `[baseline=<path>]` `[root=<путь>]` `[pass=]` `[verify=core\|full]` `[context=]` — `root=` корень фабрики: дефолт — корень репозитория аналитики (дерево `01-`/`02-`/`03-` прямо в нём, без обёртки); задать для спеки-подпапки внутри кодовой репы (напр. `root=masterspec/`). `verify=` задаёт строгость вычитки; `mode=patch` — точечная правка draft-дизайна с локальной проверкой |
 | `gen` | `type=<fn\|cmp\|scn\|alg\|api\|data\|nfr\|rules\|cdm\|as\|tc-acc\|tc-int\|tc-flt\|…>` `[from=<фокус-набор>]` `[target_path=]` `[target_mode=file\|diff\|sidecar]` `[loop=on\|off]` `[guardrails=auto\|off]` |
-| `verify` | `layer=req\|spec\|change` `[mode=full\|patch]` `[target=<slugs>]` `[baseline=<path>]` `[preset=core\|full]` `[context=]` — `preset` задаёт набор осей, `mode` — охват; `patch` только для `layer=spec` |
+| `verify` | `layer=req\|spec\|change` `[change=<name>]` `[mode=full\|patch]` `[target=<slugs>]` `[baseline=<path>]` `[preset=core\|full]` `[context=]` — `preset` задаёт набор осей, `mode` — охват; `patch` для `spec` или существующего `change` |
 | `accept` | `layer=req\|spec` `[factory=<путь к фабрике>]` |
 | `evolve` | `entry=req\|rule\|ext` `--root=<slug узла \| new:<имя>>` `[pass=]` `[context=]` — обычное изменение с каскадом; для доводки существующего change: `change=<name> mode=patch [target=<slugs>] [baseline=<path>]`, без повторного ввода entry/root |
 | `apply-change` | `[имя change]` `[context=]` `[certify=all\|req-spec]` |
@@ -132,6 +132,11 @@ masterspec-derive <factory> layer=spec mode=patch target=api-orders
 перед `accept`. Изменение принятой спеки идёт через `evolve`, требований/общих правил —
 обычным маршрутом. `verify=core` сам по себе область вычитки не сужает.
 [Допуск, снимки и эскалация](masterspec/references/patterns/design-patch.md).
+
+Контекст локальной вычитки ограничен прямыми зависимостями. Полный охват слоя
+автоматически возвращает `full`. Перед `accept`/`apply-change` машинный
+`check-pending.py` требует свежий полный отчёт и digest текущих входов;
+локальный `patch_ready` или устаревший отчёт маркер не снимают.
 
 ## Импорт из OpenSpec
 

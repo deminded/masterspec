@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 
@@ -58,13 +59,94 @@ class DesignPatchTest(unittest.TestCase):
         self.assertIn(self.key(self.cmp), result["read_only_context"])
         self.assertNotIn(self.key(self.other), result["verify_files"])
 
-    def test_removed_link_keeps_old_endpoint_and_its_requirements_in_context(self):
+    def test_removed_link_keeps_only_old_direct_endpoint_in_context(self):
         text = self.other.read_text(encoding="utf-8").replace("-> cmp-sender", "")
         self.other.write_text(text, encoding="utf-8")
         result = PATCH.plan(self.root, self.base)
         self.assertEqual(result["verify_artifacts"], [self.key(self.other)])
         self.assertIn(self.key(self.cmp), result["read_only_context"])
-        self.assertIn(self.key(self.fn), result["read_only_context"])
+        self.assertNotIn(self.key(self.fn), result["read_only_context"])
+
+    def test_comments_and_fenced_examples_create_neither_unknown_nor_known_edges(self):
+        self.change(self.other, "<!-- -> fn-ghost and -> api-send -->\n"
+                    "```text\n-> api-missing\n-> api-send\n```\n")
+        base = PATCH.snapshot(self.root)
+        self.assertEqual(base["unresolved"], [])
+        self.assertNotIn(self.key(self.api), base["files"][self.key(self.other)]["deps"])
+        self.assertEqual(PATCH.plan(self.root, base)["route"], "noop")
+        self.change(self.api)
+        self.assertNotIn(self.key(self.other), PATCH.plan(self.root, base)["verify_artifacts"])
+
+    def test_codemap_references_are_deferred_without_reading_code(self):
+        self.artifact("04-decisions", "adr-delivery", "-> trace-inbound-delivery\n-> cmap-server\n-> dmap-cache", status="accepted")
+        code = self.root / "03-codemap"
+        code.mkdir()
+        (code / "trace-inbound-delivery.md").write_bytes(b"\xff unreadable code layer")
+        base = PATCH.snapshot(self.root)
+        self.assertEqual(base["unresolved"], [])
+        self.assertEqual(len(base["deferred_references"]), 3)
+        self.change(self.api)
+        result = PATCH.plan(self.root, base)
+        self.assertEqual(result["route"], "patch")
+        self.assertTrue(all(not key.startswith("03-codemap/") for key in result["verify_files"]))
+
+    def test_known_slug_mention_in_normal_prose_still_creates_edge(self):
+        self.change(self.other, "This scenario also consumes api-send.\n")
+        base = PATCH.snapshot(self.root)
+        self.change(self.api)
+        self.assertIn(self.key(self.other), PATCH.plan(self.root, base)["verify_artifacts"])
+
+    def test_context_does_not_walk_the_entire_upstream_chain(self):
+        self.change(self.tc)
+        result = PATCH.plan(self.root, self.base)
+        self.assertEqual(result["read_only_context"], [self.key(self.flt)])
+        self.assertNotIn(self.key(self.scn), result["read_only_context"])
+
+    def test_whole_specification_layer_is_escalated_by_the_planner(self):
+        self.change(self.api, "-> tc-int-send\n")
+        base = PATCH.snapshot(self.root)
+        self.change(self.cmp)
+        result = PATCH.plan(self.root, base)
+        self.assertEqual(result["route"], "full")
+        self.assertEqual(result["coverage"]["verified"], result["coverage"]["total"])
+        self.assertTrue(any("whole layer" in reason for reason in result["reasons"]))
+
+    def test_kernel_examples_and_evidence_are_not_verification_rules(self):
+        kernel = self.root / "bundle/masterspec"
+        (kernel / "references").mkdir(parents=True)
+        rule = kernel / "references/spec-writing.md"
+        rule.write_text("Normative rule", encoding="utf-8")
+        for name in ("masterspec-derive", "masterspec-evolve", "masterspec-verify", "masterspec-gen",
+                     "masterspec-accept", "masterspec-apply-change"):
+            entry = kernel.parent / name / "SKILL.md"
+            entry.parent.mkdir()
+            entry.write_text("Operation rule", encoding="utf-8")
+        with patch.object(PATCH, "KERNEL", kernel):
+            before = PATCH.rules_snapshot(self.root, [])
+            generated = kernel / "examples/factory/.verification/baseline.json"
+            generated.parent.mkdir(parents=True)
+            generated.write_text("{}", encoding="utf-8")
+            self.assertEqual(PATCH.rules_snapshot(self.root, []), before)
+            rule.write_text("Changed normative rule", encoding="utf-8")
+            self.assertNotEqual(PATCH.rules_snapshot(self.root, []), before)
+
+    def test_unrelated_old_unresolved_debt_does_not_close_local_route(self):
+        self.change(self.other, "-> api-old-missing\n")
+        base = PATCH.snapshot(self.root)
+        self.change(self.api)
+        result = PATCH.plan(self.root, base)
+        self.assertEqual(result["route"], "patch")
+        self.assertTrue(any("api-old-missing" in item for item in result["unresolved_outside_scope"]))
+        self.change(self.other, "Another correction.\n")
+        blocked = PATCH.plan(self.root, base)
+        self.assertEqual(blocked["route"], "full")
+        self.assertTrue(any("api-old-missing" in reason and self.key(self.other) in reason for reason in blocked["reasons"]))
+
+    def test_repository_operational_envelope_example_is_noop_despite_template_comment(self):
+        factory = SCRIPT.parents[1] / "examples/operational-envelope-factory"
+        baseline = PATCH.snapshot(factory)
+        self.assertEqual(baseline["unresolved"], [])
+        self.assertEqual(PATCH.plan(factory, baseline)["route"], "noop")
 
     def test_new_reference_expands_scope(self):
         self.change(self.other, "-> api-send\n")

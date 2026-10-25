@@ -34,6 +34,7 @@ class ChangePatchTest(unittest.TestCase):
         shutil.copytree(prepared / "new", self.change / "new")
         self.scn = self.artifact("02-specifications/02-scenarios", "scn-price", "scenario", "-> cmp-quote-policy")
         self.tc = self.artifact("02-specifications/08-test-cases", "tc-int-price", "test-integration", "-> scn-price")
+        self.isolated = self.artifact("02-specifications/03-algorithms", "alg-isolated", "algorithm", "No relation to this change.")
         self.other = self.artifact("02-specifications/02-scenarios", "scn-unrelated", "scenario",
                                    "-> fn-calculate-quote\n## Details\nOriginal.")
         self.base = PATCH.snapshot(self.factory, self.change)
@@ -89,6 +90,23 @@ class ChangePatchTest(unittest.TestCase):
         self.assertEqual(result["route"], "patch")
         self.assertIn("01-requirements/02-functions/fn-calculate-quote.md", result["verify_artifacts"])
         self.assertEqual(self.tree(), before)
+
+    def test_examples_in_after_do_not_create_graph_edges(self):
+        self.edit("разбивка результата по разделу «Результат» -> fn-calculate-quote.",
+                  "разбивка результата по разделу «Результат» -> fn-calculate-quote.\n"
+                  "<!-- -> fn-ghost -->\n~~~text\n-> api-missing\n-> alg-isolated\n~~~")
+        result = PATCH.plan(self.factory, self.change, self.base)
+        self.assertEqual(result["route"], "patch")
+        self.assertNotIn(self.isolated.relative_to(self.factory).as_posix(), result["read_only_context"])
+
+    def test_whole_requirement_specification_scope_escalates_to_full(self):
+        self.isolated.write_text(self.isolated.read_text(encoding="utf-8") + "\n-> fn-calculate-quote\n", encoding="utf-8")
+        base = PATCH.snapshot(self.factory, self.change)
+        self.edit("Налог равен итоговой сумме минус исходная базовая сумма.",
+                  "Налог равен итоговой сумме минус исходная базовая сумма (пример: 2.01).")
+        result = PATCH.plan(self.factory, self.change, base)
+        self.assertEqual(result["route"], "full")
+        self.assertEqual(result["coverage"]["verified"], result["coverage"]["total"])
 
     def test_other_changed_proposals_cannot_be_hidden_by_target(self):
         self.edit_component()
