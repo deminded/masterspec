@@ -35,6 +35,14 @@ allowed-tools:
 
 **Гейт расхождений (перед всем остальным).** Если в фабрике есть `recover/_reconciliation.yaml` — неразрешённые `spec-drift` / `declared-not-implemented` / `ambiguous_matches[]` блокируют приём слоя. Принять слой, в котором документы и код говорят разное, а разница не разобрана, — значит узаконить обе правды сразу. Разрешение — решение владельца (какое значение верно), не accept.
 
+**Машинный preflight после точечных фиксов.** При `layer=spec` до промоушена выполни
+`python3 <kernel>/scripts/check-pending.py check <specs-root> --scope spec`.
+Ненулевой exit code запрещает промоушен: выполни полный `verify layer=spec mode=full
+preset=full` по `../masterspec/references/patterns/design-patch.md`, затем повтори preflight.
+Гейт проверяет pending, полный отчёт и digest текущих входов. Маркер снимает только
+`check-pending.py clear` после полного verify; вручную его не удаляй. `patch_ready`, старый
+отчёт или перенос pending в §7 не закрывают гейт. Нет Python/зависимостей при pending — блокер.
+
 1. **Гейт остатка (детерминированно, не на глаз).**
    - Прогнать form-detector: `../masterspec/scripts/check-operational-envelope.py <factory> --layer
      <layer>` → OPEN-грани, form-TODO (`MIGRATE-TODO`/`x-migrate-todo`), дыры O_T, непройденные оси.

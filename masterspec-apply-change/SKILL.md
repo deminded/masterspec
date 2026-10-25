@@ -42,6 +42,15 @@ allowed-tools:
 норм можно применить до разработки. Незакрытые OpenSpec coding tasks не блокируют
 этот мерж и не подтверждают реализацию; расхождение с кодом остаётся отдельной работой.
 
+До первой мутации фабрики выполни машинный preflight:
+`python3 <kernel>/scripts/check-pending.py check <specs-root> --scope change --change <change-dir>`.
+Ненулевой exit code запрещает apply. При pending вызови полный `verify layer=change
+change=<name> mode=full preset=full` по `../masterspec/references/patterns/change-patch.md`
+и повтори preflight. Гейт требует `cascade_ready: yes`, полный отчёт и digest текущих
+входов; маркер снимается только через `check-pending.py clear`, не вручную.
+`patch_ready` и прежний отчёт этот гейт не закрывают. Затем проверь обычное основание
+согласования именно текущей редакции; полный verify сам согласования не даёт.
+
 Определи корни фабрики по `../masterspec/references/layout-modes.md §2` (положение `00-masterspec-index.md` → specs-root, changes-root).
 
 > **`context=full` / `context=lean` (дефолт)** — для крупного change в `lean` шаги §3, §5–§11 делегируются (файловый контракт — `../masterspec/references/patterns/context-isolation.md §Lean в других скиллах`): оркестратор читает только шапку `change.md` + §2-таблицы → dry-run-план `apply/_dryrun.md`; на каждую строку §2 — субагент применяет И верифицирует СВОЮ строку → `apply/<slug>.md` (`op`/`target`/`result`/`verification`; на конфликте оркестратор спрашивает человека, при пропуске — `skipped_by_user`); reindex субагентом (обновляет индекс); затем smoke-субагент (§9.1, по УЖЕ обновлённому индексу) → `apply/_smoke.md` как gate (провал → откат, к §9.3 не переходим); оркестратор собирает §9.3-вердикт из этих отчётов, целевые файлы сам НЕ читает; `apply-report.md` — вне `.work/`. В `context=full` шаги ниже выполняются самим скиллом (читает сам). Для ограниченного контекста.
@@ -83,6 +92,10 @@ allowed-tools:
 snapshots не сравниваются с после-состоянием и diff повторно не применяются.
 
 Гейт, поставленный после мутации, — не гейт. Поэтому ДО применения любых diff-блоков и копирования файлов:
+
+Первым запусти `check-pending.py check <specs-root> --scope change --change <change-dir>`
+из kernel по правилу выше. Его ошибка блокирует всю транзакцию; статус change и предразрешение
+apply не заменяют свежий полный verify после локальных фиксов.
 
 Если есть `import-map.json` или `source-inventory.json`, это импорт OpenSpec:
 нужны оба файла и повторный `../masterspec-apply-from-openspec/scripts/check_import.py`

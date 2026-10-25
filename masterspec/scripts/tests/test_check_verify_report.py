@@ -53,13 +53,69 @@ class VerifyReportCheckerTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "verify-report.md"
             path.write_text(content, encoding="utf-8")
-            return CHECKER.validate(
+            return CHECKER._validate_form(
                 path, today=today, now=now or datetime(2026, 7, 14, tzinfo=timezone.utc)
             )
 
     def test_accepts_complete_telemetry_and_reasoned_na(self) -> None:
         _, errors = self.check(report())
         self.assertEqual(errors, [])
+
+    def test_public_validator_keeps_legacy_full_reports_without_proof_compatible(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "verify-report.md"
+            path.write_text(report(), encoding="utf-8")
+            _, errors = CHECKER.validate(path, now=datetime(2026, 7, 14, tzinfo=timezone.utc))
+            self.assertEqual(errors, [])
+
+    def patch_report(self) -> str:
+        return report().replace("preset: full\n", "preset: full\nmode: patch\n"
+                                "baseline: .verification/patches/run/baseline.json\n"
+                                "plan: .verification/patches/run/plan.json\n"
+                                f"verified_inputs_digest: {'a' * 64}\n") + """
+- patch_ready: yes
+- spec_ready: N/A — local verification
+- codegen_ready: N/A — local verification
+- cascade_ready: N/A — local verification
+"""
+
+    def test_accepts_partial_report_with_evidence_without_layer_certificate(self) -> None:
+        data, errors = self.check(self.patch_report())
+        self.assertEqual(errors, [])
+        self.assertEqual(data["patch_ready"], "yes")
+
+    def test_patch_report_cannot_certify_layer_or_change_readiness(self) -> None:
+        for field in ("spec_ready", "codegen_ready", "cascade_ready"):
+            with self.subTest(field=field):
+                content = self.patch_report().replace(f"{field}: N/A — local verification", f"{field}: yes")
+                _, errors = self.check(content)
+                self.assertIn("patch report cannot certify readiness of the whole layer/change", errors)
+
+    def test_patch_report_cannot_hide_duplicate_green_claim(self) -> None:
+        content = self.patch_report().replace("- codegen_ready: N/A", "- codegen_ready: yes\n- codegen_ready: N/A")
+        _, errors = self.check(content)
+        self.assertIn("patch report cannot certify readiness of the whole layer/change", errors)
+
+    def test_partial_report_requires_evidence_digest_verdict_and_mode(self) -> None:
+        for line in ("baseline: .verification/patches/run/baseline.json\n",
+                     "plan: .verification/patches/run/plan.json\n",
+                     f"verified_inputs_digest: {'a' * 64}\n", "- patch_ready: yes\n", "mode: patch\n"):
+            with self.subTest(line=line):
+                _, errors = self.check(self.patch_report().replace(line, ""))
+                self.assertTrue(errors)
+
+    def test_patch_mode_does_not_support_req(self) -> None:
+        _, errors = self.check(self.patch_report().replace("scope: spec", "scope: req"))
+        self.assertIn("patch mode requires scope=spec or change", errors)
+
+    def test_change_patch_report_requires_identity_without_cascade_certificate(self) -> None:
+        text = self.patch_report().replace("scope: spec", "scope: change\nchange: changes/price")
+        _, errors = self.check(text)
+        self.assertEqual(errors, [])
+        _, errors = self.check(text.replace("change: changes/price\n", ""))
+        self.assertIn("change patch report requires change evidence path", errors)
+        _, errors = self.check(text.replace("cascade_ready: N/A — local verification", "cascade_ready: yes"))
+        self.assertIn("patch report cannot certify readiness of the whole layer/change", errors)
 
     def test_accepts_unknown_staleness_policy_without_invented_measurement(self) -> None:
         content = report().replace("stale_after_days: 14", "stale_after_days: N/A — factory defines no threshold")
